@@ -782,7 +782,7 @@ Error generating stack: `+l.message+`
 .dg-table-wrap{overflow:auto;flex:1;min-height:0}
 table.dg-table{width:100%;border-collapse:collapse;min-width:600px;table-layout:auto}
 table.dg-table th,table.dg-table td{padding:13px 16px;border-bottom:1px solid var(--border);white-space:nowrap;text-align:left;font-size:13px}
-table.dg-table th{background:var(--soft);color:var(--muted);font-size:13px;position:sticky;top:0;z-index:3;font-weight:900}
+table.dg-table th{background:var(--soft);color:var(--muted);font-size:13px;position:sticky;top:0;z-index:3;font-weight:900;text-transform:none}
 .dg-sort{cursor:pointer}
 .dg-filter-btn{height:28px;width:28px;border:1px solid var(--border);border-radius:9px;background:var(--surface);cursor:pointer;margin-left:6px;font-size:12px}
 .dg-filter-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
