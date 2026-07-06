@@ -137,6 +137,11 @@ export default function SaftyStockItemMasterPage({ user }) {
   const [statusHistoryLoading, setStatusHistoryLoading] = useState(false);
   const [statusHistoryError, setStatusHistoryError] = useState('');
 
+  // Receipts States
+  const [receipts, setReceipts] = useState([]);
+  const [receiptsLoading, setReceiptsLoading] = useState(false);
+  const [receiptsError, setReceiptsError] = useState('');
+
   async function loadData() {
     setLoading(true);
     setError('');
@@ -296,6 +301,26 @@ export default function SaftyStockItemMasterPage({ user }) {
     setStatusHistoryLoading(false);
   }
 
+  async function loadReceipts(code) {
+    if (!code) {
+      setReceipts([]);
+      return;
+    }
+    setReceiptsLoading(true);
+    setReceiptsError('');
+    try {
+      const res = await apiCall('GetItemReceipts', { ItemCode: code }, {}, 'plus');
+      if (res.State !== 0) {
+        setReceiptsError(res.Message || 'Failed to load receipts.');
+      } else {
+        setReceipts(res.List0 || []);
+      }
+    } catch (e) {
+      setReceiptsError('Connection error: ' + e.message);
+    }
+    setReceiptsLoading(false);
+  }
+
   function handlePrint() {
     const element = document.getElementById('drawer-summary-tab-content');
     if (!element) return;
@@ -371,12 +396,14 @@ export default function SaftyStockItemMasterPage({ user }) {
       loadOpenPOs(itemCode);
       loadLeadTimes(itemCode);
       loadStatusHistory(itemCode);
+      loadReceipts(itemCode);
     } else {
       setBalances([]);
       setConsumption([]);
       setOpenPos([]);
       setLeadTimes([]);
       setStatusHistory([]);
+      setReceipts([]);
     }
   }, [itemCode, isDrawerOpen]);
 
@@ -1183,6 +1210,24 @@ export default function SaftyStockItemMasterPage({ user }) {
                   }}
                 >
                   Status History
+                </button>
+                <button
+                  onClick={() => setActiveTab('receipts')}
+                  style={{
+                    padding: '10px 12px',
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: activeTab === 'receipts' ? '3px solid var(--orange)' : '3px solid transparent',
+                    color: activeTab === 'receipts' ? 'var(--orange)' : 'var(--muted)',
+                    fontWeight: activeTab === 'receipts' ? 800 : 600,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    outline: 'none',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Receipts
                 </button>
               </div>
 
@@ -2962,6 +3007,77 @@ export default function SaftyStockItemMasterPage({ user }) {
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Tab Content: Receipts Section */}
+              {activeTab === 'receipts' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, borderBottom: '1px solid var(--border)', paddingBottom: 8, color: 'var(--muted)', letterSpacing: '.05em', textTransform: 'uppercase' }}>
+                    Historical Receipts (Top 10)
+                  </div>
+
+                  {receiptsLoading && (
+                    <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+                      Loading receipts...
+                    </div>
+                  )}
+
+                  {receiptsError && (
+                    <div style={{ padding: '16px', borderRadius: 8, background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: 12 }}>
+                      ⚠ {receiptsError}
+                    </div>
+                  )}
+
+                  {!receiptsLoading && !receiptsError && receipts.length === 0 && (
+                    <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--muted)', fontSize: 13, background: 'var(--soft)', borderRadius: 12, border: '1px solid var(--border)' }}>
+                      No receipts found for this item code.
+                    </div>
+                  )}
+
+                  {!receiptsLoading && !receiptsError && receipts.length > 0 && (
+                    <div style={{ overflowX: 'auto', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                        <thead>
+                          <tr style={{ background: 'var(--soft)', borderBottom: '1px solid var(--border)' }}>
+                            <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>Receiving Date</th>
+                            <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em' }}>Warehouse</th>
+                            <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', textAlign: 'right' }}>Quantity Received</th>
+                            <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.05em', textAlign: 'center' }}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {receipts.map((r, idx) => (
+                            <tr key={idx} style={{ borderBottom: idx === receipts.length - 1 ? 'none' : '1px solid var(--border)', transition: 'background-color 0.15s' }}>
+                              <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>
+                                {r.ReceivingDate ? new Date(r.ReceivingDate).toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
+                              </td>
+                              <td style={{ padding: '12px 16px', color: 'var(--text)', fontWeight: 500 }}>
+                                {r.Warehouse || '—'}
+                              </td>
+                              <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--text)', textAlign: 'right' }}>
+                                {formatQty(r.QuantityReceived)}
+                              </td>
+                              <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                                <span style={{
+                                  fontSize: 10,
+                                  fontWeight: 800,
+                                  padding: '4px 8px',
+                                  borderRadius: 12,
+                                  background: 'rgba(34, 197, 94, 0.15)',
+                                  color: '#22c55e',
+                                  display: 'inline-flex',
+                                  alignItems: 'center'
+                                }}>
+                                  {r.StateDescription || 'Received'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>

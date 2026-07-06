@@ -777,6 +777,38 @@ BEGIN
         END
 
         -- ---------------------------------------------------------------------
+        -- Operation: Get Item Receipts
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetItemReceipts'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @ReceiptsItemCode VARCHAR(100) = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @ReceiptsItemCode = JSON_VALUE(@LineData, '$.ItemCode');
+            END
+            IF @ReceiptsItemCode IS NULL OR @ReceiptsItemCode = ''
+            BEGIN
+                SET @ReceiptsItemCode = @ItemCode;
+            END
+
+            SELECT TOP (10) 
+                c.StateDescription, 
+                b.ReceivingDate, 
+                a.QuantityReceived, 
+                a.Warehouse 
+            FROM pur.ReceivingOrderLine a 
+            LEFT OUTER JOIN pur.ReceivingOrderHeader b ON a.LineOrderNumber = b.ReceivingOrderNo 
+            LEFT OUTER JOIN pur.ReceivingOrderState c ON c.StateValue = b.ReceivingState AND c.Type = 'H' 
+            WHERE a.ReceivedCode = @ReceiptsItemCode 
+              AND b.ReceivingState > 0
+            ORDER BY b.ReceivingDate DESC;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
         -- Operation: Get Item Balance
         -- ---------------------------------------------------------------------
         IF @Operation = 'GetItemBalance'
