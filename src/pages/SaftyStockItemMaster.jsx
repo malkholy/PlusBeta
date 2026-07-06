@@ -888,7 +888,7 @@ export default function SaftyStockItemMasterPage({ user }) {
         controlPanel={controlPanel}
         loading={loading}
         onRefresh={loadData}
-        onRowClick={(row) => handleOpenDrawer(row)}
+        onEdit={(row) => handleOpenDrawer(row)}
       />
 
       <style>{`
