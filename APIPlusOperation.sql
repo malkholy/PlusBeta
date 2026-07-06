@@ -25,6 +25,7 @@ CREATE OR ALTER PROCEDURE [dbo].[APIPlusOperation]
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET ANSI_WARNINGS OFF;
 	set @State=0 
 	set @message ='' 
     -- Local variables for JSON extraction
@@ -205,7 +206,7 @@ BEGIN
             SET @Message = 'Success';
 
             SELECT 
-                a.Facility, 
+                b.Facility, 
                 a.OrderNumber, 
                 a.Line, 
                 a.PurchasedID, 
@@ -396,6 +397,202 @@ BEGIN
         END
 
         -- ---------------------------------------------------------------------
+        -- Operation: Get Safety Stock Items
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetSaftyStockItems'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            WITH ConsumptionBase AS (
+                SELECT 
+                    ItemCode,
+                    AVG(TotalQuantity) AS AvgMonthlyQty,
+                    STDEV(TotalQuantity) AS StdDevMonthlyQty
+                FROM inv.ItemConsuming
+                WHERE (Yer * 12 + Mnth) >= (YEAR(GETDATE()) * 12 + MONTH(GETDATE()) - 12)
+                  AND (Yer * 12 + Mnth) < (YEAR(GETDATE()) * 12 + MONTH(GETDATE()))
+                GROUP BY ItemCode
+            ),
+            LeadTimeBase AS (
+                SELECT 
+                    ItemCode,
+                    AVG(CAST(LeadTime AS DECIMAL(18,5))) AS AvgHistLT,
+                    STDEV(CAST(LeadTime AS DECIMAL(18,5))) AS StdDevHistLT
+                FROM (
+                    SELECT 
+                        pol.PurchasedCode AS ItemCode,
+                        CASE WHEN DATEDIFF(d, poh.ReleaseDate, (
+                            SELECT MAX(rh.ReceivingDate)
+                            FROM pur.RecievingLinkLine rll
+                            LEFT OUTER JOIN pur.ReceivingOrderHeader rh ON rll.ReceivingNumber = rh.ReceivingOrderNo
+                            WHERE rll.PurchaseOrderNumber = pol.OrderNumber
+                              AND rll.PurchaseOrderLine = pol.Line
+                        )) < 0 THEN 0
+                        ELSE DATEDIFF(d, poh.ReleaseDate, (
+                            SELECT MAX(rh.ReceivingDate)
+                            FROM pur.RecievingLinkLine rll
+                            LEFT OUTER JOIN pur.ReceivingOrderHeader rh ON rll.ReceivingNumber = rh.ReceivingOrderNo
+                            WHERE rll.PurchaseOrderNumber = pol.OrderNumber
+                              AND rll.PurchaseOrderLine = pol.Line
+                        )) END AS LeadTime,
+                        ROW_NUMBER() OVER (PARTITION BY pol.PurchasedCode ORDER BY (
+                            SELECT MAX(rh.ReceivingDate)
+                            FROM pur.RecievingLinkLine rll
+                            LEFT OUTER JOIN pur.ReceivingOrderHeader rh ON rll.ReceivingNumber = rh.ReceivingOrderNo
+                            WHERE rll.PurchaseOrderNumber = pol.OrderNumber
+                              AND rll.PurchaseOrderLine = pol.Line
+                        ) DESC) AS rn
+                    FROM pur.PurchaseOrderLine pol
+                    LEFT OUTER JOIN pur.PurchaseOrderHeader poh ON pol.OrderNumber = poh.PurchaseOrderNumber
+                    WHERE pol.OrderNumber > 2499999
+                      AND pol.QuantityReceived > 0
+                ) t
+                WHERE rn <= 3
+                GROUP BY ItemCode
+            ),
+            OpenPOBase AS (
+                SELECT 
+                    pol.PurchasedCode AS ItemCode,
+                    SUM(CASE WHEN pol.QuantityOrdered - pol.QuantityReceived < 0 THEN 0 
+                             ELSE pol.QuantityOrdered - pol.QuantityReceived 
+                        END) AS OpenQtySum
+                FROM pur.PurchaseOrderLine pol
+                INNER JOIN pur.PurchaseOrderHeader poh ON poh.PurchaseOrderNumber = pol.OrderNumber
+                WHERE pol.LineState IN (0, 1)
+                  AND pol.OrderLineType = 'I'
+                  AND poh.OrderType = 1
+                GROUP BY pol.PurchasedCode
+            ),
+            MonitoredBalanceBase AS (
+                SELECT 
+                    x.ItemCode,
+                    SUM(CASE WHEN (
+                        (LOWER(LTRIM(RTRIM(s.PurchasingWarehouse))) IN ('true', 'y', 'yes', '1', 't') AND LOWER(LTRIM(RTRIM(wm.Purchasing))) IN ('true', 'y', 'yes', '1', 't'))
+                        OR
+                        (LOWER(LTRIM(RTRIM(s.ProducationWarehouse))) IN ('true', 'y', 'yes', '1', 't') AND LOWER(LTRIM(RTRIM(wm.Production))) IN ('true', 'y', 'yes', '1', 't'))
+                    ) THEN x.ItemBalance ELSE 0 END) AS MonitoredBalanceSum
+                FROM inv.ItemBalance x
+                LEFT OUTER JOIN inv.WarehouseMaster wm ON x.Warehouse = wm.Warehouse
+                INNER JOIN PUR.SaftyStockItemMaster s ON x.ItemCode = s.ItemCode
+                WHERE x.Warehouse <> '999'
+                GROUP BY x.ItemCode
+            )
+            SELECT  s.[ID]
+                  ,s.[ItemID]
+                  ,s.[ItemCode]
+                  ,s.[SaftyStock]
+                  ,s.[LeadTime]
+                  ,s.[ServiceLevelFactor]
+                  ,s.[PurchasingWarehouse]
+                  ,s.[ProducationWarehouse]
+                  ,s.[CreatedBy]
+                  ,s.[CreatedDate]
+                  ,s.[LastMaintBy]
+                  ,s.[LastMaintDate]
+                  ,i.[ItemType]
+                  ,i.[StockUM]
+                  ,ISNULL(o.OpenQtySum, 0) AS TotalOpenPO
+                  ,ISNULL(mb.MonitoredBalanceSum, 0) AS TotalMonitored
+                  ,ISNULL(c.AvgMonthlyQty, 0) AS AvgMonthlyConsumption
+                  ,CEILING(ISNULL(c.AvgMonthlyQty, 0) / 26.0) AS AvgDailyConsumption
+                  -- Active Lead Time (Use configured if > 0, else hist avg)
+                  ,CASE WHEN s.LeadTime > 0 THEN s.LeadTime 
+                        ELSE CEILING(ISNULL(l.AvgHistLT, 0))
+                   END AS ActiveLeadTime
+                  -- Active Lead Time Std Dev (If configured, it is 0, else hist std dev)
+                  ,CASE WHEN s.LeadTime > 0 THEN 0 
+                        ELSE ISNULL(l.StdDevHistLT, 0) 
+                   END AS ActiveLeadTimeStdDev
+                  -- Daily Demand Std Dev
+                  ,ISNULL(c.StdDevMonthlyQty, 0) / 26.0 AS DailyDemandStdDev
+            INTO #TempItems
+            FROM PUR.SaftyStockItemMaster s
+            LEFT OUTER JOIN INV.ItemMaster i ON s.ItemID = i.ItemID
+            LEFT OUTER JOIN ConsumptionBase c ON s.ItemCode = c.ItemCode
+            LEFT OUTER JOIN LeadTimeBase l ON s.ItemCode = l.ItemCode
+            LEFT OUTER JOIN OpenPOBase o ON s.ItemCode = o.ItemCode
+            LEFT OUTER JOIN MonitoredBalanceBase mb ON s.ItemCode = mb.ItemCode
+            WHERE i.[ItemType] = 'R';
+
+             SELECT 
+                 ID, ItemID, ItemCode, SaftyStock, LeadTime, ServiceLevelFactor,
+                 PurchasingWarehouse, ProducationWarehouse, CreatedBy, CreatedDate, LastMaintBy, LastMaintDate,
+                 ItemType, StockUM, TotalOpenPO, TotalMonitored, AvgMonthlyConsumption, AvgDailyConsumption,
+                 ActiveLeadTime, ActiveLeadTimeStdDev, DailyDemandStdDev,
+                 -- Statistical target Safety Stock
+                 CASE WHEN ActiveLeadTime > 0 THEN 
+                     CEILING(SQRT(
+                         ActiveLeadTime * POWER(DailyDemandStdDev, 2) +
+                         POWER(AvgDailyConsumption, 2) * POWER(ActiveLeadTimeStdDev, 2)
+                     ) * ISNULL(ServiceLevelFactor, 1.65))
+                     ELSE 0 
+                 END AS StatisticalTarget,
+                 -- Reorder Point / Limit
+                 CASE WHEN ActiveLeadTime > 0 THEN 
+                     CEILING(
+                         CEILING(SQRT(
+                             ActiveLeadTime * POWER(DailyDemandStdDev, 2) +
+                             POWER(AvgDailyConsumption, 2) * POWER(ActiveLeadTimeStdDev, 2)
+                         ) * ISNULL(ServiceLevelFactor, 1.65)) +
+                         (AvgDailyConsumption * ActiveLeadTime)
+                     )
+                     ELSE 0 
+                 END AS ReorderLimitPoint
+             INTO #TempFinal
+             FROM #TempItems;
+
+             -- Automatically log status transitions in real-time
+             WITH CurrentStatusCTE AS (
+                 SELECT 
+                     ItemID,
+                     ItemCode,
+                     TotalMonitored,
+                     ReorderLimitPoint,
+                     StatisticalTarget,
+                     TotalOpenPO,
+                     CASE 
+                         WHEN StatisticalTarget <= 0 THEN 'Error'
+                         WHEN TotalMonitored <= 0 THEN 'Out of Stock'
+                         WHEN TotalMonitored < StatisticalTarget THEN 
+                             CASE WHEN TotalOpenPO <= 0 THEN 'Critical' ELSE 'Safety Stock' END
+                         WHEN TotalMonitored <= ReorderLimitPoint THEN 
+                             CASE WHEN TotalOpenPO > 0 THEN 'On Order' ELSE 'Reorder Required' END
+                         ELSE 'Healthy'
+                     END AS CurrentStatus
+                 FROM #TempFinal
+             ),
+             LatestLoggedCTE AS (
+                 SELECT ItemCode, NewStatus, LogDate,
+                        ROW_NUMBER() OVER (PARTITION BY ItemCode ORDER BY LogDate DESC) AS rn
+                 FROM [PUR].[SaftyStockStatusHistory]
+             )
+             INSERT INTO [PUR].[SaftyStockStatusHistory] (
+                 ItemID, ItemCode, OldStatus, NewStatus, 
+                 MonitoredBalance, ReorderLimit, CalculatedSafetyStock, OpenPOQty
+             )
+             SELECT 
+                 c.ItemID,
+                 c.ItemCode,
+                 l.NewStatus AS OldStatus,
+                 c.CurrentStatus AS NewStatus,
+                 c.TotalMonitored,
+                 c.ReorderLimitPoint,
+                 c.StatisticalTarget,
+                 c.TotalOpenPO
+             FROM CurrentStatusCTE c
+             LEFT OUTER JOIN LatestLoggedCTE l ON c.ItemCode = l.ItemCode AND l.rn = 1
+             WHERE l.NewStatus IS NULL 
+                OR l.NewStatus <> c.CurrentStatus;
+
+             SELECT * FROM #TempFinal ORDER BY ItemCode;
+
+             DROP TABLE #TempFinal;
+             DROP TABLE #TempItems;
+             RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
         -- Operation: Get Vendors List (for dropdown filters)
         -- ---------------------------------------------------------------------
         IF @Operation = 'GetVendors'
@@ -425,6 +622,292 @@ BEGIN
             FROM INV.ItemMaster
             WHERE ItemID IS NOT NULL AND ItemDescription IS NOT NULL
             ORDER BY ItemDescription;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: Search Items
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'SearchItems'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @SearchPattern VARCHAR(200) = '';
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @SearchPattern = JSON_VALUE(@LineData, '$.SearchPattern');
+            END
+
+            SET @SearchPattern = '%' + ISNULL(@SearchPattern, '') + '%';
+
+            SELECT TOP 50 ItemID, ItemID AS ItemCode, ItemDescription, ItemType
+            FROM INV.ItemMaster
+            WHERE (ItemID LIKE @SearchPattern OR ItemDescription LIKE @SearchPattern)
+            ORDER BY ItemID;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: Save Safety Stock Item (Insert / Update)
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'SaveSaftyStockItem'
+        BEGIN
+            DECLARE @ID INT = NULL;
+            DECLARE @ItemID VARCHAR(50) = NULL;
+            DECLARE @SaftyStock DECIMAL(18,5) = 0;
+            DECLARE @LeadTime INT = 0;
+            DECLARE @ServiceLevelFactor DECIMAL(18,5) = NULL;
+            DECLARE @ItemType VARCHAR(50) = NULL;
+
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT 
+                    @ID = TRY_CAST(JSON_VALUE(@LineData, '$.ID') AS INT),
+                    @ItemID = JSON_VALUE(@LineData, '$.ItemID'),
+                    @SaftyStock = TRY_CAST(JSON_VALUE(@LineData, '$.SaftyStock') AS DECIMAL(18,5)),
+                    @LeadTime = TRY_CAST(JSON_VALUE(@LineData, '$.LeadTime') AS INT),
+                    @ServiceLevelFactor = TRY_CAST(JSON_VALUE(@LineData, '$.ServiceLevelFactor') AS DECIMAL(18,5)),
+                    @ItemType = JSON_VALUE(@LineData, '$.ItemType');
+            END
+
+            IF @ItemCode IS NULL OR @ItemCode = ''
+            BEGIN
+                SET @State = 1;
+                SET @Message = 'Item Code is required.';
+                RETURN;
+            END
+
+            -- Try to find ItemID from inv.ItemMaster if not provided
+            IF @ItemID IS NULL OR @ItemID = ''
+            BEGIN
+                SELECT TOP 1 @ItemID = ItemID 
+                FROM INV.ItemMaster 
+                WHERE ItemID = @ItemCode;
+            END
+
+            IF EXISTS (SELECT 1 FROM PUR.SaftyStockItemMaster WHERE ID = @ID)
+            BEGIN
+                UPDATE PUR.SaftyStockItemMaster
+                SET 
+                    ItemID = @ItemID,
+                    ItemCode = @ItemCode,
+                    SaftyStock = @SaftyStock,
+                    LeadTime = @LeadTime,
+                    ServiceLevelFactor = @ServiceLevelFactor,
+                    LastMaintBy = @User,
+                    LastMaintDate = GETDATE(),
+                    ItemType = @ItemType
+                WHERE ID = @ID;
+            END
+            ELSE
+            BEGIN
+                IF EXISTS (SELECT 1 FROM PUR.SaftyStockItemMaster WHERE ItemCode = @ItemCode)
+                BEGIN
+                    SET @State = 1;
+                    SET @Message = 'Safety stock record for item code ' + @ItemCode + ' already exists.';
+                    RETURN;
+                END
+
+                INSERT INTO PUR.SaftyStockItemMaster (
+                    ItemID, ItemCode, SaftyStock, LeadTime, ServiceLevelFactor,
+                    CreatedBy, CreatedDate, LastMaintBy, LastMaintDate, ItemType
+                ) VALUES (
+                    @ItemID, @ItemCode, @SaftyStock, @LeadTime, @ServiceLevelFactor,
+                    @User, GETDATE(), @User, GETDATE(), @ItemType
+                );
+            END
+
+            SET @State = 0;
+            SET @Message = 'Safety stock item saved successfully.';
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: Delete Safety Stock Item
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'DeleteSaftyStockItem'
+        BEGIN
+            DECLARE @DelID INT = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @DelID = TRY_CAST(JSON_VALUE(@LineData, '$.ID') AS INT);
+            END
+
+            IF EXISTS (SELECT 1 FROM PUR.SaftyStockItemMaster WHERE ID = @DelID)
+            BEGIN
+                DELETE FROM PUR.SaftyStockItemMaster WHERE ID = @DelID;
+                SET @State = 0;
+                SET @Message = 'Safety stock item deleted successfully.';
+            END
+            ELSE
+            BEGIN
+                SET @State = 1;
+                SET @Message = 'Record not found.';
+            END
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: Get Item Status History Log
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetItemStatusHistory'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @HistoryItemCode VARCHAR(100) = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @HistoryItemCode = JSON_VALUE(@LineData, '$.ItemCode');
+            END
+            IF @HistoryItemCode IS NULL OR @HistoryItemCode = ''
+            BEGIN
+                SET @HistoryItemCode = @ItemCode;
+            END
+
+            SELECT 
+                LogID, ItemID, ItemCode, OldStatus, NewStatus,
+                MonitoredBalance, ReorderLimit, CalculatedSafetyStock, OpenPOQty,
+                LogDate
+            FROM [PUR].[SaftyStockStatusHistory]
+            WHERE ItemCode = @HistoryItemCode
+            ORDER BY LogDate DESC;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: Get Item Balance
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetItemBalance'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            SELECT 
+                x.ItemCode,
+                z.WarehouseFacility,
+                x.Warehouse,
+                x.ItemBalance,
+                z.Production,
+                z.Purchasing
+            FROM inv.ItemBalance x
+            LEFT OUTER JOIN inv.WarehouseMaster z ON x.Warehouse = z.Warehouse
+            WHERE x.ItemCode = @ItemCode AND x.Warehouse <> '999'
+            ORDER BY z.WarehouseFacility, x.Warehouse;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: Get Item Consumption
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetItemConsumption'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @MaxIndex INT;
+            SET @MaxIndex = YEAR(GETDATE()) * 12 + MONTH(GETDATE());
+
+            SELECT 
+                Yer,
+                Mnth,
+                Facility,
+                Warehouse,
+                ItemCode,
+                TotalQuantity
+            FROM inv.ItemConsuming
+            WHERE ItemCode = @ItemCode
+              AND (Yer * 12 + Mnth) >= (@MaxIndex - 12)
+            ORDER BY Yer DESC, Mnth DESC, Facility, Warehouse;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: Get Item Open POs
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetItemOpenPOs'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            SELECT 
+                a.OrderNumber,
+                d.OrderCreatedDate AS OrderDate,
+                d.VendorNumber,
+                v.VendorName,
+                b.ItemID, 
+                b.ItemCode, 
+                b.ItemDescription, 
+                b.ItemExtraDescription, 
+                a.ItemType, 
+                a.QuantityOrdered,  
+                a.QuantityReceived,   
+                CASE WHEN a.QuantityOrdered - a.QuantityReceived < 0 THEN 0 
+                     ELSE a.QuantityOrdered - a.QuantityReceived 
+                END AS OpenQty,
+                a.ETA,
+                a.ETD,
+                d.OrderState,
+                (SELECT StateDescription FROM PUR.PurchaseOrderState WHERE State = d.OrderState AND Type = 'H') AS OrderStateDescription,
+                d.ReleaseDate
+            FROM pur.PurchaseOrderLine a 
+            LEFT OUTER JOIN inv.ItemMaster b ON a.PurchasedID = b.ItemID 
+            LEFT OUTER JOIN pur.PurchaseOrderHeader d ON d.PurchaseOrderNumber = a.OrderNumber
+            LEFT OUTER JOIN ACP.VendorMaster v ON d.VendorNumber = v.VendorNumber
+            WHERE b.ItemCode = @ItemCode
+              AND a.LineState IN (0, 1) 
+              AND a.OrderLineType = 'I' 
+              AND d.OrderType = 1
+            ORDER BY d.OrderCreatedDate DESC, a.OrderNumber DESC;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: Get Item Lead Time
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetItemLeadTime'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            SELECT TOP 6 
+                a.OrderNumber, 
+                a.LineState,  
+                a.QuantityOrdered, 
+                a.QuantityReceived, 
+                b.ReleaseDate, 
+                a.ETD, 
+                a.ETA,
+                (SELECT MAX(y.ReceivingDate) 
+                 FROM pur.RecievingLinkLine z 
+                 LEFT OUTER JOIN pur.ReceivingOrderHeader y ON z.ReceivingNumber = y.ReceivingOrderNo 
+                 WHERE z.PurchaseOrderNumber = a.OrderNumber 
+                   AND z.PurchaseOrderLine = a.Line) AS ActualArrivalDate, 	
+                ISNULL(DATEDIFF(d, a.ETD, a.ETA), 0) AS ETS,		
+                CASE WHEN DATEDIFF(d, b.ReleaseDate, 
+                          (SELECT MAX(y.ReceivingDate) 
+                           FROM pur.RecievingLinkLine z 
+                           LEFT OUTER JOIN pur.ReceivingOrderHeader y ON z.ReceivingNumber = y.ReceivingOrderNo 
+                           WHERE z.PurchaseOrderNumber = a.OrderNumber 
+                             AND z.PurchaseOrderLine = a.Line)) < 0 THEN 0
+                     ELSE DATEDIFF(d, b.ReleaseDate, 
+                          (SELECT MAX(y.ReceivingDate) 
+                           FROM pur.RecievingLinkLine z 
+                           LEFT OUTER JOIN pur.ReceivingOrderHeader y ON z.ReceivingNumber = y.ReceivingOrderNo 
+                           WHERE z.PurchaseOrderNumber = a.OrderNumber 
+                             AND z.PurchaseOrderLine = a.Line))
+                END AS LeadTime
+            FROM pur.PurchaseOrderLine a 
+            LEFT OUTER JOIN pur.PurchaseOrderHeader b ON a.OrderNumber = b.PurchaseOrderNumber  	   
+            WHERE a.PurchasedCode = @ItemCode  
+              AND a.OrderNumber > 2499999 
+              AND a.QuantityReceived > 0 
+            ORDER BY (SELECT MAX(y.ReceivingDate) 
+                      FROM pur.RecievingLinkLine z 
+                      LEFT OUTER JOIN pur.ReceivingOrderHeader y ON z.ReceivingNumber = y.ReceivingOrderNo 
+                      WHERE z.PurchaseOrderNumber = a.OrderNumber 
+                        AND z.PurchaseOrderLine = a.Line) DESC;
             RETURN;
         END
 

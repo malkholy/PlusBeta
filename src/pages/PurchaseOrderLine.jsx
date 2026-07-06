@@ -513,6 +513,21 @@ export default function PurchaseOrderLinePage({ user }) {
     }
   }, [fromDate, toDate, selectedVendor, selectedItem, selectedItemType]);
 
+  // Close drawer on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsDrawerOpen(false);
+      }
+    };
+    if (isDrawerOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDrawerOpen]);
+
   // Columns definition for the Item Line grid
   const columns = [
     {
@@ -526,7 +541,13 @@ export default function PurchaseOrderLinePage({ user }) {
         let color = '#71717a'; 
         let bg = 'rgba(113, 113, 122, 0.1)';
         
-        if (statusLower.includes('approve') || statusLower.includes('release') || statusLower.includes('invoice') || statusLower === 'closed') {
+        if (statusLower.includes('un-release') || statusLower.includes('unrelease')) {
+          color = '#dc2626'; 
+          bg = 'var(--red-soft)';
+        } else if (statusLower.includes('partial')) {
+          color = '#2563eb'; 
+          bg = 'var(--blue-soft)';
+        } else if (statusLower.includes('approve') || statusLower.includes('release') || statusLower.includes('invoice') || statusLower === 'closed') {
           color = '#16a34a'; 
           bg = 'var(--green-soft)';
         } else if (statusLower.includes('pending') || statusLower.includes('progress') || statusLower.includes('posted')) {
@@ -625,7 +646,7 @@ export default function PurchaseOrderLinePage({ user }) {
       label: 'Price',
       width: 100,
       render: (val, row) => (
-        <span style={{ fontFamily: 'monospace' }}>
+        <span>
           {formatAmount(val, row.OrderCurrency)}
         </span>
       )
@@ -635,7 +656,7 @@ export default function PurchaseOrderLinePage({ user }) {
       label: 'Amount',
       width: 120,
       render: (val, row) => (
-        <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--orange)' }}>
+        <span style={{ fontWeight: 700, color: 'var(--orange)' }}>
           {formatAmount(val, row.OrderCurrency)}
         </span>
       )
@@ -776,7 +797,7 @@ export default function PurchaseOrderLinePage({ user }) {
           label: 'Amount',
           width: 150,
           render: (val, row) => (
-            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--orange)' }}>
+            <span style={{ fontWeight: 700, color: 'var(--orange)' }}>
               {formatAmount(val, row.OrderCurrency)}
             </span>
           )
@@ -874,7 +895,7 @@ export default function PurchaseOrderLinePage({ user }) {
           label: 'Amount',
           width: 150,
           render: (val, row) => (
-            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--orange)' }}>
+            <span style={{ fontWeight: 700, color: 'var(--orange)' }}>
               {formatAmount(val, row.OrderCurrency)}
             </span>
           )
@@ -1275,10 +1296,10 @@ export default function PurchaseOrderLinePage({ user }) {
                           Recv: {formatQty(line.QuantityReceived)} | Costed: {formatQty(line.QuantityCosted)}
                         </div>
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace' }}>
+                      <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                         {formatAmount(line.Price, currency)}
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--orange)' }}>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>
                         {formatAmount(line.LineAmount, currency)}
                       </td>
                     </tr>
@@ -1326,7 +1347,7 @@ export default function PurchaseOrderLinePage({ user }) {
                     </div>
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'right' }}>—</td>
-                  <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: 'var(--orange)' }}>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: 'var(--orange)' }}>
                     {formatAmount(totalLineAmount, selectedPO.OrderCurrency)}
                   </td>
                 </tr>
@@ -1392,10 +1413,10 @@ export default function PurchaseOrderLinePage({ user }) {
                     </td>
                     <td style={{ padding: '10px 12px', color: 'var(--muted)' }}>{item.Line || '—'}</td>
                     <td style={{ padding: '10px 12px', fontWeight: 500 }}>{item.Description || 'No description'}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600 }}>
                       {formatAmount(item.Amount, currency)}
                     </td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace', color: 'var(--orange)', fontWeight: 600 }}>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--orange)', fontWeight: 600 }}>
                       {formatAmount(item.Invoiced, currency)}
                     </td>
                   </tr>

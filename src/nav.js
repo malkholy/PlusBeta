@@ -16,6 +16,12 @@ const NAV = [
         label: 'Purchase Order Line',
         icon: '📋',
         desc: 'Focus on purchase order line items and quantities',
+      },
+      {
+        id: 'safety_stock_item_master',
+        label: 'Safety Stock Item Master',
+        icon: '🛡️',
+        desc: 'Manage and monitor safety stock levels for item masters',
       }
     ]
   }

@@ -45,7 +45,7 @@ export async function apiCall(operation, lineData = null, extraParams = {}, apiT
       ...BASE_BODY,
       Operation: operation,
       LineData: lineData ? JSON.stringify(lineData) : null,
-      User: sessionStorage.getItem('FullName') || '',
+      User: sessionStorage.getItem('Username') || sessionStorage.getItem('FullName') || '',
       ...extraParams
     })
   });

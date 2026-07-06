@@ -9,6 +9,7 @@ import RawPacking from './pages/RawPacking.jsx';
 import ExpressDetail from './pages/ExpressDetail.jsx';
 import PurchaseOrderHeader from './pages/PurchaseOrderHeader.jsx';
 import PurchaseOrderLine from './pages/PurchaseOrderLine.jsx';
+import SaftyStockItemMaster from './pages/SaftyStockItemMaster.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -176,6 +177,7 @@ const PAGE_COMPONENTS = {
   express: ExpressDetail,
   purchasing_po_header: PurchaseOrderHeader,
   purchasing_po_line: PurchaseOrderLine,
+  safety_stock_item_master: SaftyStockItemMaster,
 };
 
 // ─── App ─────────────────────────────────────────────────────────────────────
@@ -208,7 +210,8 @@ export default function App() {
       const d = await apiCall('Login', { Username: un, Password: pw });
       if (d.State === 0 && d.List0?.length) {
         const u = d.List0[0];
-        sessionStorage.setItem('FullName', u.Username || un);
+        sessionStorage.setItem('Username', u.Username || un);
+        sessionStorage.setItem('FullName', u.Name || u.Username || un);
         setUser({ Username: u.Username || un, Name: u.Name || un });
          openPage('purchasing_po_header');
       } else {
@@ -221,6 +224,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    sessionStorage.removeItem('Username');
     sessionStorage.removeItem('FullName');
     setUser(null); setOpenTabs([]); setActiveTab(null);
   };

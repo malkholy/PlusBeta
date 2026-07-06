@@ -32,7 +32,7 @@ table.dg-table th{background:var(--soft);color:var(--muted);font-size:13px;posit
 .dg-sort{cursor:pointer}
 .dg-filter-btn{height:28px;width:28px;border:1px solid var(--border);border-radius:9px;background:var(--surface);cursor:pointer;margin-left:6px;font-size:12px}
 .dg-filter-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
-.dg-num{text-align:right;font-family:Consolas,monospace;font-weight:800}
+.dg-num{text-align:right;font-weight:800}
 .dg-badge{padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900}
 .dg-good{background:var(--green-soft);color:var(--green)}
 .dg-warn{background:var(--amber-soft);color:var(--amber)}
@@ -40,7 +40,7 @@ table.dg-table th{background:var(--soft);color:var(--muted);font-size:13px;posit
 table.dg-table tr.active-row td{background:var(--primary-soft)!important}
 table.dg-table tr.selected-row td{background:rgba(249,115,22,.12)}
 table.dg-table tfoot td{position:sticky;bottom:0;z-index:3;background:var(--soft)!important;font-weight:900;border-top:2px solid var(--primary);box-shadow:0 -2px 5px rgba(0,0,0,0.02)}
-table.dg-table tfoot td.dg-num{text-align:right;font-family:Consolas,monospace}
+table.dg-table tfoot td.dg-num{text-align:right}
 table.dg-table tfoot td.dg-summary-cell{cursor:context-menu}
 table.dg-table tfoot td.dg-summary-cell:hover{background:var(--primary-soft)!important}
 .dg-summary-badge{display:block;color:var(--primary);font-size:10px;margin-top:3px;font-weight:900}

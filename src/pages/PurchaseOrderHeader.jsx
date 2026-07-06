@@ -325,6 +325,21 @@ export default function PurchaseOrderHeaderPage({ user }) {
     }
   }, [fromDate, toDate, selectedVendor]);
 
+  // Close drawer on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsDrawerOpen(false);
+      }
+    };
+    if (isDrawerOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDrawerOpen]);
+
   // Columns definition (selecting only the most readable and relevant fields for the end user)
   const columns = [
     { 
@@ -342,7 +357,13 @@ export default function PurchaseOrderHeaderPage({ user }) {
         let color = '#71717a'; 
         let bg = 'rgba(113, 113, 122, 0.1)';
         
-        if (statusLower.includes('approve') || statusLower.includes('release') || statusLower.includes('invoice') || statusLower === 'closed') {
+        if (statusLower.includes('un-release') || statusLower.includes('unrelease')) {
+          color = '#dc2626'; 
+          bg = 'rgba(220, 38, 38, 0.12)';
+        } else if (statusLower.includes('partial')) {
+          color = '#2563eb'; 
+          bg = 'rgba(37, 99, 235, 0.12)';
+        } else if (statusLower.includes('approve') || statusLower.includes('release') || statusLower.includes('invoice') || statusLower === 'closed') {
           color = '#16a34a'; 
           bg = 'rgba(22, 163, 74, 0.12)';
         } else if (statusLower.includes('pending') || statusLower.includes('progress') || statusLower === 'posted') {
@@ -424,11 +445,11 @@ export default function PurchaseOrderHeaderPage({ user }) {
 
   // Calculate high-level KPIs based on the fetched data
   const totalCount = rows.length;
-  const totalOutstanding = rows.reduce((sum, r) => {
-    const total = Number(r.TotalAmount || 0);
-    const paid = Number(r.TotalPaidAmount || 0);
-    return sum + Math.max(0, total - paid);
-  }, 0);
+  const stateCounts = rows.reduce((acc, r) => {
+    const state = (r.OrderStateDescription || 'Draft').trim();
+    acc[state] = (acc[state] || 0) + 1;
+    return acc;
+  }, {});
 
   const avgReceivedPct = totalCount > 0 
     ? (rows.reduce((sum, r) => {
@@ -461,10 +482,59 @@ export default function PurchaseOrderHeaderPage({ user }) {
         <div style={{ fontSize: 24, fontWeight: 800 }}>{totalCount}</div>
         <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Active headers</div>
       </div>
-      <div style={{ background: 'var(--surface)', padding: 16, border: '1px solid var(--border)', borderRadius: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>Outstanding Balance</div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--red)' }}>{formatAmount(totalOutstanding, 'EGP')}</div>
-        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Calculated pending payments</div>
+      <div style={{ background: 'var(--surface)', padding: 16, border: '1px solid var(--border)', borderRadius: 14, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Orders By Status</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px', alignItems: 'center', marginTop: 4 }}>
+          {Object.keys(stateCounts).length === 0 ? (
+            <div style={{ fontSize: 13, color: 'var(--muted)', fontStyle: 'italic' }}>No active orders</div>
+          ) : (
+            Object.entries(stateCounts).map(([state, count]) => {
+              const status = state.trim();
+              const statusLower = status.toLowerCase();
+              
+              let color = '#71717a'; 
+              let bg = 'rgba(113, 113, 122, 0.1)';
+              
+              if (statusLower.includes('un-release') || statusLower.includes('unrelease')) {
+                color = '#dc2626'; 
+                bg = 'rgba(220, 38, 38, 0.12)';
+              } else if (statusLower.includes('partial')) {
+                color = '#2563eb'; 
+                bg = 'rgba(37, 99, 235, 0.12)';
+              } else if (statusLower.includes('approve') || statusLower.includes('release') || statusLower.includes('invoice') || statusLower === 'closed') {
+                color = '#16a34a'; 
+                bg = 'rgba(22, 163, 74, 0.12)';
+              } else if (statusLower.includes('pending') || statusLower.includes('progress') || statusLower === 'posted') {
+                color = '#ea580c'; 
+                bg = 'rgba(234, 88, 12, 0.12)';
+              } else if (statusLower.includes('draft')) {
+                color = '#d97706'; 
+                bg = 'rgba(217, 119, 6, 0.12)';
+              } else if (statusLower.includes('cancel') || statusLower.includes('reject') || statusLower.includes('fail')) {
+                color = '#dc2626'; 
+                bg = 'rgba(220, 38, 38, 0.12)';
+              }
+              
+              return (
+                <div key={state} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ 
+                    color: color, 
+                    background: bg, 
+                    padding: '2px 8px', 
+                    borderRadius: '999px', 
+                    fontSize: '11px', 
+                    fontWeight: '700',
+                    textTransform: 'capitalize',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {status}
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>{count}</span>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
       <div style={{ background: 'var(--surface)', padding: 16, border: '1px solid var(--border)', borderRadius: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6 }}>Received Rate (Avg)</div>
@@ -697,10 +767,10 @@ export default function PurchaseOrderHeaderPage({ user }) {
                           Recv: {formatQty(line.QuantityReceived)} | Costed: {formatQty(line.QuantityCosted)}
                         </div>
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace' }}>
+                      <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                         {formatAmount(line.Price, currency)}
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 700, color: 'var(--orange)' }}>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>
                         {formatAmount(line.LineAmount, currency)}
                       </td>
                     </tr>
@@ -748,7 +818,7 @@ export default function PurchaseOrderHeaderPage({ user }) {
                     </div>
                   </td>
                   <td style={{ padding: '10px 12px', textAlign: 'right' }}>—</td>
-                  <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: 'var(--orange)' }}>
+                  <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 800, color: 'var(--orange)' }}>
                     {formatAmount(totalLineAmount, selectedPO.OrderCurrency)}
                   </td>
                 </tr>
@@ -876,10 +946,10 @@ export default function PurchaseOrderHeaderPage({ user }) {
                     </td>
                     <td style={{ padding: '10px 12px', color: 'var(--muted)' }}>{item.Line || '—'}</td>
                     <td style={{ padding: '10px 12px', fontWeight: 500 }}>{item.Description || 'No description'}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 600 }}>
                       {formatAmount(item.Amount, currency)}
                     </td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: 'monospace', color: 'var(--orange)', fontWeight: 600 }}>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--orange)', fontWeight: 600 }}>
                       {formatAmount(item.Invoiced, currency)}
                     </td>
                   </tr>

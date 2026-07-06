@@ -1,5 +1,5 @@
-const url = 'https://quick.glcpaints.com:7790/General/GeneralAPI/';
-const spName = 'APIExprssControlOperation';
+const url = 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
+const spName = 'APIPlusOperation';
 
 async function test() {
   try {
@@ -19,8 +19,8 @@ async function test() {
         PlatForm: 'web',
         deviceID: '',
         IP: '192.168.1.3',
-        Operation: 'Get Express Details By Period',
-        LineData: JSON.stringify({ Period: 'yearly', Months: '', Quarter: 0, Year: 2026 }),
+        Operation: 'GetItemBalanceSchema',
+        LineData: null,
         User: 'TestUser'
       })
     });
