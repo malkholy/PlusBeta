@@ -16,8 +16,6 @@ BEGIN
         [UserCode] VARCHAR(100) NOT NULL,
         [PageGroupID] VARCHAR(50) NOT NULL,
         [CanView] BIT NOT NULL DEFAULT 1,
-        [CanEdit] BIT NOT NULL DEFAULT 0,
-        [CanDelete] BIT NOT NULL DEFAULT 0,
         [GrantedBy] NVARCHAR(100) NULL,
         [GrantedDate] DATETIME DEFAULT GETDATE(),
         CONSTRAINT FK_UserPagePermissions_PagesAndGroups FOREIGN KEY ([PageGroupID]) REFERENCES [PLS].[PagesAndGroups]([PageGroupID])
