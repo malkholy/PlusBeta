@@ -352,7 +352,7 @@ export default function UserPermissions({ user }) {
                           }}
                         >
                           {/* Navigation Group Header */}
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 12, marginBottom: 12 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 8 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <span style={{ fontSize: 16 }}>{group.Icon || '📁'}</span>
                               <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{group.Label} (Navigation Group)</span>
@@ -372,53 +372,84 @@ export default function UserPermissions({ user }) {
                             </label>
                           </div>
 
-                          {/* Navigation Group Children Pages */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 8 }}>
-                            {groupChildren.map(child => {
-                              const isChildAllowed = hasPermission(child.PageGroupID);
-                              
-                              return (
-                                <div 
-                                  key={child.PageGroupID} 
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    background: 'var(--surface)',
-                                    border: '1px solid var(--border)',
-                                    borderRadius: 10,
-                                    padding: '10px 14px',
-                                    opacity: isGroupAllowed ? 1 : 0.65
-                                  }}
-                                >
-                                  <div style={{ minWidth: 0, flex: 1, paddingRight: 16 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                      <span style={{ fontSize: 14 }}>{child.Icon || '📄'}</span>
-                                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{child.Label}</span>
-                                    </div>
-                                    {child.Description && (
-                                      <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {child.Description}
-                                      </div>
-                                    )}
-                                  </div>
+                          {/* Navigation Group Children Pages (Tree View style) */}
+                          {groupChildren.length > 0 && (
+                            <div style={{ 
+                              position: 'relative', 
+                              paddingLeft: 24, 
+                              marginLeft: 8,
+                              marginTop: 8,
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              gap: 10 
+                            }}>
+                              {/* Vertical tree line branch connector */}
+                              <div style={{
+                                position: 'absolute',
+                                left: 7,
+                                top: -12,
+                                bottom: 20, // stops at the last child's middle
+                                width: 2,
+                                background: 'var(--border)'
+                              }} />
 
-                                  <label style={{ display: 'inline-flex', alignItems: 'center', cursor: isGroupAllowed ? 'pointer' : 'not-allowed' }}>
-                                    <input 
-                                      type="checkbox"
-                                      checked={isChildAllowed}
-                                      disabled={!isGroupAllowed || actionLoadingId === child.PageGroupID}
-                                      onChange={() => handleTogglePermission(child.PageGroupID, isChildAllowed)}
-                                      style={{ width: 16, height: 16, marginRight: 8, cursor: isGroupAllowed ? 'pointer' : 'not-allowed' }}
-                                    />
-                                    <span style={{ fontSize: 12, fontWeight: 600, color: isChildAllowed ? 'var(--orange)' : 'var(--muted)' }}>
-                                      {actionLoadingId === child.PageGroupID ? 'Saving...' : isChildAllowed ? 'Access Allowed' : 'Access Denied'}
-                                    </span>
-                                  </label>
-                                </div>
-                              );
-                            })}
-                          </div>
+                              {groupChildren.map((child, childIdx) => {
+                                const isChildAllowed = hasPermission(child.PageGroupID);
+                                
+                                return (
+                                  <div 
+                                    key={child.PageGroupID} 
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      background: 'var(--surface)',
+                                      border: '1px solid var(--border)',
+                                      borderRadius: 10,
+                                      padding: '10px 14px',
+                                      position: 'relative',
+                                      opacity: isGroupAllowed ? 1 : 0.65
+                                    }}
+                                  >
+                                    {/* Horizontal branch line connector */}
+                                    <div style={{
+                                      position: 'absolute',
+                                      left: -17,
+                                      top: 20,
+                                      width: 17,
+                                      height: 2,
+                                      background: 'var(--border)'
+                                    }} />
+
+                                    <div style={{ minWidth: 0, flex: 1, paddingRight: 16 }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <span style={{ fontSize: 14 }}>{child.Icon || '📄'}</span>
+                                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{child.Label}</span>
+                                      </div>
+                                      {child.Description && (
+                                        <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          {child.Description}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <label style={{ display: 'inline-flex', alignItems: 'center', cursor: isGroupAllowed ? 'pointer' : 'not-allowed' }}>
+                                      <input 
+                                        type="checkbox"
+                                        checked={isChildAllowed}
+                                        disabled={!isGroupAllowed || actionLoadingId === child.PageGroupID}
+                                        onChange={() => handleTogglePermission(child.PageGroupID, isChildAllowed)}
+                                        style={{ width: 16, height: 16, marginRight: 8, cursor: isGroupAllowed ? 'pointer' : 'not-allowed' }}
+                                      />
+                                      <span style={{ fontSize: 12, fontWeight: 600, color: isChildAllowed ? 'var(--orange)' : 'var(--muted)' }}>
+                                        {actionLoadingId === child.PageGroupID ? 'Saving...' : isChildAllowed ? 'Access Allowed' : 'Access Denied'}
+                                      </span>
+                                    </label>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       );
                     })}

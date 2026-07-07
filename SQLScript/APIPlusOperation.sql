@@ -976,7 +976,7 @@ BEGIN
             SET @State = 0;
             SET @Message = 'Success';
 
-            SELECT PageGroupID, Label, IsGroup 
+            SELECT PageGroupID, Label, Icon, Description, IsGroup, ParentID, SortOrder 
             FROM [PLS].[PagesAndGroups] 
             ORDER BY SortOrder;
             RETURN;
