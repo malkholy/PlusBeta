@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { apiCall } from './shared/api.js';
 import NAV from './nav.js';
 import Expenses from './pages/Expenses.jsx';
@@ -213,6 +213,7 @@ export default function App() {
   const [openTabs, setOpenTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [allowedPages, setAllowedPages] = useState([]);
 
   // login
   const [un, setUn] = useState('');
@@ -256,8 +257,26 @@ export default function App() {
     sessionStorage.removeItem('Username');
     sessionStorage.removeItem('FullName');
     sessionStorage.removeItem('IsAdmin');
-    setUser(null); setOpenTabs([]); setActiveTab(null);
+    setUser(null); setOpenTabs([]); setActiveTab(null); setAllowedPages([]);
   };
+
+  const loadAllowedPages = useCallback(async (usr) => {
+    if (!usr) {
+      setAllowedPages([]);
+      return [];
+    }
+    try {
+      const res = await apiCall('GetUserAllowedPages', {}, {}, 'plus');
+      if (res.State === 0) {
+        const ids = (res.List0 || []).map(row => row.PageGroupID);
+        setAllowedPages(ids);
+        return ids;
+      }
+    } catch (err) {
+      console.error('Failed to load allowed pages:', err);
+    }
+    return [];
+  }, []);
 
   const getNavItems = useCallback(() => {
     const items = [...NAV];
@@ -277,9 +296,21 @@ export default function App() {
           }
         ]
       });
+      return items;
     }
-    return items;
-  }, [user]);
+    
+    // Regular users: filter items based on allowedPages
+    return items
+      .map(item => {
+        if (item.isGroup) {
+          const filteredChildren = (item.children || []).filter(c => allowedPages.includes(c.id));
+          if (filteredChildren.length === 0) return null;
+          return { ...item, children: filteredChildren };
+        }
+        return allowedPages.includes(item.id) ? item : null;
+      })
+      .filter(Boolean);
+  }, [user, allowedPages]);
 
   const openPage = useCallback((id) => {
     if (id === 'hr') {
@@ -287,6 +318,14 @@ export default function App() {
       const canAccessHR = usernameLower === 'mhd' || usernameLower === 'm.a.elhout';
       if (!canAccessHR) return;
     }
+    
+    // Safety check for regular users trying to open an unpermitted page
+    const isAdmin = checkIsAdmin(user, user?.Username);
+    if (!isAdmin && id !== 'purchasing_po_header' && allowedPages.length > 0 && !allowedPages.includes(id)) {
+      alert('Access Denied: You do not have permission to view this page.');
+      return;
+    }
+
     setActiveTab(id);
     setOpenTabs(prev => {
       if (prev.find(t => t.id === id)) return prev;
@@ -305,7 +344,7 @@ export default function App() {
       }
       return [...prev, { id, ...(tabDef || {}) }];
     });
-  }, [user, getNavItems]);
+  }, [user, getNavItems, allowedPages]);
 
   const closeTab = (id, e) => {
     e.stopPropagation();
@@ -315,6 +354,38 @@ export default function App() {
       return next;
     });
   };
+
+  useEffect(() => {
+    if (user) {
+      loadAllowedPages(user).then((ids) => {
+        // Auto-open starting tab if none are open
+        if (openTabs.length === 0) {
+          const isAdmin = checkIsAdmin(user, user.Username);
+          if (isAdmin || (ids && ids.includes('purchasing_po_header'))) {
+            openPage('purchasing_po_header');
+          } else if (ids && ids.length > 0) {
+            // Find first permitted page
+            const items = getNavItems();
+            let firstPageId = null;
+            for (const item of items) {
+              if (item.isGroup && item.children) {
+                const child = item.children.find(c => ids.includes(c.id));
+                if (child) { firstPageId = child.id; break; }
+              } else if (!item.isGroup && ids.includes(item.id)) {
+                firstPageId = item.id;
+                break;
+              }
+            }
+            if (firstPageId) {
+              openPage(firstPageId);
+            }
+          }
+        }
+      });
+    } else {
+      setAllowedPages([]);
+    }
+  }, [user, loadAllowedPages]);
 
   const ActivePage = activeTab ? PAGE_COMPONENTS[activeTab] : null;
   const activeDef = (() => {

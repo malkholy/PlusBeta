@@ -1039,6 +1039,43 @@ BEGIN
         END
 
         -- ---------------------------------------------------------------------
+        -- Operation: GetUserAllowedPages
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetUserAllowedPages'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @IsUserAdmin BIT = 0;
+            IF EXISTS (SELECT 1 FROM ERPManagement.[System].[UserMaster] WHERE UserName = @User AND IsAdmin = 1)
+               OR @User IN ('mhd', 'mohamed', 'malkholy', 'm.alkholy', 'mohamed.kholy', 'mohamed.alkholy', 'ma')
+            BEGIN
+                SET @IsUserAdmin = 1;
+            END
+
+            IF @IsUserAdmin = 1
+            BEGIN
+                -- Admins automatically get all groups and pages
+                SELECT PageGroupID FROM [PLS].[PagesAndGroups];
+            END
+            ELSE
+            BEGIN
+                -- Regular users get only explicit allowed items + their parent groups
+                SELECT DISTINCT PageGroupID 
+                FROM [PLS].[UserPagePermissions] 
+                WHERE Username = @User AND CanView = 1
+                
+                UNION
+                
+                SELECT DISTINCT pg.ParentID 
+                FROM [PLS].[UserPagePermissions] p
+                INNER JOIN [PLS].[PagesAndGroups] pg ON p.PageGroupID = pg.PageGroupID
+                WHERE p.Username = @User AND p.CanView = 1 AND pg.ParentID IS NOT NULL;
+            END
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
         -- Fallback: Unsupported Operation
         -- ---------------------------------------------------------------------
       
