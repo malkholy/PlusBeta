@@ -182,9 +182,9 @@ const PAGE_COMPONENTS = {
   user_permissions: UserPermissions,
 };
 
-function checkIsAdmin(u) {
-  if (!u) return false;
-  const usernameLower = (u.Username || '').toLowerCase();
+function checkIsAdmin(u, fallbackUsername) {
+  if (!u && !fallbackUsername) return false;
+  const usernameLower = (u?.Username || fallbackUsername || '').toLowerCase();
   const adminBypassList = [
     'mhd', 
     'mohamed', 
@@ -197,7 +197,7 @@ function checkIsAdmin(u) {
   if (adminBypassList.includes(usernameLower)) {
     return true;
   }
-  const val = u.IsAdmin !== undefined ? u.IsAdmin : (u.isAdmin !== undefined ? u.isAdmin : u.isadmin);
+  const val = u?.IsAdmin !== undefined ? u.IsAdmin : (u?.isAdmin !== undefined ? u.isAdmin : u?.isadmin);
   return val === 1 || val === true || String(val) === '1' || String(val) === 'true';
 }
 
@@ -237,7 +237,7 @@ export default function App() {
       if (d.State === 0 && d.List0?.length) {
         const u = d.List0[0];
         console.log('Login response user object:', u);
-        const isAdmin = checkIsAdmin(u);
+        const isAdmin = checkIsAdmin(u, un);
         sessionStorage.setItem('Username', u.Username || un);
         sessionStorage.setItem('FullName', u.Name || u.Username || un);
         sessionStorage.setItem('IsAdmin', isAdmin ? '1' : '0');
@@ -261,7 +261,7 @@ export default function App() {
 
   const getNavItems = useCallback(() => {
     const items = [...NAV];
-    const isAdmin = checkIsAdmin(user);
+    const isAdmin = checkIsAdmin(user, user?.Username);
     if (isAdmin) {
       items.push({
         id: 'admin_group',
