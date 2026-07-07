@@ -230,8 +230,14 @@ export default function UserPermissions({ user }) {
                     <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {u.Name || u.Username}
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                      {u.Username}
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span>{u.Username}</span>
+                      {u.GroupName && (
+                        <>
+                          <span style={{ color: 'var(--border)', fontSize: 9 }}>•</span>
+                          <span style={{ fontStyle: 'italic', color: 'var(--hint)' }}>{u.GroupName}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                   {isAdmin && (

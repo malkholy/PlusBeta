@@ -1083,9 +1083,10 @@ BEGIN
             SET @State = 0;
             SET @Message = 'Success';
 
-            SELECT Username, Name, IsAdmin 
-            FROM ERPManagement.[System].[UserMaster]
-            ORDER BY Username;
+            SELECT a.Username, a.Name, a.IsAdmin, b.GroupName  
+            FROM ERPManagement.[System].[UserMaster] a 
+            LEFT OUTER JOIN ERPManagement.[System].GroupMaster b ON a.GroupID = b.GroupID  
+            ORDER BY a.Username;
             RETURN;
         END
 
