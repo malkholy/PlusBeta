@@ -13,7 +13,7 @@ IF OBJECT_ID('PLS.UserPagePermissions', 'U') IS NULL
 BEGIN
     CREATE TABLE [PLS].[UserPagePermissions] (
         [PermissionID] INT IDENTITY(1,1) PRIMARY KEY,
-        [UserCode] VARCHAR(100) NOT NULL,
+        [Username] VARCHAR(100) NOT NULL,
         [PageGroupID] VARCHAR(50) NOT NULL,
         [CanView] BIT NOT NULL DEFAULT 1,
         [GrantedBy] NVARCHAR(100) NULL,
@@ -21,6 +21,6 @@ BEGIN
         CONSTRAINT FK_UserPagePermissions_PagesAndGroups FOREIGN KEY ([PageGroupID]) REFERENCES [PLS].[PagesAndGroups]([PageGroupID])
     );
 
-    CREATE NONCLUSTERED INDEX IX_UserPagePermissions_User ON [PLS].[UserPagePermissions] (UserCode);
+    CREATE NONCLUSTERED INDEX IX_UserPagePermissions_User ON [PLS].[UserPagePermissions] (Username);
 END
 GO
