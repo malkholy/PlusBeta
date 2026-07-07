@@ -2256,7 +2256,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                           }}>
                             <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>POs Analyzed</span>
                             <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
-                              {leadTimes.length} PO{leadTimes.length === 1 ? '' : 's'}
+                              {recentThree.length} PO{recentThree.length === 1 ? '' : 's'}
                             </span>
                             <span style={{ fontSize: 8, color: 'var(--muted)' }}>Delivered POs list</span>
                           </div>
@@ -2275,7 +2275,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                             </tr>
                           </thead>
                           <tbody>
-                            {leadTimes.map((l, idx) => (
+                            {recentThree.map((l, idx) => (
                               <tr 
                                 key={idx} 
                                 style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.1s' }}
