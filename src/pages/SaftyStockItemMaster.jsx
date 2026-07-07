@@ -26,11 +26,12 @@ function isFlagActive(val) {
   return s === 'true' || s === 'y' || s === 'yes' || s === '1' || s === 't';
 }
 
-function getInventoryStatus(inventory, reorderLimit, safetyStock, openPO, leadTime, activeLeadTime) {
+function getInventoryStatus(inventory, reorderLimit, safetyStock, openPO, leadTime, activeLeadTime, minHistLT) {
   const lt = Number(leadTime || 0);
   const alt = Number(activeLeadTime || 0);
+  const mhl = minHistLT !== undefined && minHistLT !== null ? Number(minHistLT) : -1;
 
-  if (lt <= 0 && alt <= 0) {
+  if (lt <= 0 && (alt <= 0 || mhl === 0)) {
     return {
       label: 'Error',
       color: '#ef4444',
@@ -490,7 +491,8 @@ export default function SaftyStockItemMasterPage({ user }) {
       r.StatisticalTarget,
       r.TotalOpenPO,
       r.LeadTime,
-      r.ActiveLeadTime
+      r.ActiveLeadTime,
+      r.MinHistLT
     );
     acc[status.label] = (acc[status.label] || 0) + 1;
     return acc;
@@ -511,7 +513,8 @@ export default function SaftyStockItemMasterPage({ user }) {
       r.StatisticalTarget,
       r.TotalOpenPO,
       r.LeadTime,
-      r.ActiveLeadTime
+      r.ActiveLeadTime,
+      r.MinHistLT
     );
     if (statusFilter !== 'All' && status.label !== statusFilter) {
       return false;
@@ -816,7 +819,8 @@ export default function SaftyStockItemMasterPage({ user }) {
           row.StatisticalTarget,
           row.TotalOpenPO,
           row.LeadTime,
-          row.ActiveLeadTime
+          row.ActiveLeadTime,
+          row.MinHistLT
         );
         return (
           <span style={{ 
@@ -1388,13 +1392,15 @@ export default function SaftyStockItemMasterPage({ user }) {
                       totalCoveredUntilStr = date.toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' });
                     }
 
+                    const minHistLTVal = recentThree.length > 0 ? Math.min(...recentThree.map(l => Number(l.LeadTime))) : -1;
                     const statusObj = getInventoryStatus(
                       totalMonitored,
                       reorderLimit,
                       calculatedSafetyStock,
                       totalOpenQty,
                       leadTime,
-                      activeLeadTime
+                      activeLeadTime,
+                      minHistLTVal
                     );
                     let healthStatus = `${statusObj.dot} ${statusObj.label}`;
                     let healthColor = statusObj.color;

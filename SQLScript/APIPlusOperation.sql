@@ -420,7 +420,8 @@ BEGIN
                 SELECT 
                     ItemCode,
                     AVG(CAST(LeadTime AS DECIMAL(18,5))) AS AvgHistLT,
-                    STDEV(CAST(LeadTime AS DECIMAL(18,5))) AS StdDevHistLT
+                    STDEV(CAST(LeadTime AS DECIMAL(18,5))) AS StdDevHistLT,
+                    MIN(LeadTime) AS MinHistLT
                 FROM (
                     SELECT 
                         pol.PurchasedCode AS ItemCode,
@@ -508,6 +509,7 @@ BEGIN
                    END AS ActiveLeadTimeStdDev
                   -- Daily Demand Std Dev
                   ,ISNULL(c.StdDevMonthlyQty, 0) / 26.0 AS DailyDemandStdDev
+                  ,ISNULL(l.MinHistLT, -1) AS MinHistLT
             INTO #TempItems
             FROM PUR.SaftyStockItemMaster s
             LEFT OUTER JOIN INV.ItemMaster i ON s.ItemID = i.ItemID
@@ -521,7 +523,7 @@ BEGIN
                  ID, ItemID, ItemCode, SaftyStock, LeadTime, ServiceLevelFactor,
                  PurchasingWarehouse, ProducationWarehouse, CreatedBy, CreatedDate, LastMaintBy, LastMaintDate,
                  ItemType, StockUM, TotalOpenPO, TotalMonitored, AvgMonthlyConsumption, AvgDailyConsumption,
-                 ActiveLeadTime, ActiveLeadTimeStdDev, DailyDemandStdDev,
+                 ActiveLeadTime, ActiveLeadTimeStdDev, DailyDemandStdDev, MinHistLT,
                  -- Statistical target Safety Stock
                  CASE WHEN ActiveLeadTime > 0 THEN 
                      CEILING(SQRT(
@@ -554,7 +556,7 @@ BEGIN
                      StatisticalTarget,
                      TotalOpenPO,
                      CASE 
-                         WHEN (LeadTime <= 0 AND ActiveLeadTime <= 0) THEN 'Error'
+                         WHEN (LeadTime <= 0 AND (ActiveLeadTime <= 0 OR MinHistLT = 0)) THEN 'Error'
                          WHEN StatisticalTarget <= 0 THEN 'Error'
                          WHEN TotalMonitored <= 0 THEN 'Out of Stock'
                          WHEN TotalMonitored < StatisticalTarget THEN 
