@@ -6,6 +6,7 @@ export default function UserPermissions({ user }) {
   const [pagesAndGroups, setPagesAndGroups] = useState([]);
   const [userPermissions, setUserPermissions] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [queries, setQueries] = useState([]);
   
   // Loading states
   const [usersLoading, setUsersLoading] = useState(false);
@@ -20,6 +21,7 @@ export default function UserPermissions({ user }) {
   useEffect(() => {
     loadUsers();
     loadPagesAndGroups();
+    loadQueryMaster();
   }, []);
 
   useEffect(() => {
@@ -57,6 +59,17 @@ export default function UserPermissions({ user }) {
       console.error('Failed to load pages and groups:', e);
     }
     setPagesLoading(false);
+  }
+
+  async function loadQueryMaster() {
+    try {
+      const res = await apiCall('GetQueryMaster', {}, {}, 'plus');
+      if (res.State === 0) {
+        setQueries(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Failed to load query master list:', e);
+    }
   }
 
   async function loadUserPermissions(username) {
@@ -395,22 +408,10 @@ export default function UserPermissions({ user }) {
 
                               {groupChildren.map((child, childIdx) => {
                                 const isChildAllowed = hasPermission(child.PageGroupID);
+                                const pageQueries = queries.filter(q => q.PageGroupID === child.PageGroupID);
                                 
                                 return (
-                                  <div 
-                                    key={child.PageGroupID} 
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'space-between',
-                                      background: 'var(--surface)',
-                                      border: '1px solid var(--border)',
-                                      borderRadius: 10,
-                                      padding: '10px 14px',
-                                      position: 'relative',
-                                      opacity: isGroupAllowed ? 1 : 0.65
-                                    }}
-                                  >
+                                  <div key={child.PageGroupID} style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
                                     {/* Horizontal branch line connector */}
                                     <div style={{
                                       position: 'absolute',
@@ -421,30 +422,102 @@ export default function UserPermissions({ user }) {
                                       background: 'var(--border)'
                                     }} />
 
-                                    <div style={{ minWidth: 0, flex: 1, paddingRight: 16 }}>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <span style={{ fontSize: 14 }}>{child.Icon || '📄'}</span>
-                                        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{child.Label}</span>
-                                      </div>
-                                      {child.Description && (
-                                        <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                          {child.Description}
+                                    <div 
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        background: 'var(--surface)',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: 10,
+                                        padding: '10px 14px',
+                                        opacity: isGroupAllowed ? 1 : 0.65
+                                      }}
+                                    >
+                                      <div style={{ minWidth: 0, flex: 1, paddingRight: 16 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                          <span style={{ fontSize: 14 }}>{child.Icon || '📄'}</span>
+                                          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{child.Label}</span>
                                         </div>
-                                      )}
+                                        {child.Description && (
+                                          <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                            {child.Description}
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      <label style={{ display: 'inline-flex', alignItems: 'center', cursor: isGroupAllowed ? 'pointer' : 'not-allowed' }}>
+                                        <input 
+                                          type="checkbox"
+                                          checked={isChildAllowed}
+                                          disabled={!isGroupAllowed || actionLoadingId === child.PageGroupID}
+                                          onChange={() => handleTogglePermission(child.PageGroupID, isChildAllowed)}
+                                          style={{ width: 16, height: 16, marginRight: 8, cursor: isGroupAllowed ? 'pointer' : 'not-allowed' }}
+                                        />
+                                        <span style={{ fontSize: 12, fontWeight: 600, color: isChildAllowed ? 'var(--orange)' : 'var(--muted)' }}>
+                                          {actionLoadingId === child.PageGroupID ? 'Saving...' : isChildAllowed ? 'Access Allowed' : 'Access Denied'}
+                                        </span>
+                                      </label>
                                     </div>
 
-                                    <label style={{ display: 'inline-flex', alignItems: 'center', cursor: isGroupAllowed ? 'pointer' : 'not-allowed' }}>
-                                      <input 
-                                        type="checkbox"
-                                        checked={isChildAllowed}
-                                        disabled={!isGroupAllowed || actionLoadingId === child.PageGroupID}
-                                        onChange={() => handleTogglePermission(child.PageGroupID, isChildAllowed)}
-                                        style={{ width: 16, height: 16, marginRight: 8, cursor: isGroupAllowed ? 'pointer' : 'not-allowed' }}
-                                      />
-                                      <span style={{ fontSize: 12, fontWeight: 600, color: isChildAllowed ? 'var(--orange)' : 'var(--muted)' }}>
-                                        {actionLoadingId === child.PageGroupID ? 'Saving...' : isChildAllowed ? 'Access Allowed' : 'Access Denied'}
-                                      </span>
-                                    </label>
+                                    {/* Queries List */}
+                                    {isChildAllowed && pageQueries.length > 0 && (
+                                      <div style={{
+                                        position: 'relative',
+                                        paddingLeft: 24,
+                                        marginLeft: 16,
+                                        marginTop: 8,
+                                        marginBottom: 8,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 6
+                                      }}>
+                                        <div style={{
+                                          position: 'absolute',
+                                          left: 7,
+                                          top: -8,
+                                          bottom: 14,
+                                          width: 1,
+                                          borderLeft: '1px dashed var(--border)'
+                                        }} />
+
+                                        {pageQueries.map(q => (
+                                          <div 
+                                            key={q.QueryID}
+                                            style={{
+                                              position: 'relative',
+                                              display: 'flex',
+                                              flexDirection: 'column',
+                                              padding: '6px 12px',
+                                              background: 'var(--soft)',
+                                              border: '1px solid var(--border)',
+                                              borderRadius: 8
+                                            }}
+                                          >
+                                            <div style={{
+                                              position: 'absolute',
+                                              left: -17,
+                                              top: 14,
+                                              width: 17,
+                                              height: 1,
+                                              borderTop: '1px dashed var(--border)'
+                                            }} />
+                                            
+                                            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>
+                                              ⚡ {q.QueryName}
+                                            </div>
+                                            <div style={{ fontSize: 9.5, color: 'var(--muted)', marginTop: 2, fontFamily: 'monospace' }}>
+                                              {q.SPName} • {q.Operation}
+                                            </div>
+                                            {q.Description && (
+                                              <div style={{ fontSize: 9.5, color: 'var(--hint)', marginTop: 2 }}>
+                                                {q.Description}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -464,41 +537,102 @@ export default function UserPermissions({ user }) {
                           {orphanPages.map(page => {
                             const isAllowed = hasPermission(page.PageGroupID);
                             return (
-                              <div 
-                                key={page.PageGroupID} 
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  background: 'var(--surface)',
-                                  border: '1px solid var(--border)',
-                                  borderRadius: 10,
-                                  padding: '10px 14px'
-                                }}
-                              >
-                                <div style={{ minWidth: 0, flex: 1, paddingRight: 16 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <span style={{ fontSize: 14 }}>{page.Icon || '📄'}</span>
-                                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{page.Label}</span>
-                                  </div>
-                                  {page.Description && (
-                                    <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4 }}>
-                                      {page.Description}
+                              <div key={page.PageGroupID} style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                                {/* Page Card */}
+                                <div 
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    background: 'var(--surface)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 10,
+                                    padding: '10px 14px'
+                                  }}
+                                >
+                                  <div style={{ minWidth: 0, flex: 1, paddingRight: 16 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      <span style={{ fontSize: 14 }}>{page.Icon || '📄'}</span>
+                                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{page.Label}</span>
                                     </div>
-                                  )}
+                                    {page.Description && (
+                                      <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4 }}>
+                                        {page.Description}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+                                    <input 
+                                      type="checkbox"
+                                      checked={isAllowed}
+                                      disabled={actionLoadingId === page.PageGroupID}
+                                      onChange={() => handleTogglePermission(page.PageGroupID, isAllowed)}
+                                      style={{ width: 16, height: 16, marginRight: 8, cursor: 'pointer' }}
+                                    />
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: isAllowed ? 'var(--orange)' : 'var(--muted)' }}>
+                                      {actionLoadingId === page.PageGroupID ? 'Saving...' : isAllowed ? 'Allowed' : 'Denied'}
+                                    </span>
+                                  </label>
                                 </div>
-                                <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
-                                  <input 
-                                    type="checkbox"
-                                    checked={isAllowed}
-                                    disabled={actionLoadingId === page.PageGroupID}
-                                    onChange={() => handleTogglePermission(page.PageGroupID, isAllowed)}
-                                    style={{ width: 16, height: 16, marginRight: 8, cursor: 'pointer' }}
-                                  />
-                                  <span style={{ fontSize: 12, fontWeight: 600, color: isAllowed ? 'var(--orange)' : 'var(--muted)' }}>
-                                    {actionLoadingId === page.PageGroupID ? 'Saving...' : isAllowed ? 'Allowed' : 'Denied'}
-                                  </span>
-                                </label>
+
+                                {/* Queries List */}
+                                {isAllowed && pageQueries.length > 0 && (
+                                  <div style={{
+                                    position: 'relative',
+                                    paddingLeft: 24,
+                                    marginLeft: 16,
+                                    marginTop: 8,
+                                    marginBottom: 8,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 6
+                                  }}>
+                                    <div style={{
+                                      position: 'absolute',
+                                      left: 7,
+                                      top: -8,
+                                      bottom: 14,
+                                      width: 1,
+                                      borderLeft: '1px dashed var(--border)'
+                                    }} />
+
+                                    {pageQueries.map(q => (
+                                      <div 
+                                        key={q.QueryID}
+                                        style={{
+                                          position: 'relative',
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          padding: '6px 12px',
+                                          background: 'var(--soft)',
+                                          border: '1px solid var(--border)',
+                                          borderRadius: 8
+                                        }}
+                                      >
+                                        <div style={{
+                                          position: 'absolute',
+                                          left: -17,
+                                          top: 14,
+                                          width: 17,
+                                          height: 1,
+                                          borderTop: '1px dashed var(--border)'
+                                        }} />
+                                        
+                                        <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>
+                                          ⚡ {q.QueryName}
+                                        </div>
+                                        <div style={{ fontSize: 9.5, color: 'var(--muted)', marginTop: 2, fontFamily: 'monospace' }}>
+                                          {q.SPName} • {q.Operation}
+                                        </div>
+                                        {q.Description && (
+                                          <div style={{ fontSize: 9.5, color: 'var(--hint)', marginTop: 2 }}>
+                                            {q.Description}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
