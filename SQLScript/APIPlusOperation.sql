@@ -554,6 +554,7 @@ BEGIN
                      StatisticalTarget,
                      TotalOpenPO,
                      CASE 
+                         WHEN (LeadTime <= 0 AND ActiveLeadTime <= 0) THEN 'Error'
                          WHEN StatisticalTarget <= 0 THEN 'Error'
                          WHEN TotalMonitored <= 0 THEN 'Out of Stock'
                          WHEN TotalMonitored < StatisticalTarget THEN 

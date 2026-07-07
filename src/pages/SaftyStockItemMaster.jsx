@@ -26,7 +26,18 @@ function isFlagActive(val) {
   return s === 'true' || s === 'y' || s === 'yes' || s === '1' || s === 't';
 }
 
-function getInventoryStatus(inventory, reorderLimit, safetyStock, openPO) {
+function getInventoryStatus(inventory, reorderLimit, safetyStock, openPO, leadTime, activeLeadTime) {
+  const lt = Number(leadTime || 0);
+  const alt = Number(activeLeadTime || 0);
+
+  if (lt <= 0 && alt <= 0) {
+    return {
+      label: 'Error',
+      color: '#ef4444',
+      dot: '❌'
+    };
+  }
+
   const ss = Number(safetyStock || 0);
 
   if (ss <= 0) {
@@ -477,7 +488,9 @@ export default function SaftyStockItemMasterPage({ user }) {
       r.TotalMonitored,
       r.ReorderLimitPoint,
       r.StatisticalTarget,
-      r.TotalOpenPO
+      r.TotalOpenPO,
+      r.LeadTime,
+      r.ActiveLeadTime
     );
     acc[status.label] = (acc[status.label] || 0) + 1;
     return acc;
@@ -496,7 +509,9 @@ export default function SaftyStockItemMasterPage({ user }) {
       r.TotalMonitored,
       r.ReorderLimitPoint,
       r.StatisticalTarget,
-      r.TotalOpenPO
+      r.TotalOpenPO,
+      r.LeadTime,
+      r.ActiveLeadTime
     );
     if (statusFilter !== 'All' && status.label !== statusFilter) {
       return false;
@@ -799,7 +814,9 @@ export default function SaftyStockItemMasterPage({ user }) {
           row.TotalMonitored,
           row.ReorderLimitPoint,
           row.StatisticalTarget,
-          row.TotalOpenPO
+          row.TotalOpenPO,
+          row.LeadTime,
+          row.ActiveLeadTime
         );
         return (
           <span style={{ 
@@ -1375,7 +1392,9 @@ export default function SaftyStockItemMasterPage({ user }) {
                       totalMonitored,
                       reorderLimit,
                       calculatedSafetyStock,
-                      totalOpenQty
+                      totalOpenQty,
+                      leadTime,
+                      activeLeadTime
                     );
                     let healthStatus = `${statusObj.dot} ${statusObj.label}`;
                     let healthColor = statusObj.color;
