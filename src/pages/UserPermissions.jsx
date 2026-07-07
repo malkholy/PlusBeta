@@ -514,6 +514,29 @@ export default function UserPermissions({ user }) {
                                                 {q.Description}
                                               </div>
                                             )}
+                                            {q.QuerySQL && (
+                                              <details style={{ marginTop: 4 }}>
+                                                <summary style={{ fontSize: 9.5, fontWeight: 700, cursor: 'pointer', color: 'var(--orange)', outline: 'none' }}>
+                                                  Show SQL Query
+                                                </summary>
+                                                <pre style={{
+                                                  marginTop: 6,
+                                                  padding: '6px 10px',
+                                                  background: 'var(--surface)',
+                                                  border: '1px solid var(--border)',
+                                                  borderRadius: 6,
+                                                  fontSize: 9.5,
+                                                  fontFamily: 'monospace',
+                                                  overflowX: 'auto',
+                                                  whiteSpace: 'pre-wrap',
+                                                  color: 'var(--text)',
+                                                  lineHeight: 1.4,
+                                                  textAlign: 'left'
+                                                }}>
+                                                  {q.QuerySQL}
+                                                </pre>
+                                              </details>
+                                            )}
                                           </div>
                                         ))}
                                       </div>
@@ -628,6 +651,29 @@ export default function UserPermissions({ user }) {
                                           <div style={{ fontSize: 9.5, color: 'var(--hint)', marginTop: 2 }}>
                                             {q.Description}
                                           </div>
+                                        )}
+                                        {q.QuerySQL && (
+                                          <details style={{ marginTop: 4 }}>
+                                            <summary style={{ fontSize: 9.5, fontWeight: 700, cursor: 'pointer', color: 'var(--orange)', outline: 'none' }}>
+                                              Show SQL Query
+                                            </summary>
+                                            <pre style={{
+                                              marginTop: 6,
+                                              padding: '6px 10px',
+                                              background: 'var(--surface)',
+                                              border: '1px solid var(--border)',
+                                              borderRadius: 6,
+                                              fontSize: 9.5,
+                                              fontFamily: 'monospace',
+                                              overflowX: 'auto',
+                                              whiteSpace: 'pre-wrap',
+                                              color: 'var(--text)',
+                                              lineHeight: 1.4,
+                                              textAlign: 'left'
+                                            }}>
+                                              {q.QuerySQL}
+                                            </pre>
+                                          </details>
                                         )}
                                       </div>
                                     ))}

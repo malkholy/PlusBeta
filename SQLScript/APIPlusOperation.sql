@@ -1098,7 +1098,7 @@ BEGIN
             SET @State = 0;
             SET @Message = 'Success';
 
-            SELECT QueryID, PageGroupID, QueryName, SPName, Operation, Description 
+            SELECT QueryID, PageGroupID, QueryName, SPName, Operation, Description, QuerySQL 
             FROM [PLS].[QueryMaster]
             ORDER BY PageGroupID, QueryID;
             RETURN;
