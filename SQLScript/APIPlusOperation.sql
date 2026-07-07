@@ -425,14 +425,14 @@ BEGIN
                 FROM (
                     SELECT 
                         pol.PurchasedCode AS ItemCode,
-                        CASE WHEN DATEDIFF(d, poh.ReleaseDate, (
+                        CASE WHEN DATEDIFF(d, (SELECT MIN(x.OperationDate) FROM pur.PurchaseOrderReleaseHistory x WHERE x.po = pol.OrderNumber), (
                             SELECT MAX(rh.ReceivingDate)
                             FROM pur.RecievingLinkLine rll
                             LEFT OUTER JOIN pur.ReceivingOrderHeader rh ON rll.ReceivingNumber = rh.ReceivingOrderNo
                             WHERE rll.PurchaseOrderNumber = pol.OrderNumber
                               AND rll.PurchaseOrderLine = pol.Line
                         )) < 0 THEN 0
-                        ELSE DATEDIFF(d, poh.ReleaseDate, (
+                        ELSE DATEDIFF(d, (SELECT MIN(x.OperationDate) FROM pur.PurchaseOrderReleaseHistory x WHERE x.po = pol.OrderNumber), (
                             SELECT MAX(rh.ReceivingDate)
                             FROM pur.RecievingLinkLine rll
                             LEFT OUTER JOIN pur.ReceivingOrderHeader rh ON rll.ReceivingNumber = rh.ReceivingOrderNo
@@ -913,7 +913,7 @@ BEGIN
                 a.LineState,  
                 a.QuantityOrdered, 
                 a.QuantityReceived, 
-                b.ReleaseDate, 
+                (SELECT MIN(x.OperationDate) FROM pur.PurchaseOrderReleaseHistory x WHERE x.po = a.OrderNumber) AS ReleaseDate, 
                 a.ETD, 
                 a.ETA,
                 (SELECT MAX(y.ReceivingDate) 
@@ -922,13 +922,13 @@ BEGIN
                  WHERE z.PurchaseOrderNumber = a.OrderNumber 
                    AND z.PurchaseOrderLine = a.Line) AS ActualArrivalDate, 	
                 ISNULL(DATEDIFF(d, a.ETD, a.ETA), 0) AS ETS,		
-                CASE WHEN DATEDIFF(d, b.ReleaseDate, 
+                CASE WHEN DATEDIFF(d, (SELECT MIN(x.OperationDate) FROM pur.PurchaseOrderReleaseHistory x WHERE x.po = a.OrderNumber), 
                           (SELECT MAX(y.ReceivingDate) 
                            FROM pur.RecievingLinkLine z 
                            LEFT OUTER JOIN pur.ReceivingOrderHeader y ON z.ReceivingNumber = y.ReceivingOrderNo 
                            WHERE z.PurchaseOrderNumber = a.OrderNumber 
                              AND z.PurchaseOrderLine = a.Line)) < 0 THEN 0
-                     ELSE DATEDIFF(d, b.ReleaseDate, 
+                     ELSE DATEDIFF(d, (SELECT MIN(x.OperationDate) FROM pur.PurchaseOrderReleaseHistory x WHERE x.po = a.OrderNumber), 
                           (SELECT MAX(y.ReceivingDate) 
                            FROM pur.RecievingLinkLine z 
                            LEFT OUTER JOIN pur.ReceivingOrderHeader y ON z.ReceivingNumber = y.ReceivingOrderNo 
