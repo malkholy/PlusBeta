@@ -1076,6 +1076,20 @@ BEGIN
         END
 
         -- ---------------------------------------------------------------------
+        -- Operation: GetSystemUsers
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetSystemUsers'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            SELECT Username, Name, IsAdmin 
+            FROM ERPManagement.[System].[UserMaster]
+            ORDER BY Username;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
         -- Fallback: Unsupported Operation
         -- ---------------------------------------------------------------------
       
