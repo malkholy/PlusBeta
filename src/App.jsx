@@ -182,6 +182,12 @@ const PAGE_COMPONENTS = {
   user_permissions: UserPermissions,
 };
 
+function checkIsAdmin(u) {
+  if (!u) return false;
+  const val = u.IsAdmin !== undefined ? u.IsAdmin : (u.isAdmin !== undefined ? u.isAdmin : u.isadmin);
+  return val === 1 || val === true || String(val) === '1' || String(val) === 'true';
+}
+
 // ─── App ─────────────────────────────────────────────────────────────────────
 export default function App() {
   const [user, setUser] = useState(() => {
@@ -217,10 +223,12 @@ export default function App() {
       const d = await apiCall('Login', { Username: un, Password: pw });
       if (d.State === 0 && d.List0?.length) {
         const u = d.List0[0];
+        console.log('Login response user object:', u);
+        const isAdmin = checkIsAdmin(u);
         sessionStorage.setItem('Username', u.Username || un);
         sessionStorage.setItem('FullName', u.Name || u.Username || un);
-        sessionStorage.setItem('IsAdmin', u.IsAdmin ? '1' : '0');
-        setUser({ Username: u.Username || un, Name: u.Name || un, IsAdmin: u.IsAdmin });
+        sessionStorage.setItem('IsAdmin', isAdmin ? '1' : '0');
+        setUser({ Username: u.Username || un, Name: u.Name || un, IsAdmin: isAdmin ? 1 : 0 });
          openPage('purchasing_po_header');
       } else {
         setLoginErr(d.Message || 'Invalid username or password');
@@ -240,7 +248,7 @@ export default function App() {
 
   const getNavItems = useCallback(() => {
     const items = [...NAV];
-    const isAdmin = user && (user.IsAdmin === 1 || user.IsAdmin === true || String(user.IsAdmin) === '1');
+    const isAdmin = checkIsAdmin(user);
     if (isAdmin) {
       items.push({
         id: 'admin_group',
