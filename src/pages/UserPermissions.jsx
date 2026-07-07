@@ -7,6 +7,7 @@ export default function UserPermissions({ user }) {
   const [userPermissions, setUserPermissions] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [queries, setQueries] = useState([]);
+  const [queryPermissions, setQueryPermissions] = useState([]);
   
   // Loading states
   const [usersLoading, setUsersLoading] = useState(false);
@@ -29,6 +30,7 @@ export default function UserPermissions({ user }) {
       loadUserPermissions(selectedUser.Username);
     } else {
       setUserPermissions([]);
+      setQueryPermissions([]);
     }
   }, [selectedUser]);
 
@@ -83,6 +85,14 @@ export default function UserPermissions({ user }) {
         );
         setUserPermissions(filtered);
       }
+
+      const qRes = await apiCall('GetUserQueryPermissions', {}, {}, 'plus');
+      if (qRes.State === 0) {
+        const filteredQ = (qRes.List0 || []).filter(
+          qp => qp.Username.toLowerCase() === username.toLowerCase()
+        );
+        setQueryPermissions(filteredQ);
+      }
     } catch (e) {
       console.error('Failed to load user permissions:', e);
     }
@@ -103,6 +113,27 @@ export default function UserPermissions({ user }) {
 
       if (res.State !== 0) {
         alert(res.Message || 'Failed to update permission.');
+      } else {
+        await loadUserPermissions(selectedUser.Username);
+      }
+    } catch (err) {
+      alert('Connection error: ' + err.message);
+    }
+    setActionLoadingId(null);
+  }
+
+  async function handleSaveQueryPermission(queryId, filterText) {
+    if (!selectedUser) return;
+    setActionLoadingId(`q_${queryId}`);
+    try {
+      const res = await apiCall('SaveUserQueryPermission', {
+        Username: selectedUser.Username,
+        QueryID: queryId,
+        SQLFilter: filterText
+      }, {}, 'plus');
+
+      if (res.State !== 0) {
+        alert(res.Message || 'Failed to update query permission.');
       } else {
         await loadUserPermissions(selectedUser.Username);
       }
@@ -537,6 +568,17 @@ export default function UserPermissions({ user }) {
                                                 </pre>
                                               </details>
                                             )}
+                                            {(() => {
+                                              const qPerm = queryPermissions.find(qp => qp.QueryID === q.QueryID);
+                                              const currentFilter = qPerm ? qPerm.SQLFilter : '';
+                                              return (
+                                                <SQLFilterInput 
+                                                  value={currentFilter}
+                                                  onSave={(val) => handleSaveQueryPermission(q.QueryID, val)}
+                                                  isLoading={actionLoadingId === `q_${q.QueryID}`}
+                                                />
+                                              );
+                                            })()}
                                           </div>
                                         ))}
                                       </div>
@@ -675,6 +717,17 @@ export default function UserPermissions({ user }) {
                                             </pre>
                                           </details>
                                         )}
+                                        {(() => {
+                                          const qPerm = queryPermissions.find(qp => qp.QueryID === q.QueryID);
+                                          const currentFilter = qPerm ? qPerm.SQLFilter : '';
+                                          return (
+                                            <SQLFilterInput 
+                                              value={currentFilter}
+                                              onSave={(val) => handleSaveQueryPermission(q.QueryID, val)}
+                                              isLoading={actionLoadingId === `q_${q.QueryID}`}
+                                            />
+                                          );
+                                        })()}
                                       </div>
                                     ))}
                                   </div>
@@ -695,6 +748,120 @@ export default function UserPermissions({ user }) {
         </div>
 
       </div>
+    </div>
+  );
+}
+
+function SQLFilterInput({ value, onChange, onSave, isLoading }) {
+  const [text, setText] = useState(value || '');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  const suggestions = [
+    "Warehouse='1FG'",
+    "Warehouse='2RM'",
+    "Warehouse='3SF'",
+    "VendorNumber='V001'",
+    "OrderState='New'",
+    "Facility='GLC'"
+  ];
+
+  const filtered = suggestions.filter(s => 
+    s.toLowerCase().includes(text.toLowerCase()) && s.toLowerCase() !== text.toLowerCase()
+  );
+
+  useEffect(() => {
+    setText(value || '');
+  }, [value]);
+
+  const handleSelect = (val) => {
+    setText(val);
+    setShowSuggestions(false);
+    onSave(val);
+  };
+
+  const handleBlur = () => {
+    setTimeout(() => {
+      setShowSuggestions(false);
+      if (text !== (value || '')) {
+        onSave(text);
+      }
+    }, 200);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.target.blur();
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative', marginTop: 8, display: 'flex', flexDirection: 'column' }}>
+      <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', marginBottom: 4 }}>
+        Row-Level SQL Filter (RLS Clause):
+      </label>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input 
+          type="text"
+          value={text}
+          onChange={e => {
+            setText(e.target.value);
+            setShowSuggestions(true);
+          }}
+          onFocus={() => setShowSuggestions(true)}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          placeholder="e.g. Warehouse='1FG'"
+          style={{
+            flex: 1,
+            height: 32,
+            padding: '0 10px',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 6,
+            fontSize: 11.5,
+            fontFamily: 'monospace',
+            color: 'var(--text)',
+            outline: 'none'
+          }}
+        />
+        {isLoading && <span style={{ fontSize: 10, color: 'var(--orange)' }}>Saving...</span>}
+      </div>
+      
+      {showSuggestions && filtered.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: '100%',
+          marginTop: 4,
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 8,
+          boxShadow: 'var(--shadow)',
+          zIndex: 99,
+          maxHeight: 120,
+          overflowY: 'auto',
+          padding: '4px 0'
+        }}>
+          {filtered.map(s => (
+            <div 
+              key={s}
+              onMouseDown={() => handleSelect(s)}
+              style={{
+                padding: '6px 12px',
+                fontSize: 11,
+                fontFamily: 'monospace',
+                cursor: 'pointer',
+                color: 'var(--text)'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--soft)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              {s}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

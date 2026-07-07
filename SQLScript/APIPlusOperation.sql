@@ -1105,6 +1105,53 @@ BEGIN
         END
 
         -- ---------------------------------------------------------------------
+        -- Operation: GetUserQueryPermissions
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetUserQueryPermissions'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            SELECT PermissionID, Username, QueryID, SQLFilter 
+            FROM [PLS].[UserQueryPermissions]
+            ORDER BY Username, QueryID;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: SaveUserQueryPermission
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'SaveUserQueryPermission'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @QUser VARCHAR(100) = JSON_VALUE(@LineData, '$.Username');
+            DECLARE @QQueryID INT = TRY_CAST(JSON_VALUE(@LineData, '$.QueryID') AS INT);
+            DECLARE @QFilter NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.SQLFilter');
+
+            IF @QUser IS NULL OR @QQueryID IS NULL
+            BEGIN
+                SET @State = 1;
+                SET @Message = 'Username and QueryID are required';
+                RETURN;
+            END
+
+            IF EXISTS (SELECT 1 FROM [PLS].[UserQueryPermissions] WHERE Username = @QUser AND QueryID = @QQueryID)
+            BEGIN
+                UPDATE [PLS].[UserQueryPermissions] 
+                SET SQLFilter = @QFilter, GrantedBy = @User, GrantedDate = GETDATE()
+                WHERE Username = @QUser AND QueryID = @QQueryID;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO [PLS].[UserQueryPermissions] (Username, QueryID, SQLFilter, GrantedBy, GrantedDate)
+                VALUES (@QUser, @QQueryID, @QFilter, @User, GETDATE());
+            END
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
         -- Fallback: Unsupported Operation
         -- ---------------------------------------------------------------------
       
