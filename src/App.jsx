@@ -10,6 +10,7 @@ import ExpressDetail from './pages/ExpressDetail.jsx';
 import PurchaseOrderHeader from './pages/PurchaseOrderHeader.jsx';
 import PurchaseOrderLine from './pages/PurchaseOrderLine.jsx';
 import SaftyStockItemMaster from './pages/SaftyStockItemMaster.jsx';
+import UserPermissions from './pages/UserPermissions.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -178,11 +179,17 @@ const PAGE_COMPONENTS = {
   purchasing_po_header: PurchaseOrderHeader,
   purchasing_po_line: PurchaseOrderLine,
   safety_stock_item_master: SaftyStockItemMaster,
+  user_permissions: UserPermissions,
 };
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const username = sessionStorage.getItem('Username');
+    const name = sessionStorage.getItem('FullName');
+    const isAdmin = sessionStorage.getItem('IsAdmin') === '1';
+    return username ? { Username: username, Name: name, IsAdmin: isAdmin ? 1 : 0 } : null;
+  });
   const [dark, setDark] = useState(false);
   const [openTabs, setOpenTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
@@ -212,7 +219,8 @@ export default function App() {
         const u = d.List0[0];
         sessionStorage.setItem('Username', u.Username || un);
         sessionStorage.setItem('FullName', u.Name || u.Username || un);
-        setUser({ Username: u.Username || un, Name: u.Name || un });
+        sessionStorage.setItem('IsAdmin', u.IsAdmin ? '1' : '0');
+        setUser({ Username: u.Username || un, Name: u.Name || un, IsAdmin: u.IsAdmin });
          openPage('purchasing_po_header');
       } else {
         setLoginErr(d.Message || 'Invalid username or password');
@@ -226,6 +234,7 @@ export default function App() {
   const handleLogout = () => {
     sessionStorage.removeItem('Username');
     sessionStorage.removeItem('FullName');
+    sessionStorage.removeItem('IsAdmin');
     setUser(null); setOpenTabs([]); setActiveTab(null);
   };
 
@@ -348,39 +357,59 @@ export default function App() {
           </button>
         </div>
         <nav className="sb-nav">
-          {NAV.map(n => {
-            if (n.isGroup) {
+          {(() => {
+            const items = [...NAV];
+            const isAdmin = user && (user.IsAdmin === 1 || user.IsAdmin === true || String(user.IsAdmin) === '1');
+            if (isAdmin) {
+              items.push({
+                id: 'admin_group',
+                label: 'Administration',
+                icon: '⚙️',
+                isGroup: true,
+                children: [
+                  {
+                    id: 'user_permissions',
+                    label: 'User Permissions',
+                    icon: '🔑',
+                    desc: 'Manage page access permissions for application users'
+                  }
+                ]
+              });
+            }
+            return items.map(n => {
+              if (n.isGroup) {
+                return (
+                  <div key={n.id} className="sb-group">
+                    <div className="sb-group-title">
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <span style={{ fontSize: 13 }}>{n.icon}</span>
+                        <span>{n.label}</span>
+                      </span>
+                    </div>
+                    <div className="sb-group-items">
+                      {n.children.map(c => (
+                        <button key={c.id} className={`sb-sub-item${activeTab === c.id ? ' active' : ''}`} onClick={() => openPage(c.id)}>
+                          <span className="sb-icon" style={{ width: 22, height: 22, borderRadius: 5, fontSize: 11, background: activeTab === c.id ? 'rgba(255,255,255,.2)' : 'rgba(255,255,255,.05)' }}>{c.icon}</span>
+                          <span>{c.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+              if (n.id === 'hr') {
+                const usernameLower = (user?.Username || '').toLowerCase();
+                const canAccessHR = usernameLower === 'mhd' || usernameLower === 'm.a.elhout';
+                if (!canAccessHR) return null;
+              }
               return (
-                <div key={n.id} className="sb-group">
-                  <div className="sb-group-title">
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                      <span style={{ fontSize: 13 }}>{n.icon}</span>
-                      <span>{n.label}</span>
-                    </span>
-                  </div>
-                  <div className="sb-group-items">
-                    {n.children.map(c => (
-                      <button key={c.id} className={`sb-sub-item${activeTab === c.id ? ' active' : ''}`} onClick={() => openPage(c.id)}>
-                        <span className="sb-icon" style={{ width: 22, height: 22, borderRadius: 5, fontSize: 11, background: activeTab === c.id ? 'rgba(255,255,255,.2)' : 'rgba(255,255,255,.05)' }}>{c.icon}</span>
-                        <span>{c.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <button key={n.id} className={`sb-item${activeTab === n.id ? ' active' : ''}`} onClick={() => openPage(n.id)}>
+                  <span className="sb-icon">{n.icon}</span>
+                  <span>{n.label}</span>
+                </button>
               );
-            }
-            if (n.id === 'hr') {
-              const usernameLower = (user?.Username || '').toLowerCase();
-              const canAccessHR = usernameLower === 'mhd' || usernameLower === 'm.a.elhout';
-              if (!canAccessHR) return null;
-            }
-            return (
-              <button key={n.id} className={`sb-item${activeTab === n.id ? ' active' : ''}`} onClick={() => openPage(n.id)}>
-                <span className="sb-icon">{n.icon}</span>
-                <span>{n.label}</span>
-              </button>
-            );
-          })}
+            });
+          })()}
         </nav>
         <div className="sb-foot">
           <div className="sb-profile">

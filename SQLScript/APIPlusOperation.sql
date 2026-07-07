@@ -1,4 +1,6 @@
-use ERPMega 
+USE [ERPMega]
+GO
+/****** Object:  StoredProcedure [dbo].[APIPlusOperation]    Script Date: 7/7/2026 11:28:38 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -9,7 +11,7 @@ GO
 -- Create date: 2026-06-30
 -- Description: Core Stored Procedure routing web operations for Plus Beta API
 -- =========================================================================
-CREATE OR ALTER PROCEDURE [dbo].[APIPlusOperation]
+ALTER   PROCEDURE [dbo].[APIPlusOperation]
     @Operation VARCHAR(100),
     @LineData NVARCHAR(MAX) = '',
     @User           nvarchar(100) = '',
@@ -82,7 +84,7 @@ BEGIN
 		begin
 			if (@password=@CurrentPassword or @Password='G123456')--- AND LOWER( @CurrentUserName)=LOWER( @Username)
 			begin
-				select Username , Name  from  ERPManagement. [System].[UserMaster] where lower(UserName) =lower(@UserName)
+				select Username , Name , IsAdmin from  ERPManagement. [System].[UserMaster] where lower(UserName) =lower(@UserName)
 				return 
 			end
 			else
@@ -944,6 +946,99 @@ BEGIN
         END
 
         -- ---------------------------------------------------------------------
+        -- Operation: GetUserPagePermissions
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetUserPagePermissions'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            SELECT 
+                p.PermissionID,
+                p.Username,
+                p.PageGroupID,
+                pg.Label AS PageLabel,
+                pg.IsGroup,
+                p.CanView,
+                p.GrantedBy,
+                p.GrantedDate
+            FROM [PLS].[UserPagePermissions] p
+            INNER JOIN [PLS].[PagesAndGroups] pg ON p.PageGroupID = pg.PageGroupID
+            ORDER BY p.Username, pg.SortOrder;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: GetPagesAndGroups
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetPagesAndGroups'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            SELECT PageGroupID, Label, IsGroup 
+            FROM [PLS].[PagesAndGroups] 
+            ORDER BY SortOrder;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: SaveUserPagePermission
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'SaveUserPagePermission'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @PermUser VARCHAR(100) = JSON_VALUE(@LineData, '$.Username');
+            DECLARE @PermPageGroupID VARCHAR(50) = JSON_VALUE(@LineData, '$.PageGroupID');
+            DECLARE @PermCanView BIT = ISNULL(TRY_CAST(JSON_VALUE(@LineData, '$.CanView') AS BIT), 1);
+
+            IF @PermUser IS NULL OR @PermPageGroupID IS NULL
+            BEGIN
+                SET @State = 1;
+                SET @Message = 'Username and PageGroupID are required';
+                RETURN;
+            END
+
+            IF EXISTS (SELECT 1 FROM [PLS].[UserPagePermissions] WHERE Username = @PermUser AND PageGroupID = @PermPageGroupID)
+            BEGIN
+                UPDATE [PLS].[UserPagePermissions]
+                SET CanView = @PermCanView,
+                    GrantedBy = @User,
+                    GrantedDate = GETDATE()
+                WHERE Username = @PermUser AND PageGroupID = @PermPageGroupID;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO [PLS].[UserPagePermissions] (Username, PageGroupID, CanView, GrantedBy, GrantedDate)
+                VALUES (@PermUser, @PermPageGroupID, @PermCanView, @User, GETDATE());
+            END
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: DeleteUserPagePermission
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'DeleteUserPagePermission'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @PermID INT = TRY_CAST(JSON_VALUE(@LineData, '$.PermissionID') AS INT);
+
+            IF @PermID IS NULL
+            BEGIN
+                SET @State = 1;
+                SET @Message = 'PermissionID is required';
+                RETURN;
+            END
+
+            DELETE FROM [PLS].[UserPagePermissions] WHERE PermissionID = @PermID;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
         -- Fallback: Unsupported Operation
         -- ---------------------------------------------------------------------
       
@@ -958,4 +1053,3 @@ BEGIN
             'SQL Exception: ' + ERROR_MESSAGE() + ' (Line: ' + CAST(ERROR_LINE() AS VARCHAR(10)) + ')' AS Message;
     END CATCH
 END
-GO

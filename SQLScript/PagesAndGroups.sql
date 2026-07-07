@@ -51,4 +51,18 @@ BEGIN
     INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
     VALUES ('safety_stock_item_master', N'Safety Stock Item Master', N'🛡️', N'Manage and monitor safety stock levels for item masters', 0, 'purchasing_group', 40);
 END
+
+-- 5. Administration Group (Nav Group)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'admin_group')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('admin_group', N'Administration', N'⚙️', N'Administration navigation group', 1, NULL, 100);
+END
+
+-- 6. User Page Permissions (Page)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'user_permissions')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('user_permissions', N'User Page Permissions', N'🔑', N'Manage page access permissions for application users', 0, 'admin_group', 110);
+END
 GO
