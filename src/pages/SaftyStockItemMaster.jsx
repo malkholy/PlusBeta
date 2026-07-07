@@ -2129,28 +2129,32 @@ export default function SaftyStockItemMasterPage({ user }) {
                       No lead time history found for item **{itemCode}**.
                     </div>
                   ) : (() => {
-                    const validLeadTimes = leadTimes.filter(l => l.LeadTime != null);
-                    const avgLeadTime = validLeadTimes.length > 0
-                      ? Math.round(validLeadTimes.reduce((sum, l) => sum + Number(l.LeadTime), 0) / validLeadTimes.length)
+                    const sortedByArrival = [...leadTimes]
+                      .filter(l => l.ActualArrivalDate && !isNaN(new Date(l.ActualArrivalDate).getTime()) && l.LeadTime != null)
+                      .sort((a, b) => new Date(b.ActualArrivalDate) - new Date(a.ActualArrivalDate));
+                    const recentThree = sortedByArrival.slice(0, 3);
+
+                    const avgLeadTime = recentThree.length > 0
+                      ? Math.round(recentThree.reduce((sum, l) => sum + Number(l.LeadTime), 0) / recentThree.length)
                       : null;
-                    const minLeadTime = validLeadTimes.length > 0
-                      ? Math.min(...validLeadTimes.map(l => Number(l.LeadTime)))
+                    const minLeadTime = recentThree.length > 0
+                      ? Math.min(...recentThree.map(l => Number(l.LeadTime)))
                       : null;
-                    const maxLeadTime = validLeadTimes.length > 0
-                      ? Math.max(...validLeadTimes.map(l => Number(l.LeadTime)))
+                    const maxLeadTime = recentThree.length > 0
+                      ? Math.max(...recentThree.map(l => Number(l.LeadTime)))
                       : null;
 
                     let stdDevLeadTime = null;
-                    if (validLeadTimes.length > 1) {
-                      const mean = validLeadTimes.reduce((sum, l) => sum + Number(l.LeadTime), 0) / validLeadTimes.length;
-                      const sqDiffs = validLeadTimes.map(l => Math.pow(Number(l.LeadTime) - mean, 2));
-                      const avgSqDiff = sqDiffs.reduce((sum, d) => sum + d, 0) / (validLeadTimes.length - 1);
+                    if (recentThree.length > 1) {
+                      const mean = recentThree.reduce((sum, l) => sum + Number(l.LeadTime), 0) / recentThree.length;
+                      const sqDiffs = recentThree.map(l => Math.pow(Number(l.LeadTime) - mean, 2));
+                      const avgSqDiff = sqDiffs.reduce((sum, d) => sum + d, 0) / (recentThree.length - 1);
                       stdDevLeadTime = Math.sqrt(avgSqDiff);
-                    } else if (validLeadTimes.length === 1) {
+                    } else if (recentThree.length === 1) {
                       stdDevLeadTime = 0;
                     }
 
-                    const validETS = leadTimes.filter(l => l.ETS != null);
+                    const validETS = recentThree.filter(l => l.ETS != null);
                     const avgETS = validETS.length > 0
                       ? Math.round(validETS.reduce((sum, l) => sum + Number(l.ETS), 0) / validETS.length)
                       : null;
