@@ -238,6 +238,28 @@ export default function App() {
     setUser(null); setOpenTabs([]); setActiveTab(null);
   };
 
+  const getNavItems = useCallback(() => {
+    const items = [...NAV];
+    const isAdmin = user && (user.IsAdmin === 1 || user.IsAdmin === true || String(user.IsAdmin) === '1');
+    if (isAdmin) {
+      items.push({
+        id: 'admin_group',
+        label: 'Administration',
+        icon: '⚙️',
+        isGroup: true,
+        children: [
+          {
+            id: 'user_permissions',
+            label: 'User Page Permissions',
+            icon: '🔑',
+            desc: 'Manage page access permissions for application users'
+          }
+        ]
+      });
+    }
+    return items;
+  }, [user]);
+
   const openPage = useCallback((id) => {
     if (id === 'hr') {
       const usernameLower = (user?.Username || '').toLowerCase();
@@ -247,9 +269,10 @@ export default function App() {
     setActiveTab(id);
     setOpenTabs(prev => {
       if (prev.find(t => t.id === id)) return prev;
-      let tabDef = NAV.find(n => n.id === id);
+      const items = getNavItems();
+      let tabDef = items.find(n => n.id === id);
       if (!tabDef) {
-        for (const n of NAV) {
+        for (const n of items) {
           if (n.isGroup && n.children) {
             const child = n.children.find(c => c.id === id);
             if (child) {
@@ -261,7 +284,7 @@ export default function App() {
       }
       return [...prev, { id, ...(tabDef || {}) }];
     });
-  }, [user]);
+  }, [user, getNavItems]);
 
   const closeTab = (id, e) => {
     e.stopPropagation();
@@ -274,9 +297,10 @@ export default function App() {
 
   const ActivePage = activeTab ? PAGE_COMPONENTS[activeTab] : null;
   const activeDef = (() => {
-    let def = NAV.find(n => n.id === activeTab);
+    const items = getNavItems();
+    let def = items.find(n => n.id === activeTab);
     if (!def) {
-      for (const n of NAV) {
+      for (const n of items) {
         if (n.isGroup && n.children) {
           const child = n.children.find(c => c.id === activeTab);
           if (child) return child;
@@ -357,59 +381,39 @@ export default function App() {
           </button>
         </div>
         <nav className="sb-nav">
-          {(() => {
-            const items = [...NAV];
-            const isAdmin = user && (user.IsAdmin === 1 || user.IsAdmin === true || String(user.IsAdmin) === '1');
-            if (isAdmin) {
-              items.push({
-                id: 'admin_group',
-                label: 'Administration',
-                icon: '⚙️',
-                isGroup: true,
-                children: [
-                  {
-                    id: 'user_permissions',
-                    label: 'User Permissions',
-                    icon: '🔑',
-                    desc: 'Manage page access permissions for application users'
-                  }
-                ]
-              });
-            }
-            return items.map(n => {
-              if (n.isGroup) {
-                return (
-                  <div key={n.id} className="sb-group">
-                    <div className="sb-group-title">
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                        <span style={{ fontSize: 13 }}>{n.icon}</span>
-                        <span>{n.label}</span>
-                      </span>
-                    </div>
-                    <div className="sb-group-items">
-                      {n.children.map(c => (
-                        <button key={c.id} className={`sb-sub-item${activeTab === c.id ? ' active' : ''}`} onClick={() => openPage(c.id)}>
-                          <span className="sb-icon" style={{ width: 22, height: 22, borderRadius: 5, fontSize: 11, background: activeTab === c.id ? 'rgba(255,255,255,.2)' : 'rgba(255,255,255,.05)' }}>{c.icon}</span>
-                          <span>{c.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
-              if (n.id === 'hr') {
-                const usernameLower = (user?.Username || '').toLowerCase();
-                const canAccessHR = usernameLower === 'mhd' || usernameLower === 'm.a.elhout';
-                if (!canAccessHR) return null;
-              }
+          {getNavItems().map(n => {
+            if (n.isGroup) {
               return (
-                <button key={n.id} className={`sb-item${activeTab === n.id ? ' active' : ''}`} onClick={() => openPage(n.id)}>
-                  <span className="sb-icon">{n.icon}</span>
-                  <span>{n.label}</span>
-                </button>
+                <div key={n.id} className="sb-group">
+                  <div className="sb-group-title">
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <span style={{ fontSize: 13 }}>{n.icon}</span>
+                      <span>{n.label}</span>
+                    </span>
+                  </div>
+                  <div className="sb-group-items">
+                    {n.children.map(c => (
+                      <button key={c.id} className={`sb-sub-item${activeTab === c.id ? ' active' : ''}`} onClick={() => openPage(c.id)}>
+                        <span className="sb-icon" style={{ width: 22, height: 22, borderRadius: 5, fontSize: 11, background: activeTab === c.id ? 'rgba(255,255,255,.2)' : 'rgba(255,255,255,.05)' }}>{c.icon}</span>
+                        <span>{c.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               );
-            });
-          })()}
+            }
+            if (n.id === 'hr') {
+              const usernameLower = (user?.Username || '').toLowerCase();
+              const canAccessHR = usernameLower === 'mhd' || usernameLower === 'm.a.elhout';
+              if (!canAccessHR) return null;
+            }
+            return (
+              <button key={n.id} className={`sb-item${activeTab === n.id ? ' active' : ''}`} onClick={() => openPage(n.id)}>
+                <span className="sb-icon">{n.icon}</span>
+                <span>{n.label}</span>
+              </button>
+            );
+          })}
         </nav>
         <div className="sb-foot">
           <div className="sb-profile">
