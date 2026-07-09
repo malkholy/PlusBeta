@@ -593,6 +593,8 @@ export default function UserPermissions({ user }) {
                                               height: 1,
                                               borderTop: '1px dashed var(--border)'
                                             }} />
+                                             <div style={{ display: 'flex', gap: 16, width: '100%' }}>
+                                               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                                             
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                                               <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>
@@ -644,6 +646,28 @@ export default function UserPermissions({ user }) {
                                               </button>
                                             )}
                                             {q.QuerySQL && showSQL && (
+                                              <button
+                                                onClick={() => setShowSQLPreviews(prev => ({ ...prev, [q.QueryID]: !prev[q.QueryID] }))}
+                                                style={{
+                                                  background: 'none',
+                                                  border: 'none',
+                                                  color: 'var(--orange)',
+                                                  fontSize: 9.5,
+                                                  fontWeight: 700,
+                                                  cursor: 'pointer',
+                                                  padding: '2px 0',
+                                                  marginTop: 4,
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  gap: 4,
+                                                  outline: 'none',
+                                                  alignSelf: 'flex-start'
+                                                }}
+                                              >
+                                                {showSQL ? '▼ Hide Query SQL' : '▶ Show Query SQL'}
+                                              </button>
+                                            )}
+                                            {q.QuerySQL && showSQL && (
                                               <pre style={{
                                                 marginTop: 6,
                                                 padding: '6px 10px',
@@ -661,12 +685,17 @@ export default function UserPermissions({ user }) {
                                                 {q.QuerySQL}
                                               </pre>
                                             )}
+                                            </div>
+                                                         <div style={{ width: 1, borderRight: '1px solid var(--border)', alignSelf: 'stretch' }} />
+                                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <SQLFilterInput 
                                               query={q}
                                               qPerm={qPerm}
                                               onSave={(val, mode, builder) => handleSaveQueryPermission(q.QueryID, val, mode, builder)}
                                               isLoading={actionLoadingId === `q_${q.QueryID}`}
                                             />
+                                                         </div>
+                                                       </div>
                                           </div>
                                         );
                                       };
@@ -883,6 +912,8 @@ export default function UserPermissions({ user }) {
                                           height: 1,
                                           borderTop: '1px dashed var(--border)'
                                         }} />
+                                             <div style={{ display: 'flex', gap: 16, width: '100%' }}>
+                                               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                                         
                                         <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>
                                           ⚡ {q.QueryName}
@@ -896,6 +927,28 @@ export default function UserPermissions({ user }) {
                                           </div>
                                         )}
                                         {q.QuerySQL && (
+                                          <button
+                                            onClick={() => setShowSQLPreviews(prev => ({ ...prev, [q.QueryID]: !prev[q.QueryID] }))}
+                                            style={{
+                                              background: 'none',
+                                              border: 'none',
+                                              color: 'var(--orange)',
+                                              fontSize: 9.5,
+                                              fontWeight: 700,
+                                              cursor: 'pointer',
+                                              padding: '2px 0',
+                                              marginTop: 4,
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: 4,
+                                              outline: 'none',
+                                              alignSelf: 'flex-start'
+                                            }}
+                                          >
+                                            {showSQL ? '▼ Hide Query SQL' : '▶ Show Query SQL'}
+                                          </button>
+                                        )}
+                                        {q.QuerySQL && showSQL && (
                                           <button
                                             onClick={() => setShowSQLPreviews(prev => ({ ...prev, [q.QueryID]: !prev[q.QueryID] }))}
                                             style={{
@@ -935,17 +988,17 @@ export default function UserPermissions({ user }) {
                                             {q.QuerySQL}
                                           </pre>
                                         )}
-                                        {(() => {
-                                          const qPerm = queryPermissions.find(qp => qp.QueryID === q.QueryID);
-                                          return (
-                                            <SQLFilterInput 
+                                        </div>
+                                                     <div style={{ width: 1, borderRight: '1px solid var(--border)', alignSelf: 'stretch' }} />
+                                                     <div style={{ flex: 1, minWidth: 0 }}>
+                                        <SQLFilterInput 
                                               query={q}
                                               qPerm={qPerm}
                                               onSave={(val, mode, builder) => handleSaveQueryPermission(q.QueryID, val, mode, builder)}
                                               isLoading={actionLoadingId === `q_${q.QueryID}`}
                                             />
-                                          );
-                                        })()}
+                                                     </div>
+                                                   </div>
                                       </div>
                                     )})} 
                                   </div>
