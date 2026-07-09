@@ -177,7 +177,7 @@ export default function TrackingHistory() {
 
         <div style={{ flex: '0 1 150px' }}>
           <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
-            ETA From
+            Created From
           </label>
           <input 
             type="date"
@@ -199,7 +199,7 @@ export default function TrackingHistory() {
 
         <div style={{ flex: '0 1 150px' }}>
           <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
-            ETA To
+            Created To
           </label>
           <input 
             type="date"
