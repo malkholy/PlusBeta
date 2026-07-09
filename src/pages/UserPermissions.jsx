@@ -240,13 +240,13 @@ export default function UserPermissions({ user }) {
               <div style={{ textAlign: 'center', padding: 24, color: 'var(--muted)', fontSize: 13 }}>No users found.</div>
             ) : Object.keys(groupedUsers).map(groupName => {
               const groupUsers = groupedUsers[groupName];
-              const isCollapsed = !!collapsedUserGroups[groupName];
+              const isCollapsed = collapsedUserGroups[groupName] !== false;
               
               return (
                 <div key={groupName} style={{ marginBottom: 12 }}>
                   {/* Group Header */}
                   <div 
-                    onClick={() => setCollapsedUserGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }))}
+                    onClick={() => setCollapsedUserGroups(prev => ({ ...prev, [groupName]: !isCollapsed }))}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -428,6 +428,7 @@ export default function UserPermissions({ user }) {
                     {!permsLoading && groups.map(group => {
                       const groupChildren = pagesAndGroups.filter(pg => pg.ParentID === group.PageGroupID);
                       const isGroupAllowed = hasPermission(group.PageGroupID);
+                      const isNavGroupCollapsed = collapsedNavGroups[group.PageGroupID] !== false;
                       
                       return (
                         <div 
@@ -442,11 +443,11 @@ export default function UserPermissions({ user }) {
                           {/* Navigation Group Header */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 8 }}>
                             <div 
-                              onClick={() => setCollapsedNavGroups(prev => ({ ...prev, [group.PageGroupID]: !prev[group.PageGroupID] }))}
+                              onClick={() => setCollapsedNavGroups(prev => ({ ...prev, [group.PageGroupID]: !isNavGroupCollapsed }))}
                               style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}
                             >
                               <span style={{ fontSize: 10, color: 'var(--muted)' }}>
-                                {collapsedNavGroups[group.PageGroupID] ? '▶' : '▼'}
+                                {isNavGroupCollapsed ? '▶' : '▼'}
                               </span>
                               <span style={{ fontSize: 16 }}>{group.Icon || '📁'}</span>
                               <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{group.Label} (Navigation Group)</span>
@@ -467,7 +468,7 @@ export default function UserPermissions({ user }) {
                           </div>
 
                           {/* Navigation Group Children Pages (Tree View style) */}
-                          {groupChildren.length > 0 && !collapsedNavGroups[group.PageGroupID] && (
+                          {groupChildren.length > 0 && !isNavGroupCollapsed && (
                             <div style={{ 
                               position: 'relative', 
                               paddingLeft: 24, 
