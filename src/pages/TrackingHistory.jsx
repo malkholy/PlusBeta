@@ -81,7 +81,7 @@ export default function TrackingHistory() {
     const uniqueTrackNumbers = new Set(rows.map(r => r.TrackNumber)).size;
     
     // Total cost sum
-    const totalValue = rows.reduce((sum, r) => sum + (r.TotalAmount || 0), 0);
+    const totalValue = rows.reduce((sum, r) => sum + Number(r.TotalAmount || 0), 0);
     
     return {
       total,
