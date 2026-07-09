@@ -54,6 +54,9 @@ BEGIN
                 DECLARE @QueryOperation VARCHAR(100) = JSON_VALUE(@LineData, '$.QueryOperation');
                 DECLARE @Description NVARCHAR(500) = JSON_VALUE(@LineData, '$.Description');
                 DECLARE @QuerySQL NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.QuerySQL');
+                DECLARE @DatabaseName VARCHAR(100) = JSON_VALUE(@LineData, '$.DatabaseName');
+                DECLARE @SchemaName VARCHAR(100) = JSON_VALUE(@LineData, '$.SchemaName');
+                DECLARE @TableOrViewName VARCHAR(150) = JSON_VALUE(@LineData, '$.TableOrViewName');
 
                 IF @PageGroupID IS NOT NULL AND @QueryOperation IS NOT NULL
                 BEGIN
@@ -63,15 +66,18 @@ BEGIN
                         SET QueryName = COALESCE(@QueryName, QueryName),
                             SPName = COALESCE(@SPName, SPName),
                             Description = COALESCE(@Description, Description),
-                            QuerySQL = COALESCE(@QuerySQL, QuerySQL)
+                            QuerySQL = COALESCE(@QuerySQL, QuerySQL),
+                            DatabaseName = COALESCE(@DatabaseName, DatabaseName),
+                            SchemaName = COALESCE(@SchemaName, SchemaName),
+                            TableOrViewName = COALESCE(@TableOrViewName, TableOrViewName)
                         WHERE PageGroupID = @PageGroupID AND Operation = @QueryOperation;
                         
                         SET @Message = 'View compiled and QueryMaster updated successfully';
                     END
                     ELSE
                     BEGIN
-                        INSERT INTO [PLS].[QueryMaster] (PageGroupID, QueryName, SPName, Operation, Description, QuerySQL, CreatedBy)
-                        VALUES (@PageGroupID, COALESCE(@QueryName, @QueryOperation), COALESCE(@SPName, N'[PLS].[APIPlusOperation]'), @QueryOperation, @Description, @QuerySQL, @User);
+                        INSERT INTO [PLS].[QueryMaster] (PageGroupID, QueryName, SPName, Operation, Description, QuerySQL, DatabaseName, SchemaName, TableOrViewName, CreatedBy)
+                        VALUES (@PageGroupID, COALESCE(@QueryName, @QueryOperation), COALESCE(@SPName, N'[PLS].[APIPlusOperation]'), @QueryOperation, @Description, @QuerySQL, @DatabaseName, @SchemaName, @TableOrViewName, @User);
                         
                         SET @Message = 'View compiled and QueryMaster registered successfully';
                     END

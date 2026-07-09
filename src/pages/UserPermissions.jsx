@@ -541,6 +541,7 @@ export default function UserPermissions({ user }) {
                                             </div>
                                             <div style={{ fontSize: 9.5, color: 'var(--muted)', marginTop: 2, fontFamily: 'monospace' }}>
                                               {q.SPName} • {q.Operation}
+                                              {q.DatabaseName && ` • Target: ${q.DatabaseName}.${q.SchemaName || 'dbo'}.${q.TableOrViewName}`}
                                             </div>
                                             {q.Description && (
                                               <div style={{ fontSize: 9.5, color: 'var(--hint)', marginTop: 2 }}>
