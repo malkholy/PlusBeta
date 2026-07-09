@@ -23,6 +23,7 @@ export default function UserPermissions({ user }) {
   const [collapsedUserGroups, setCollapsedUserGroups] = useState({});
   const [collapsedNavGroups, setCollapsedNavGroups] = useState({});
   const [collapsedPageQueries, setCollapsedPageQueries] = useState({});
+  const [activeQueryTabs, setActiveQueryTabs] = useState({});
 
   useEffect(() => {
     loadUsers();
@@ -648,6 +649,7 @@ export default function UserPermissions({ user }) {
 
                                       const gridQueries = pageQueries.filter(q => q.QueryType === 'Grid');
                                       const lookupQueries = pageQueries.filter(q => q.QueryType !== 'Grid');
+                                      const activeTab = activeQueryTabs[child.PageGroupID] || 'Grid';
 
                                       return (
                                         <div style={{
@@ -668,27 +670,72 @@ export default function UserPermissions({ user }) {
                                             width: 1,
                                             borderLeft: '1px dashed var(--border)'
                                           }} />
+                                          {/* Tab Bar */}
+                                           <div style={{
+                                             display: 'flex',
+                                             gap: 8,
+                                             borderBottom: '1px solid var(--border)',
+                                             paddingBottom: 4,
+                                             marginBottom: 4,
+                                             userSelect: 'none'
+                                           }}>
+                                             <button
+                                               onClick={() => setActiveQueryTabs(prev => ({ ...prev, [child.PageGroupID]: 'Grid' }))}
+                                               style={{
+                                                 background: 'none',
+                                                 border: 'none',
+                                                 borderBottom: activeTab === 'Grid' ? '2px solid var(--orange)' : '2px solid transparent',
+                                                 color: activeTab === 'Grid' ? 'var(--orange)' : 'var(--muted)',
+                                                 fontWeight: 700,
+                                                 fontSize: 10.5,
+                                                 cursor: 'pointer',
+                                                 padding: '4px 8px',
+                                                 transition: 'all 0.15s',
+                                                 outline: 'none'
+                                               }}
+                                             >
+                                               📊 Grid Data ({gridQueries.length})
+                                             </button>
+                                             <button
+                                               onClick={() => setActiveQueryTabs(prev => ({ ...prev, [child.PageGroupID]: 'Lookup' }))}
+                                               style={{
+                                                 background: 'none',
+                                                 border: 'none',
+                                                 borderBottom: activeTab === 'Lookup' ? '2px solid var(--orange)' : '2px solid transparent',
+                                                 color: activeTab === 'Lookup' ? 'var(--orange)' : 'var(--muted)',
+                                                 fontWeight: 700,
+                                                 fontSize: 10.5,
+                                                 cursor: 'pointer',
+                                                 padding: '4px 8px',
+                                                 transition: 'all 0.15s',
+                                                 outline: 'none'
+                                               }}
+                                             >
+                                               ⚙️ Lookup / Detail ({lookupQueries.length})
+                                             </button>
+                                           </div>
 
-                                          {gridQueries.length > 0 && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                              <div style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: 6, userSelect: 'none' }}>
-                                                <span>📊 Grid Data Queries</span>
-                                              </div>
-                                              {gridQueries.map(q => renderQueryItem(q))}
-                                            </div>
-                                          )}
-
-                                          {lookupQueries.length > 0 && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                                              <div style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: 6, userSelect: 'none' }}>
-                                                <span>⚙️ Lookup / Detail Queries</span>
-                                              </div>
-                                              {lookupQueries.map(q => renderQueryItem(q))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })()}
+                                           {/* Tab Content */}
+                                           {activeTab === 'Grid' ? (
+                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                               {gridQueries.length === 0 ? (
+                                                 <div style={{ fontSize: 11, color: 'var(--muted)', fontStyle: 'italic', padding: 8 }}>No grid data queries registered.</div>
+                                               ) : (
+                                                 gridQueries.map(q => renderQueryItem(q))
+                                               )}
+                                             </div>
+                                           ) : (
+                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                               {lookupQueries.length === 0 ? (
+                                                 <div style={{ fontSize: 11, color: 'var(--muted)', fontStyle: 'italic', padding: 8 }}>No lookup or detail queries registered.</div>
+                                               ) : (
+                                                 lookupQueries.map(q => renderQueryItem(q))
+                                               )}
+                                             </div>
+                                           )}
+                                         </div>
+                                       );
+                                     })()}
                                   </div>
                                 );
                               })}
