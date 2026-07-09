@@ -1101,9 +1101,10 @@ BEGIN
             SET @State = 0;
             SET @Message = 'Success';
 
-            SELECT QueryID, PageGroupID, QueryName, SPName, Operation, Description, QuerySQL, DatabaseName, SchemaName, TableOrViewName, QueryType 
-            FROM [PLS].[QueryMaster]
-            ORDER BY PageGroupID, QueryID;
+            SELECT q.QueryID, pq.PageGroupID, q.QueryName, q.SPName, q.Operation, q.Description, q.QuerySQL, q.DatabaseName, q.SchemaName, q.TableOrViewName, q.QueryType 
+            FROM [PLS].[QueryMaster] q
+            INNER JOIN [PLS].[PageQueries] pq ON q.QueryID = pq.QueryID
+            ORDER BY pq.PageGroupID, q.QueryID;
             RETURN;
         END
 

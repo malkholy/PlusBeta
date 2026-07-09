@@ -61,7 +61,10 @@ BEGIN
 
                 IF @PageGroupID IS NOT NULL AND @QueryOperation IS NOT NULL
                 BEGIN
-                    IF EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE PageGroupID = @PageGroupID AND Operation = @QueryOperation)
+                    DECLARE @ExistingQueryID INT;
+                    SELECT @ExistingQueryID = QueryID FROM [PLS].[QueryMaster] WHERE Operation = @QueryOperation;
+
+                    IF @ExistingQueryID IS NOT NULL
                     BEGIN
                         UPDATE [PLS].[QueryMaster]
                         SET QueryName = COALESCE(@QueryName, QueryName),
@@ -72,14 +75,22 @@ BEGIN
                             SchemaName = COALESCE(@SchemaName, SchemaName),
                             TableOrViewName = COALESCE(@TableOrViewName, TableOrViewName),
                             QueryType = COALESCE(@QueryType, QueryType)
-                        WHERE PageGroupID = @PageGroupID AND Operation = @QueryOperation;
+                        WHERE QueryID = @ExistingQueryID;
+
+                        IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = @PageGroupID AND QueryID = @ExistingQueryID)
+                        BEGIN
+                            INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES (@PageGroupID, @ExistingQueryID);
+                        END
                         
                         SET @Message = 'View compiled and QueryMaster updated successfully';
                     END
                     ELSE
                     BEGIN
-                        INSERT INTO [PLS].[QueryMaster] (PageGroupID, QueryName, SPName, Operation, Description, QuerySQL, DatabaseName, SchemaName, TableOrViewName, QueryType, CreatedBy)
-                        VALUES (@PageGroupID, COALESCE(@QueryName, @QueryOperation), COALESCE(@SPName, N'[PLS].[APIPlusOperation]'), @QueryOperation, @Description, @QuerySQL, @DatabaseName, @SchemaName, @TableOrViewName, COALESCE(@QueryType, 'Grid'), @User);
+                        INSERT INTO [PLS].[QueryMaster] (QueryName, SPName, Operation, Description, QuerySQL, DatabaseName, SchemaName, TableOrViewName, QueryType, CreatedBy)
+                        VALUES (COALESCE(@QueryName, @QueryOperation), COALESCE(@SPName, N'[PLS].[APIPlusOperation]'), @QueryOperation, @Description, @QuerySQL, @DatabaseName, @SchemaName, @TableOrViewName, COALESCE(@QueryType, 'Grid'), @User);
+                        
+                        SET @ExistingQueryID = SCOPE_IDENTITY();
+                        INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES (@PageGroupID, @ExistingQueryID);
                         
                         SET @Message = 'View compiled and QueryMaster registered successfully';
                     END
