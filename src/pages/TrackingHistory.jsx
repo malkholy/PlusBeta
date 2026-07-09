@@ -325,7 +325,7 @@ export default function TrackingHistory() {
                         }}
                       >
                         <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--text)' }}>
-                          {row.TrackNumber} {row.IsLocked && '🔒'}
+                          {row.TrackNumber} {row.IsLocked ? '🔒' : ''}
                         </td>
                         <td style={{ padding: '12px 16px', color: 'var(--text)' }}>{row.VendorName || row.VendorNumber}</td>
                         <td style={{ padding: '12px 16px', color: 'var(--muted)' }}>{row.ForwarderName || '-'}</td>
