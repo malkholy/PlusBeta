@@ -9,3 +9,8 @@ This document outlines workspace-specific rules and instructions for coding assi
 ## Database and Tables
 
 - **New Table Creation**: Every time a new database table is created, you must create a new standalone SQL file named after the table (e.g., `TableName.sql`) inside the `SQLScript/` directory containing its DDL scripts.
+
+## Query Master Registry
+
+- **Query Isolation Requirement**: You must register/create a new separate query row in the `[PLS].[QueryMaster]` table if a query (even with the same Stored Procedure or Operation) is going to be used on a different page. Never share a single Query ID/Query Master registration across multiple pages, because permissions and custom row-level filter clauses are stored per User Group and per Query ID.
+
