@@ -1280,6 +1280,95 @@ BEGIN
         END
 
         -- ---------------------------------------------------------------------
+        -- Operation: SaveQueryMaster
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'SaveQueryMaster'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @QMQueryID INT = NULLIF(JSON_VALUE(@LineData, '$.QueryID'), '');
+            DECLARE @QMQueryName NVARCHAR(150) = JSON_VALUE(@LineData, '$.QueryName');
+            DECLARE @QMSPName NVARCHAR(250) = JSON_VALUE(@LineData, '$.SPName');
+            DECLARE @QMQueryOperation VARCHAR(100) = JSON_VALUE(@LineData, '$.Operation');
+            DECLARE @QMDescription NVARCHAR(500) = JSON_VALUE(@LineData, '$.Description');
+            DECLARE @QMQuerySQL NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.QuerySQL');
+            DECLARE @QMDatabaseName VARCHAR(100) = JSON_VALUE(@LineData, '$.DatabaseName');
+            DECLARE @QMSchemaName VARCHAR(100) = JSON_VALUE(@LineData, '$.SchemaName');
+            DECLARE @QMTableOrViewName VARCHAR(150) = JSON_VALUE(@LineData, '$.TableOrViewName');
+            DECLARE @QMQueryType VARCHAR(50) = JSON_VALUE(@LineData, '$.QueryType');
+
+            IF @QMQueryID IS NOT NULL
+            BEGIN
+                UPDATE [PLS].[QueryMaster]
+                SET QueryName = @QMQueryName,
+                    SPName = @QMSPName,
+                    Operation = @QMQueryOperation,
+                    Description = @QMDescription,
+                    QuerySQL = @QMQuerySQL,
+                    DatabaseName = @QMDatabaseName,
+                    SchemaName = @QMSchemaName,
+                    TableOrViewName = @QMTableOrViewName,
+                    QueryType = @QMQueryType
+                WHERE QueryID = @QMQueryID;
+            END
+            ELSE
+            BEGIN
+                INSERT INTO [PLS].[QueryMaster] (QueryName, SPName, Operation, Description, QuerySQL, DatabaseName, SchemaName, TableOrViewName, QueryType, CreatedBy)
+                VALUES (@QMQueryName, @QMSPName, @QMQueryOperation, @QMDescription, @QMQuerySQL, @QMDatabaseName, @QMSchemaName, @QMTableOrViewName, @QMQueryType, @User);
+                
+                SET @QMQueryID = SCOPE_IDENTITY();
+            END
+
+            SELECT @State AS State, @Message AS Message, @QMQueryID AS QueryID;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: DeleteQueryMaster
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'DeleteQueryMaster'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @DelQueryID INT = JSON_VALUE(@LineData, '$.QueryID');
+
+            DELETE FROM [PLS].[QueryMaster] WHERE QueryID = @DelQueryID;
+
+            SELECT @State AS State, @Message AS Message;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: SaveQueryPageRelation
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'SaveQueryPageRelation'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @RelQueryID INT = JSON_VALUE(@LineData, '$.QueryID');
+            DECLARE @RelPageGroupID VARCHAR(50) = JSON_VALUE(@LineData, '$.PageGroupID');
+            DECLARE @RelIsLinked BIT = JSON_VALUE(@LineData, '$.IsLinked');
+
+            IF @RelIsLinked = 1
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = @RelPageGroupID AND QueryID = @RelQueryID)
+                BEGIN
+                    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES (@RelPageGroupID, @RelQueryID);
+                END
+            END
+            ELSE
+            BEGIN
+                DELETE FROM [PLS].[PageQueries] WHERE PageGroupID = @RelPageGroupID AND QueryID = @RelQueryID;
+            END
+
+            SELECT @State AS State, @Message AS Message;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
         -- Fallback: Unsupported Operation
         -- ---------------------------------------------------------------------
       

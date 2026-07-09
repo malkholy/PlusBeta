@@ -11,6 +11,7 @@ import PurchaseOrderHeader from './pages/PurchaseOrderHeader.jsx';
 import PurchaseOrderLine from './pages/PurchaseOrderLine.jsx';
 import SaftyStockItemMaster from './pages/SaftyStockItemMaster.jsx';
 import UserPermissions from './pages/UserPermissions.jsx';
+import QueryMaster from './pages/QueryMaster.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -180,6 +181,7 @@ const PAGE_COMPONENTS = {
   purchasing_po_line: PurchaseOrderLine,
   safety_stock_item_master: SaftyStockItemMaster,
   user_permissions: UserPermissions,
+  query_master: QueryMaster,
 };
 
 function checkIsAdmin(u, fallbackUsername) {
@@ -293,6 +295,12 @@ export default function App() {
             label: 'User Page Permissions',
             icon: '🔑',
             desc: 'Manage page access permissions for application users'
+          },
+          {
+            id: 'query_master',
+            label: 'Query Master Registry',
+            icon: '⚙️',
+            desc: 'Manage registered database queries and page mappings'
           }
         ]
       });

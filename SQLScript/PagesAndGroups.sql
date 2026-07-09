@@ -65,4 +65,12 @@ BEGIN
     INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
     VALUES ('user_permissions', N'User Page Permissions', N'🔑', N'Manage page access permissions for application users', 0, 'admin_group', 110);
 END
+
+-- 7. Query Master Registry (Page)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'query_master')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('query_master', N'Query Master Registry', N'⚙️', N'Manage registered database queries and page mappings', 0, 'admin_group', 120);
+END
 GO
+
