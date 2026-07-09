@@ -1355,7 +1355,7 @@ function SQLFilterInput({ query, qPerm, onSave, isLoading }) {
               onFocus={() => setShowSuggestions(true)}
               onBlur={handleTextBlur}
               onKeyDown={handleTextKeyDown}
-              placeholder="e.g. Warehouse='1FG'"
+              placeholder=""
               style={{
                 flex: 1,
                 height: 32,
