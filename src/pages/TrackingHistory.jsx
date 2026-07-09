@@ -430,35 +430,51 @@ export default function TrackingHistory() {
                 </div>
               </div>
 
-              {/* Item details */}
+              {/* Shipment Logistics & Mode */}
               <div>
-                <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Line Item & Code details</div>
+                <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Shipment & Cargo Info</div>
                 <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div>
-                    <div style={{ fontSize: 9.5, color: 'var(--muted)' }}>Converted Item Code</div>
-                    <div style={{ fontSize: 12.5, fontWeight: 800, color: 'var(--orange)', fontFamily: 'monospace', marginTop: 2 }}>{selectedRow.ItemCode || '-'}</div>
-                  </div>
-                  
-                  <div style={{ marginTop: 4 }}>
-                    <div style={{ fontSize: 9.5, color: 'var(--muted)' }}>Item Description</div>
-                    <div style={{ fontSize: 12, color: 'var(--text)', marginTop: 2 }}>{selectedRow.ItemDescription || '-'}</div>
-                  </div>
-
-                  {selectedRow.ItemExtraDescription && (
-                    <div style={{ marginTop: 4 }}>
-                      <div style={{ fontSize: 9.5, color: 'var(--muted)' }}>Extra Description</div>
-                      <div style={{ fontSize: 12, color: 'var(--text)', marginTop: 2 }}>{selectedRow.ItemExtraDescription}</div>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     <div>
-                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Quantity</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.LineQuantity} {selectedRow.LogisticLineUnitOfMeasure}</div>
+                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Shipment Mode</span>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.ShipmentMode || '-'}</div>
                     </div>
                     <div>
-                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Unit Price</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.Price?.toLocaleString()} {selectedRow.LineCurrency}</div>
+                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Shipment Size</span>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.ShipmentSize || '-'}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+                    <div>
+                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Destination</span>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.Destination || '-'}</div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Clearing Agent</span>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.ClearingAgentName || '-'}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+                    <div>
+                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Customs Broker Ref</span>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.CustomsBrokerRef || '-'}</div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Certificate No</span>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.CertificateNo || '-'}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+                    <div>
+                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Assign to User</span>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.AssignToUser || '-'}</div>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Request Shipping Date</span>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{formatDate(selectedRow.RequestShippingDate)}</div>
                     </div>
                   </div>
                 </div>

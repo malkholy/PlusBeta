@@ -537,14 +537,11 @@ GO
 CREATE OR ALTER VIEW [dbo].[QGetTrackingHistory] AS
 SELECT        a.LHID, a.TrackNumber, a.TrackState, a.VendorNumber, a.BankNumber, a.ForwarderID, a.PINumber, a.ShipmentState, a.AccountingState, a.DocumentState, a.Currency, a.ETA, a.ETD, a.InvoiceNumber, a.Destination, 
                          a.LogisitcNote, a.AttachmentID, a.CustomsBrokerRef, a.RequestShippingDate, a.OfficeCourierArrivalDate, a.BankCourierArrivalDate, a.SentToBankDate, a.ReleasedFromBankDate, a.FactoryArrivalDate, a.PaymentTermID, 
-                         a.IncoTermID, a.IsLocked, a.CarrierID, a.LogisticCreatedBy, a.LogisticCreatedDate, a.LogisticLastMaintBy, a.LogisticLastMaintDate, a.ClearingAgentID, b.ForwarderName, ll.PackingType AS LinePackingType, c.CarrierName, 
+                         a.IncoTermID, a.IsLocked, a.CarrierID, a.LogisticCreatedBy, a.LogisticCreatedDate, a.LogisticLastMaintBy, a.LogisticLastMaintDate, a.ClearingAgentID, b.ForwarderName, c.CarrierName, 
                          d.ClearingAgentName, e.TermDescription AS PaymentTermDescription, f.DeliveryTermDescription AS IncoTermDescription,
                              (SELECT        StateDescription
                                FROM            LGI.LogisticStateMaster AS x
                                WHERE        (StateValue = a.TrackState)) AS StateDescription,
-                             (SELECT        StateDescription
-                               FROM            LGI.LogisticStateMaster AS x
-                               WHERE        (StateValue = ll.LineState)) AS LineStateDescription,
                              (SELECT        ValueDescription
                                FROM            dbo.Reference AS x
                                WHERE        (RefID = 40) AND (a.ShipmentState = ValueInt)) AS ShipmentStateDescription,
@@ -554,69 +551,7 @@ SELECT        a.LHID, a.TrackNumber, a.TrackState, a.VendorNumber, a.BankNumber,
                              (SELECT        ValueDescription
                                FROM            dbo.Reference AS x
                                WHERE        (RefID = 42) AND (a.AccountingState = ValueInt)) AS AccountingStateDescription, g.VendorName, g.VendorExtraName, z.BankAccountName, a.ItemAmount, a.DiscountAmount, a.FreightAmount, a.InsuranceAmount, 
-                         a.TotalAmount, a.ACINumber, a.BLNumber, a.BLType, a.ShipmentMode, ll.PurchaseOrderNumber, ll.PurchaseOrderLineNumber, ll.LineState, ll.LineNumber, ll.NonItemFlag, ll.ItemID, ll.NonInventoryItemDescription, 
-                         ll.LineQuantity, ll.LogisticLineUnitOfMeasure, ll.Currency AS LineCurrency, ll.Price, ll.Amount AS LineAmount, ll.BatchNumber, ll.Origin, ll.RecievedDate, pom.OriginDescription, (CASE WHEN ll.LineType = 'A' THEN
-                             (SELECT        ass.AssetCode
-                               FROM            ass.AssetMaster ass
-                               WHERE        ll.ItemID = ass.AssetID) WHEN ll.LineType = 'I' THEN
-                             (SELECT        ass.ItemCode
-                               FROM            INV.ItemMaster ass
-                               WHERE        ll.ItemID = ass.ItemID) WHEN ll.LineType = 'N' THEN
-                             (SELECT        ass.ItemCode
-                               FROM            PUR.NonStockItemMaster ass
-                               WHERE        ll.ItemID = ass.NonStockItemID) WHEN ll.LineType = 'S' THEN
-                             (SELECT        ass.SampleCode
-                               FROM            PUR.SampleMaster ass
-                               WHERE        ll.ItemID = ass.SampleID) ELSE
-                             (SELECT        ass.ITCode
-                               FROM            IT.ITItemMaster ass
-                               WHERE        ll.ItemID = ass.ITItemID) END) AS ItemCode, (CASE WHEN ll.LineType = 'A' THEN
-                             (SELECT        ass.AssetDescription
-                               FROM            ass.AssetMaster ass
-                               WHERE        ll.ItemID = ass.AssetID) WHEN ll.LineType = 'I' THEN
-                             (SELECT        ass.ItemDescription
-                               FROM            INV.ItemMaster ass
-                               WHERE        ll.ItemID = ass.ItemID) WHEN ll.LineType = 'N' THEN
-                             (SELECT        ass.ItemDescription
-                               FROM            PUR.NonStockItemMaster ass
-                               WHERE        ll.ItemID = ass.NonStockItemID) WHEN ll.LineType = 'S' THEN
-                             (SELECT        ass.SampleDescription
-                               FROM            PUR.SampleMaster ass
-                               WHERE        ll.ItemID = ass.SampleID) ELSE
-                             (SELECT        ass.ItemDescription
-                               FROM            IT.ITItemMaster ass
-                               WHERE        ll.ItemID = ass.ITItemID) END) AS ItemDescription, (CASE WHEN ll.LineType = 'A' THEN
-                             (SELECT        ass.AssetExtraDescription
-                               FROM            ass.AssetMaster ass
-                               WHERE        ll.ItemID = ass.AssetID) WHEN ll.LineType = 'I' THEN
-                             (SELECT        ass.ItemExtraDescription
-                               FROM            INV.ItemMaster ass
-                               WHERE        ll.ItemID = ass.ItemID) WHEN ll.LineType = 'N' THEN
-                             (SELECT        ass.ItemDescription
-                               FROM            PUR.NonStockItemMaster ass
-                               WHERE        ll.ItemID = ass.NonStockItemID) WHEN ll.LineType = 'S' THEN
-                             (SELECT        ass.SampleDescription
-                               FROM            PUR.SampleMaster ass
-                               WHERE        ll.ItemID = ass.SampleID) ELSE
-                             (SELECT        ass.ItemDescription
-                               FROM            IT.ITItemMaster ass
-                               WHERE        ll.ItemID = ass.ITItemID) END) AS ItemExtraDescription, (CASE WHEN ll.LineType = 'A' THEN
-                             (SELECT        ass.AssetType
-                               FROM            ass.AssetMaster ass
-                               WHERE        ll.ItemID = ass.AssetID) WHEN ll.LineType = 'I' THEN
-                             (SELECT        ass.ItemType
-                               FROM            INV.ItemMaster ass
-                               WHERE        ll.ItemID = ass.ItemID) WHEN ll.LineType = 'N' THEN
-                             (SELECT        ass.ItemType
-                               FROM            PUR.NonStockItemMaster ass
-                               WHERE        ll.ItemID = ass.NonStockItemID) WHEN ll.LineType = 'S' THEN
-                             (SELECT        ass.SampleType
-                               FROM            PUR.SampleMaster ass
-                               WHERE        ll.ItemID = ass.SampleID) ELSE
-                             (SELECT        ass.ItemType
-                               FROM            IT.ITItemMaster ass
-                               WHERE        ll.ItemID = ass.ITItemID) END) AS ItemType, a.ShipmentSize, poh.EnteredDate AS PurchaseOrderEnteredDate, poh.OrderCloseDate AS PurchaseOrderCloseDate, poh.ReleaseDate AS PurchaseOrderReleaseDate, 
-                         a.AssignToUser, a.CertificateNo, poh.RequestArrivalDate
+                         a.TotalAmount, a.ACINumber, a.BLNumber, a.BLType, a.ShipmentMode, a.ShipmentSize, a.AssignToUser, a.CertificateNo
 FROM            LGI.LogisticHeader AS a LEFT OUTER JOIN
                          LGI.ForwarderMaster AS b ON a.ForwarderID = b.ForwarderID LEFT OUTER JOIN
                          LGI.CarrierMaster AS c ON c.CarrierID = a.CarrierID LEFT OUTER JOIN
@@ -624,9 +559,6 @@ FROM            LGI.LogisticHeader AS a LEFT OUTER JOIN
                          ACP.VendorPaymentTerm AS e ON e.PaymentTermID = a.PaymentTermID LEFT OUTER JOIN
                          ACP.VendorDeliveryTerm AS f ON f.DeliveryTermID = a.IncoTermID LEFT OUTER JOIN
                          ACP.VendorMaster AS g ON g.VendorNumber = a.VendorNumber LEFT OUTER JOIN
-                         ACC.BankAccountsMaster AS z ON z.BankAccountNumber = a.BankNumber LEFT OUTER JOIN
-                         LGI.LogisticLine AS ll ON ll.TrackNumber = a.TrackNumber LEFT OUTER JOIN
-                         PUR.PurchasingOriginMaster AS pom ON ll.Origin = pom.Origin LEFT OUTER JOIN
-                         PUR.PurchaseOrderHeader AS poh ON poh.PurchaseOrderNumber = ll.PurchaseOrderNumber;
+                         ACC.BankAccountsMaster AS z ON z.BankAccountNumber = a.BankNumber;
 GO
 
