@@ -564,34 +564,19 @@ export default function UserPermissions({ user }) {
                                     </div>
 
                                     {/* Queries List */}
-                                    {isChildAllowed && pageQueries.length > 0 && !!collapsedPageQueries[child.PageGroupID] && (
-                                      <div style={{
-                                        position: 'relative',
-                                        paddingLeft: 24,
-                                        marginLeft: 16,
-                                        marginTop: 8,
-                                        marginBottom: 8,
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: 6
-                                      }}>
-                                        <div style={{
-                                          position: 'absolute',
-                                          left: 7,
-                                          top: -8,
-                                          bottom: 14,
-                                          width: 1,
-                                          borderLeft: '1px dashed var(--border)'
-                                        }} />
-
-                                        {pageQueries.map(q => (
+                                    {isChildAllowed && pageQueries.length > 0 && !!collapsedPageQueries[child.PageGroupID] && (() => {
+                                      const renderQueryItem = (q) => {
+                                        const qPerm = queryPermissions.find(qp => qp.QueryID === q.QueryID);
+                                        const isGrid = q.QueryType === 'Grid';
+                                        
+                                        return (
                                           <div 
                                             key={q.QueryID}
                                             style={{
                                               position: 'relative',
                                               display: 'flex',
                                               flexDirection: 'column',
-                                              padding: '6px 12px',
+                                              padding: '10px 14px',
                                               background: 'var(--soft)',
                                               border: '1px solid var(--border)',
                                               borderRadius: 8
@@ -606,9 +591,24 @@ export default function UserPermissions({ user }) {
                                               borderTop: '1px dashed var(--border)'
                                             }} />
                                             
-                                            <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>
-                                              ⚡ {q.QueryName}
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                              <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>
+                                                ⚡ {q.QueryName}
+                                              </div>
+                                              <span style={{
+                                                fontSize: 8,
+                                                fontWeight: 800,
+                                                color: isGrid ? 'var(--orange)' : 'var(--muted)',
+                                                background: isGrid ? 'rgba(249,115,22,0.12)' : 'rgba(148,163,184,0.12)',
+                                                padding: '2px 6px',
+                                                borderRadius: 4,
+                                                textTransform: 'uppercase',
+                                                whiteSpace: 'nowrap'
+                                              }}>
+                                                {isGrid ? 'Main Grid' : q.QueryType || 'Lookup'}
+                                              </span>
                                             </div>
+                                            
                                             <div style={{ fontSize: 9.5, color: 'var(--muted)', marginTop: 2, fontFamily: 'monospace' }}>
                                               {q.SPName} • {q.Operation}
                                               {q.DatabaseName && ` • Target: ${q.DatabaseName}.${q.SchemaName || 'dbo'}.${q.TableOrViewName}`}
@@ -636,21 +636,59 @@ export default function UserPermissions({ user }) {
                                                 {q.QuerySQL}
                                               </pre>
                                             )}
-                                            {(() => {
-                                              const qPerm = queryPermissions.find(qp => qp.QueryID === q.QueryID);
-                                              return (
-                                                <SQLFilterInput 
-                                                  query={q}
-                                                  qPerm={qPerm}
-                                                  onSave={(val, mode, builder) => handleSaveQueryPermission(q.QueryID, val, mode, builder)}
-                                                  isLoading={actionLoadingId === `q_${q.QueryID}`}
-                                                />
-                                              );
-                                            })()}
+                                            <SQLFilterInput 
+                                              query={q}
+                                              qPerm={qPerm}
+                                              onSave={(val, mode, builder) => handleSaveQueryPermission(q.QueryID, val, mode, builder)}
+                                              isLoading={actionLoadingId === `q_${q.QueryID}`}
+                                            />
                                           </div>
-                                        ))}
-                                      </div>
-                                    )}
+                                        );
+                                      };
+
+                                      const gridQueries = pageQueries.filter(q => q.QueryType === 'Grid');
+                                      const lookupQueries = pageQueries.filter(q => q.QueryType !== 'Grid');
+
+                                      return (
+                                        <div style={{
+                                          position: 'relative',
+                                          paddingLeft: 24,
+                                          marginLeft: 16,
+                                          marginTop: 8,
+                                          marginBottom: 8,
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          gap: 12
+                                        }}>
+                                          <div style={{
+                                            position: 'absolute',
+                                            left: 7,
+                                            top: -8,
+                                            bottom: 14,
+                                            width: 1,
+                                            borderLeft: '1px dashed var(--border)'
+                                          }} />
+
+                                          {gridQueries.length > 0 && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                              <div style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--orange)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: 6, userSelect: 'none' }}>
+                                                <span>📊 Grid Data Queries</span>
+                                              </div>
+                                              {gridQueries.map(q => renderQueryItem(q))}
+                                            </div>
+                                          )}
+
+                                          {lookupQueries.length > 0 && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                                              <div style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: 6, userSelect: 'none' }}>
+                                                <span>⚙️ Lookup / Detail Queries</span>
+                                              </div>
+                                              {lookupQueries.map(q => renderQueryItem(q))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 );
                               })}

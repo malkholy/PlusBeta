@@ -57,6 +57,7 @@ BEGIN
                 DECLARE @DatabaseName VARCHAR(100) = JSON_VALUE(@LineData, '$.DatabaseName');
                 DECLARE @SchemaName VARCHAR(100) = JSON_VALUE(@LineData, '$.SchemaName');
                 DECLARE @TableOrViewName VARCHAR(150) = JSON_VALUE(@LineData, '$.TableOrViewName');
+                DECLARE @QueryType VARCHAR(50) = JSON_VALUE(@LineData, '$.QueryType');
 
                 IF @PageGroupID IS NOT NULL AND @QueryOperation IS NOT NULL
                 BEGIN
@@ -69,15 +70,16 @@ BEGIN
                             QuerySQL = COALESCE(@QuerySQL, QuerySQL),
                             DatabaseName = COALESCE(@DatabaseName, DatabaseName),
                             SchemaName = COALESCE(@SchemaName, SchemaName),
-                            TableOrViewName = COALESCE(@TableOrViewName, TableOrViewName)
+                            TableOrViewName = COALESCE(@TableOrViewName, TableOrViewName),
+                            QueryType = COALESCE(@QueryType, QueryType)
                         WHERE PageGroupID = @PageGroupID AND Operation = @QueryOperation;
                         
                         SET @Message = 'View compiled and QueryMaster updated successfully';
                     END
                     ELSE
                     BEGIN
-                        INSERT INTO [PLS].[QueryMaster] (PageGroupID, QueryName, SPName, Operation, Description, QuerySQL, DatabaseName, SchemaName, TableOrViewName, CreatedBy)
-                        VALUES (@PageGroupID, COALESCE(@QueryName, @QueryOperation), COALESCE(@SPName, N'[PLS].[APIPlusOperation]'), @QueryOperation, @Description, @QuerySQL, @DatabaseName, @SchemaName, @TableOrViewName, @User);
+                        INSERT INTO [PLS].[QueryMaster] (PageGroupID, QueryName, SPName, Operation, Description, QuerySQL, DatabaseName, SchemaName, TableOrViewName, QueryType, CreatedBy)
+                        VALUES (@PageGroupID, COALESCE(@QueryName, @QueryOperation), COALESCE(@SPName, N'[PLS].[APIPlusOperation]'), @QueryOperation, @Description, @QuerySQL, @DatabaseName, @SchemaName, @TableOrViewName, COALESCE(@QueryType, 'Grid'), @User);
                         
                         SET @Message = 'View compiled and QueryMaster registered successfully';
                     END
