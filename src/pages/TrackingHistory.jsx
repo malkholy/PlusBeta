@@ -220,7 +220,7 @@ export default function TrackingHistory() {
         </div>
 
         <button 
-          onClick={loadData}
+          onClick={() => loadData()}
           disabled={loading}
           style={{
             height: 38,
