@@ -95,7 +95,7 @@ export default function TrackingHistory() {
     if (!dStr) return '-';
     try {
       const d = new Date(dStr);
-      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' });
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' });
     } catch (e) {
       return dStr;
     }
