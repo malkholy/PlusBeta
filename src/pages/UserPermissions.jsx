@@ -24,6 +24,7 @@ export default function UserPermissions({ user }) {
   const [collapsedNavGroups, setCollapsedNavGroups] = useState({});
   const [collapsedPageQueries, setCollapsedPageQueries] = useState({});
   const [activeQueryTabs, setActiveQueryTabs] = useState({});
+  const [showSQLPreviews, setShowSQLPreviews] = useState({});
 
   useEffect(() => {
     loadUsers();
@@ -569,6 +570,7 @@ export default function UserPermissions({ user }) {
                                       const renderQueryItem = (q) => {
                                         const qPerm = queryPermissions.find(qp => qp.QueryID === q.QueryID);
                                         const isGrid = q.QueryType === 'Grid';
+                                        const showSQL = !!showSQLPreviews[q.QueryID];
                                         
                                         return (
                                           <div 
@@ -620,6 +622,28 @@ export default function UserPermissions({ user }) {
                                               </div>
                                             )}
                                             {q.QuerySQL && (
+                                              <button
+                                                onClick={() => setShowSQLPreviews(prev => ({ ...prev, [q.QueryID]: !prev[q.QueryID] }))}
+                                                style={{
+                                                  background: 'none',
+                                                  border: 'none',
+                                                  color: 'var(--orange)',
+                                                  fontSize: 9.5,
+                                                  fontWeight: 700,
+                                                  cursor: 'pointer',
+                                                  padding: '2px 0',
+                                                  marginTop: 4,
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  gap: 4,
+                                                  outline: 'none',
+                                                  alignSelf: 'flex-start'
+                                                }}
+                                              >
+                                                {showSQL ? '▼ Hide Query SQL' : '▶ Show Query SQL'}
+                                              </button>
+                                            )}
+                                            {q.QuerySQL && showSQL && (
                                               <pre style={{
                                                 marginTop: 6,
                                                 padding: '6px 10px',
@@ -836,7 +860,9 @@ export default function UserPermissions({ user }) {
                                       borderLeft: '1px dashed var(--border)'
                                     }} />
 
-                                    {pageQueries.map(q => (
+                                    {pageQueries.map(q => {
+                                      const showSQL = !!showSQLPreviews[q.QueryID];
+                                      return (
                                       <div 
                                         key={q.QueryID}
                                         style={{
@@ -870,6 +896,28 @@ export default function UserPermissions({ user }) {
                                           </div>
                                         )}
                                         {q.QuerySQL && (
+                                          <button
+                                            onClick={() => setShowSQLPreviews(prev => ({ ...prev, [q.QueryID]: !prev[q.QueryID] }))}
+                                            style={{
+                                              background: 'none',
+                                              border: 'none',
+                                              color: 'var(--orange)',
+                                              fontSize: 9.5,
+                                              fontWeight: 700,
+                                              cursor: 'pointer',
+                                              padding: '2px 0',
+                                              marginTop: 4,
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: 4,
+                                              outline: 'none',
+                                              alignSelf: 'flex-start'
+                                            }}
+                                          >
+                                            {showSQL ? '▼ Hide Query SQL' : '▶ Show Query SQL'}
+                                          </button>
+                                        )}
+                                        {q.QuerySQL && showSQL && (
                                           <pre style={{
                                             marginTop: 6,
                                             padding: '6px 10px',
@@ -899,7 +947,7 @@ export default function UserPermissions({ user }) {
                                           );
                                         })()}
                                       </div>
-                                    ))}
+                                    )})} 
                                   </div>
                                 )}
                               </div>
