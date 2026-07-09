@@ -19,6 +19,11 @@ export default function UserPermissions({ user }) {
   const [userSearch, setUserSearch] = useState('');
   const [error, setError] = useState('');
 
+  // Collapse/Expand states
+  const [collapsedUserGroups, setCollapsedUserGroups] = useState({});
+  const [collapsedNavGroups, setCollapsedNavGroups] = useState({});
+  const [collapsedPageQueries, setCollapsedPageQueries] = useState({});
+
   useEffect(() => {
     loadUsers();
     loadPagesAndGroups();
@@ -172,6 +177,14 @@ export default function UserPermissions({ user }) {
     (u.Name || '').toLowerCase().includes(userSearch.toLowerCase())
   );
 
+  // Group users by User Group
+  const groupedUsers = filteredUsers.reduce((acc, u) => {
+    const grp = u.GroupName || 'General Users';
+    if (!acc[grp]) acc[grp] = [];
+    acc[grp].push(u);
+    return acc;
+  }, {});
+
   // Group pages by parent groups
   const groups = pagesAndGroups.filter(pg => pg.IsGroup);
   const orphanPages = pagesAndGroups.filter(pg => !pg.IsGroup && !pg.ParentID);
@@ -225,80 +238,109 @@ export default function UserPermissions({ user }) {
               <div style={{ textAlign: 'center', padding: 24, color: 'var(--muted)', fontSize: 13 }}>Loading users...</div>
             ) : filteredUsers.length === 0 ? (
               <div style={{ textAlign: 'center', padding: 24, color: 'var(--muted)', fontSize: 13 }}>No users found.</div>
-            ) : filteredUsers.map(u => {
-              const isAdmin = isUserAdmin(u);
-              const isSelected = selectedUser && selectedUser.Username === u.Username;
-              const initials = (u.Name || u.Username).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            ) : Object.keys(groupedUsers).map(groupName => {
+              const groupUsers = groupedUsers[groupName];
+              const isCollapsed = !!collapsedUserGroups[groupName];
               
               return (
-                <div 
-                  key={u.Username}
-                  onClick={() => setSelectedUser(u)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '12px 14px',
-                    borderRadius: 12,
-                    cursor: 'pointer',
-                    background: isSelected ? 'rgba(249,115,22,0.1)' : 'transparent',
-                    border: isSelected ? '1px solid rgba(249,115,22,0.2)' : '1px solid transparent',
-                    transition: 'all 0.15s',
-                    marginBottom: 4
-                  }}
-                  onMouseEnter={e => {
-                    if (!isSelected) {
-                      e.currentTarget.style.background = 'var(--soft)';
-                    }
-                  }}
-                  onMouseLeave={e => {
-                    if (!isSelected) {
-                      e.currentTarget.style.background = 'transparent';
-                    }
-                  }}
-                >
-                  <div style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: '50%',
-                    background: isAdmin ? 'linear-gradient(135deg, var(--orange), var(--orange2))' : 'var(--border)',
-                    color: isAdmin ? '#fff' : 'var(--muted)',
-                    fontWeight: 700,
-                    fontSize: 12,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}>
-                    {initials}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {u.Name || u.Username}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span>{u.Username}</span>
-                      {u.GroupName && (
-                        <>
-                          <span style={{ color: 'var(--border)', fontSize: 9 }}>•</span>
-                          <span style={{ fontStyle: 'italic', color: 'var(--hint)' }}>{u.GroupName}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {isAdmin && (
-                    <span style={{
-                      fontSize: 9,
-                      fontWeight: 800,
-                      color: 'var(--orange)',
-                      background: 'rgba(249,115,22,0.12)',
-                      padding: '2px 6px',
-                      borderRadius: 6,
-                      textTransform: 'uppercase'
-                    }}>
-                      Admin
+                <div key={groupName} style={{ marginBottom: 12 }}>
+                  {/* Group Header */}
+                  <div 
+                    onClick={() => setCollapsedUserGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }))}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      cursor: 'pointer',
+                      borderRadius: 8,
+                      background: 'var(--soft)',
+                      border: '1px solid var(--border)',
+                      marginBottom: 6,
+                      userSelect: 'none'
+                    }}
+                  >
+                    <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      📁 {groupName} ({groupUsers.length})
                     </span>
-                  )}
+                    <span style={{ fontSize: 10, color: 'var(--muted)' }}>
+                      {isCollapsed ? '▶' : '▼'}
+                    </span>
+                  </div>
+
+                  {/* Group Users List */}
+                  {!isCollapsed && groupUsers.map(u => {
+                    const isAdmin = isUserAdmin(u);
+                    const isSelected = selectedUser && selectedUser.Username === u.Username;
+                    const initials = (u.Name || u.Username).split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    
+                    return (
+                      <div 
+                        key={u.Username}
+                        onClick={() => setSelectedUser(u)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '10px 12px',
+                          borderRadius: 10,
+                          cursor: 'pointer',
+                          background: isSelected ? 'rgba(249,115,22,0.1)' : 'transparent',
+                          border: isSelected ? '1px solid rgba(249,115,22,0.2)' : '1px solid transparent',
+                          transition: 'all 0.15s',
+                          marginBottom: 4,
+                          marginLeft: 4
+                        }}
+                        onMouseEnter={e => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background = 'var(--soft)';
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background = 'transparent';
+                          }
+                        }}
+                      >
+                        <div style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          background: isAdmin ? 'linear-gradient(135deg, var(--orange), var(--orange2))' : 'var(--border)',
+                          color: isAdmin ? '#fff' : 'var(--muted)',
+                          fontWeight: 700,
+                          fontSize: 11,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0
+                        }}>
+                          {initials}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {u.Name || u.Username}
+                          </div>
+                          <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 1 }}>
+                            {u.Username}
+                          </div>
+                        </div>
+                        {isAdmin && (
+                          <span style={{
+                            fontSize: 8,
+                            fontWeight: 800,
+                            color: 'var(--orange)',
+                            background: 'rgba(249,115,22,0.12)',
+                            padding: '1px 5px',
+                            borderRadius: 4,
+                            textTransform: 'uppercase'
+                          }}>
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}
@@ -399,7 +441,13 @@ export default function UserPermissions({ user }) {
                         >
                           {/* Navigation Group Header */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 8 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div 
+                              onClick={() => setCollapsedNavGroups(prev => ({ ...prev, [group.PageGroupID]: !prev[group.PageGroupID] }))}
+                              style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}
+                            >
+                              <span style={{ fontSize: 10, color: 'var(--muted)' }}>
+                                {collapsedNavGroups[group.PageGroupID] ? '▶' : '▼'}
+                              </span>
                               <span style={{ fontSize: 16 }}>{group.Icon || '📁'}</span>
                               <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)' }}>{group.Label} (Navigation Group)</span>
                             </div>
@@ -419,7 +467,7 @@ export default function UserPermissions({ user }) {
                           </div>
 
                           {/* Navigation Group Children Pages (Tree View style) */}
-                          {groupChildren.length > 0 && (
+                          {groupChildren.length > 0 && !collapsedNavGroups[group.PageGroupID] && (
                             <div style={{ 
                               position: 'relative', 
                               paddingLeft: 24, 
@@ -477,6 +525,27 @@ export default function UserPermissions({ user }) {
                                             {child.Description}
                                           </div>
                                         )}
+                                        {isChildAllowed && pageQueries.length > 0 && (
+                                          <button
+                                            onClick={() => setCollapsedPageQueries(prev => ({ ...prev, [child.PageGroupID]: !prev[child.PageGroupID] }))}
+                                            style={{
+                                              background: 'none',
+                                              border: 'none',
+                                              color: 'var(--orange)',
+                                              fontSize: 10.5,
+                                              fontWeight: 700,
+                                              cursor: 'pointer',
+                                              padding: '2px 0',
+                                              marginTop: 6,
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: 4,
+                                              outline: 'none'
+                                            }}
+                                          >
+                                            {!!collapsedPageQueries[child.PageGroupID] ? '▼ Hide Row Filters' : '▶ Show Row Filters'} ({pageQueries.length})
+                                          </button>
+                                        )}
                                       </div>
 
                                       <label style={{ display: 'inline-flex', alignItems: 'center', cursor: isGroupAllowed ? 'pointer' : 'not-allowed' }}>
@@ -494,7 +563,7 @@ export default function UserPermissions({ user }) {
                                     </div>
 
                                     {/* Queries List */}
-                                    {isChildAllowed && pageQueries.length > 0 && (
+                                    {isChildAllowed && pageQueries.length > 0 && !!collapsedPageQueries[child.PageGroupID] && (
                                       <div style={{
                                         position: 'relative',
                                         paddingLeft: 24,
