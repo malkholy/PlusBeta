@@ -527,7 +527,7 @@ export default function UserPermissions({ user }) {
                                             {child.Description}
                                           </div>
                                         )}
-                                        {isChildAllowed && pageQueries.length > 0 && (
+                                        {pageQueries.length > 0 && (
                                           <button
                                             onClick={() => setCollapsedPageQueries(prev => ({ ...prev, [child.PageGroupID]: !prev[child.PageGroupID] }))}
                                             style={{
@@ -565,7 +565,7 @@ export default function UserPermissions({ user }) {
                                     </div>
 
                                     {/* Queries List */}
-                                    {isChildAllowed && pageQueries.length > 0 && !!collapsedPageQueries[child.PageGroupID] && (() => {
+                                    {pageQueries.length > 0 && !!collapsedPageQueries[child.PageGroupID] && (() => {
                                       const renderQueryItem = (q) => {
                                         const qPerm = queryPermissions.find(qp => qp.QueryID === q.QueryID);
                                         const isGrid = q.QueryType === 'Grid';
@@ -754,6 +754,7 @@ export default function UserPermissions({ user }) {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                           {orphanPages.map(page => {
                             const isAllowed = hasPermission(page.PageGroupID);
+                            const pageQueries = queries.filter(q => q.PageGroupID === page.PageGroupID);
                             return (
                               <div key={page.PageGroupID} style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
                                 {/* Page Card */}
@@ -778,6 +779,27 @@ export default function UserPermissions({ user }) {
                                         {page.Description}
                                       </div>
                                     )}
+                                    {pageQueries.length > 0 && (
+                                      <button
+                                        onClick={() => setCollapsedPageQueries(prev => ({ ...prev, [page.PageGroupID]: !prev[page.PageGroupID] }))}
+                                        style={{
+                                          background: 'none',
+                                          border: 'none',
+                                          color: 'var(--orange)',
+                                          fontSize: 10.5,
+                                          fontWeight: 700,
+                                          cursor: 'pointer',
+                                          padding: '2px 0',
+                                          marginTop: 6,
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: 4,
+                                          outline: 'none'
+                                        }}
+                                      >
+                                        {!!collapsedPageQueries[page.PageGroupID] ? '▼ Hide Row Filters' : '▶ Show Row Filters'} ({pageQueries.length})
+                                      </button>
+                                    )}
                                   </div>
                                   <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
                                     <input 
@@ -793,8 +815,8 @@ export default function UserPermissions({ user }) {
                                   </label>
                                 </div>
 
-                                {/* Queries List */}
-                                {isAllowed && pageQueries.length > 0 && (
+                                 {/* Queries List */}
+                                 {pageQueries.length > 0 && !!collapsedPageQueries[page.PageGroupID] && (
                                   <div style={{
                                     position: 'relative',
                                     paddingLeft: 24,
