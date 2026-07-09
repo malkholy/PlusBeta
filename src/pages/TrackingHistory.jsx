@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react';
 import { apiCall } from '../shared/api.js';
 
+const getTodayString = () => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const getMonthBeginString = () => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  return `${yyyy}-${mm}-01`;
+};
+
 export default function TrackingHistory() {
   const [rows, setRows] = useState([]);
   const [vendors, setVendors] = useState([]);
@@ -11,15 +26,16 @@ export default function TrackingHistory() {
   // Filter states
   const [trackNumber, setTrackNumber] = useState('');
   const [selectedVendor, setSelectedVendor] = useState('');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [fromDate, setFromDate] = useState(getMonthBeginString());
+  const [toDate, setToDate] = useState(getTodayString());
 
   // Selected row for details panel
   const [selectedRow, setSelectedRow] = useState(null);
 
   useEffect(() => {
     loadVendors();
-    loadData();
+    // Use helper dates directly on first load to prevent race condition on initial render closure
+    loadData(getMonthBeginString(), getTodayString());
   }, []);
 
   async function loadVendors() {
@@ -35,15 +51,15 @@ export default function TrackingHistory() {
     setLoadingVendors(false);
   }
 
-  async function loadData() {
+  async function loadData(overrideFromDate, overrideToDate) {
     setLoading(true);
     setError('');
     try {
       const payload = {
         TrackNumber: trackNumber.trim() || null,
         VendorNumber: selectedVendor || null,
-        FromDate: fromDate || null,
-        ToDate: toDate || null
+        FromDate: overrideFromDate !== undefined ? overrideFromDate : (fromDate || null),
+        ToDate: overrideToDate !== undefined ? overrideToDate : (toDate || null)
       };
 
       const res = await apiCall('GetTrackingHistory', payload, {}, 'logistics');
