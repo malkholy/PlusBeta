@@ -16,6 +16,8 @@ BEGIN
         [Username] VARCHAR(100) NOT NULL,
         [QueryID] INT NOT NULL,
         [SQLFilter] NVARCHAR(MAX) NULL,
+        [CondMode] VARCHAR(50) NOT NULL DEFAULT 'sql',
+        [CondBuilder] NVARCHAR(MAX) NULL,
         [GrantedBy] NVARCHAR(100) NULL,
         [GrantedDate] DATETIME NOT NULL DEFAULT GETDATE(),
         CONSTRAINT FK_UserQueryPermissions_QueryMaster FOREIGN KEY ([QueryID]) REFERENCES [PLS].[QueryMaster]([QueryID])
@@ -23,5 +25,19 @@ BEGIN
 
     CREATE NONCLUSTERED INDEX IX_UserQueryPermissions_UserQuery 
     ON [PLS].[UserQueryPermissions] (Username, QueryID);
+END
+ELSE
+BEGIN
+    -- Add CondMode column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('PLS.UserQueryPermissions') AND name = 'CondMode')
+    BEGIN
+        ALTER TABLE [PLS].[UserQueryPermissions] ADD [CondMode] VARCHAR(50) NOT NULL DEFAULT 'sql';
+    END
+
+    -- Add CondBuilder column if it doesn't exist
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('PLS.UserQueryPermissions') AND name = 'CondBuilder')
+    BEGIN
+        ALTER TABLE [PLS].[UserQueryPermissions] ADD [CondBuilder] NVARCHAR(MAX) NULL;
+    END
 END
 GO

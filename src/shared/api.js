@@ -15,7 +15,7 @@ const BASE_BODY = {
 };
 
 export async function apiCall(operation, lineData = null, extraParams = {}, apiType = 'default') {
-  const target = (apiType === true || apiType === 'express') ? 'express' : (apiType === 'hr' ? 'hr' : (apiType === 'plus' ? 'plus' : 'default'));
+  const target = (apiType === true || apiType === 'express') ? 'express' : (apiType === 'hr' ? 'hr' : (apiType === 'plus' ? 'plus' : (apiType === 'query' ? 'query' : (apiType === 'purchasing' ? 'purchasing' : 'default'))));
 
   let url = '';
   let spName = '';
@@ -29,6 +29,12 @@ export async function apiCall(operation, lineData = null, extraParams = {}, apiT
   } else if (target === 'plus') {
     url = IS_DEV ? '/plus-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
     spName = 'APIPlusOperation';
+  } else if (target === 'query') {
+    url = IS_DEV ? '/query-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
+    spName = 'APIPlusQueryOperation';
+  } else if (target === 'purchasing') {
+    url = IS_DEV ? '/purchasing-api/General/GeneralAPI/' : '/plus-api/General/GeneralAPI/';
+    spName = IS_DEV ? 'APIPlusPurchasingOperation' : 'APIPlusOperation';
   } else {
     url = IS_DEV ? '/api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
     spName = 'APIERPControlOperation';

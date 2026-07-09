@@ -42,12 +42,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'purchasi
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('purchasing_po_header', N'Get Purchase Orders', N'[PLS].[APIPlusOperation]', 'GetPurchaseOrders', N'Retrieve purchase order header list', 
-            N'SELECT a.PurchaseOrderNumber, a.EnteredDate, a.VendorNumber, a.TotalAmount, a.OrderState, d.VendorName FROM PUR.PurchaseOrderHeader a LEFT JOIN PUR.VendorMaster d ON a.VendorNumber = d.VendorNumber WHERE a.EnteredDate BETWEEN @FromDate AND @ToDate ORDER BY a.PurchaseOrderNumber DESC;', 'System');
+            N'SELECT PurchaseOrderNumber, EnteredDate, VendorNumber, TotalAmount, OrderState, VendorName FROM QGetPurchaseOrders WHERE EnteredDate BETWEEN @FromDate AND @ToDate ORDER BY PurchaseOrderNumber DESC;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT a.PurchaseOrderNumber, a.EnteredDate, a.VendorNumber, a.TotalAmount, a.OrderState, d.VendorName FROM PUR.PurchaseOrderHeader a LEFT JOIN PUR.VendorMaster d ON a.VendorNumber = d.VendorNumber WHERE a.EnteredDate BETWEEN @FromDate AND @ToDate ORDER BY a.PurchaseOrderNumber DESC;'
+    SET [QuerySQL] = N'SELECT PurchaseOrderNumber, EnteredDate, VendorNumber, TotalAmount, OrderState, VendorName FROM QGetPurchaseOrders WHERE EnteredDate BETWEEN @FromDate AND @ToDate ORDER BY PurchaseOrderNumber DESC;'
     WHERE [PageGroupID] = 'purchasing_po_header' AND [Operation] = 'GetPurchaseOrders';
 END
 
@@ -55,12 +55,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'purchasi
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('purchasing_po_header', N'Get Purchase Order Lines', N'[PLS].[APIPlusOperation]', 'GetPurchaseOrderLines', N'Retrieve purchase order line item details', 
-            N'SELECT LineNumber, ItemCode, OrderedQuantity, UnitPrice, TotalAmount FROM PUR.PurchaseOrderLine WHERE PurchaseOrderNumber = @PONumber ORDER BY LineNumber;', 'System');
+            N'SELECT Line, PurchasedCode AS ItemCode, QuantityOrdered AS OrderedQuantity, Price AS UnitPrice, LineAmount AS TotalAmount FROM QGetPurchaseOrderLines WHERE OrderNumber = @PONumber ORDER BY Line;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT LineNumber, ItemCode, OrderedQuantity, UnitPrice, TotalAmount FROM PUR.PurchaseOrderLine WHERE PurchaseOrderNumber = @PONumber ORDER BY LineNumber;'
+    SET [QuerySQL] = N'SELECT Line, PurchasedCode AS ItemCode, QuantityOrdered AS OrderedQuantity, Price AS UnitPrice, LineAmount AS TotalAmount FROM QGetPurchaseOrderLines WHERE OrderNumber = @PONumber ORDER BY Line;'
     WHERE [PageGroupID] = 'purchasing_po_header' AND [Operation] = 'GetPurchaseOrderLines';
 END
 
@@ -68,12 +68,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'purchasi
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('purchasing_po_header', N'Get Vendors', N'[PLS].[APIPlusOperation]', 'GetVendors', N'Retrieve vendor master details', 
-            N'SELECT VendorNumber, VendorName FROM PUR.VendorMaster ORDER BY VendorName;', 'System');
+            N'SELECT VendorNumber, VendorName FROM QGetVendors ORDER BY VendorName;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT VendorNumber, VendorName FROM PUR.VendorMaster ORDER BY VendorName;'
+    SET [QuerySQL] = N'SELECT VendorNumber, VendorName FROM QGetVendors ORDER BY VendorName;'
     WHERE [PageGroupID] = 'purchasing_po_header' AND [Operation] = 'GetVendors';
 END
 
@@ -83,12 +83,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'purchasi
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('purchasing_po_line', N'Get All Purchase Order Lines', N'[PLS].[APIPlusOperation]', 'GetPurchaseOrderLinesAll', N'Retrieve complete catalog of purchase order lines', 
-            N'SELECT PurchaseOrderNumber, LineNumber, ItemCode, OrderedQuantity, UnitPrice, TotalAmount FROM PUR.PurchaseOrderLine WHERE EnteredDate BETWEEN @FromDate AND @ToDate ORDER BY PurchaseOrderNumber DESC, LineNumber;', 'System');
+            N'SELECT OrderNumber AS PurchaseOrderNumber, Line AS LineNumber, PurchasedCode AS ItemCode, QuantityOrdered AS OrderedQuantity, Price AS UnitPrice, LineAmount AS TotalAmount FROM QGetPurchaseOrderLinesAll WHERE OrderCreatedDate BETWEEN @FromDate AND @ToDate ORDER BY OrderNumber DESC, Line;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT PurchaseOrderNumber, LineNumber, ItemCode, OrderedQuantity, UnitPrice, TotalAmount FROM PUR.PurchaseOrderLine WHERE EnteredDate BETWEEN @FromDate AND @ToDate ORDER BY PurchaseOrderNumber DESC, LineNumber;'
+    SET [QuerySQL] = N'SELECT OrderNumber AS PurchaseOrderNumber, Line AS LineNumber, PurchasedCode AS ItemCode, QuantityOrdered AS OrderedQuantity, Price AS UnitPrice, LineAmount AS TotalAmount FROM QGetPurchaseOrderLinesAll WHERE OrderCreatedDate BETWEEN @FromDate AND @ToDate ORDER BY OrderNumber DESC, Line;'
     WHERE [PageGroupID] = 'purchasing_po_line' AND [Operation] = 'GetPurchaseOrderLinesAll';
 END
 
@@ -96,12 +96,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'purchasi
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('purchasing_po_line', N'Get Vendors', N'[PLS].[APIPlusOperation]', 'GetVendors', N'Retrieve vendor master details', 
-            N'SELECT VendorNumber, VendorName FROM PUR.VendorMaster ORDER BY VendorName;', 'System');
+            N'SELECT VendorNumber, VendorName FROM QGetVendors ORDER BY VendorName;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT VendorNumber, VendorName FROM PUR.VendorMaster ORDER BY VendorName;'
+    SET [QuerySQL] = N'SELECT VendorNumber, VendorName FROM QGetVendors ORDER BY VendorName;'
     WHERE [PageGroupID] = 'purchasing_po_line' AND [Operation] = 'GetVendors';
 END
 
@@ -109,12 +109,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'purchasi
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('purchasing_po_line', N'Get Items', N'[PLS].[APIPlusOperation]', 'GetItems', N'Retrieve items list from master', 
-            N'SELECT ItemCode, ItemDescription FROM PUR.ItemMaster ORDER BY ItemCode;', 'System');
+            N'SELECT ItemCode, ItemDescription FROM QGetItems ORDER BY ItemCode;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT ItemCode, ItemDescription FROM PUR.ItemMaster ORDER BY ItemCode;'
+    SET [QuerySQL] = N'SELECT ItemCode, ItemDescription FROM QGetItems ORDER BY ItemCode;'
     WHERE [PageGroupID] = 'purchasing_po_line' AND [Operation] = 'GetItems';
 END
 
@@ -124,12 +124,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'safety_s
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('safety_stock_item_master', N'Get Safety Stock Items', N'[PLS].[APIPlusOperation]', 'GetSaftyStockItems', N'Retrieve active items monitored for safety stock', 
-            N'SELECT ID, ItemCode, SaftyStock, LeadTime, ServiceLevelFactor, ItemType FROM PUR.SaftyStockItemMaster ORDER BY ItemCode;', 'System');
+            N'SELECT ID, ItemCode, SaftyStock, LeadTime, ServiceLevelFactor, ItemType FROM QGetSaftyStockItems ORDER BY ItemCode;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT ID, ItemCode, SaftyStock, LeadTime, ServiceLevelFactor, ItemType FROM PUR.SaftyStockItemMaster ORDER BY ItemCode;'
+    SET [QuerySQL] = N'SELECT ID, ItemCode, SaftyStock, LeadTime, ServiceLevelFactor, ItemType FROM QGetSaftyStockItems ORDER BY ItemCode;'
     WHERE [PageGroupID] = 'safety_stock_item_master' AND [Operation] = 'GetSaftyStockItems';
 END
 
@@ -137,12 +137,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'safety_s
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('safety_stock_item_master', N'Get Item Balance', N'[PLS].[APIPlusOperation]', 'GetItemBalance', N'Retrieve on-hand warehouse inventory balance', 
-            N'SELECT ItemCode, OnHandBalance FROM PUR.ItemBalance WHERE ItemCode = @ItemCode;', 'System');
+            N'SELECT ItemCode, ItemBalance AS OnHandBalance FROM QGetItemBalance WHERE ItemCode = @ItemCode;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT ItemCode, OnHandBalance FROM PUR.ItemBalance WHERE ItemCode = @ItemCode;'
+    SET [QuerySQL] = N'SELECT ItemCode, ItemBalance AS OnHandBalance FROM QGetItemBalance WHERE ItemCode = @ItemCode;'
     WHERE [PageGroupID] = 'safety_stock_item_master' AND [Operation] = 'GetItemBalance';
 END
 
@@ -150,12 +150,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'safety_s
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('safety_stock_item_master', N'Get Item Consumption', N'[PLS].[APIPlusOperation]', 'GetItemConsumption', N'Retrieve item consumption usage history logs', 
-            N'SELECT ItemCode, ConsumptionQty, ConsumptionDate FROM PUR.ItemConsumption WHERE ItemCode = @ItemCode ORDER BY ConsumptionDate DESC;', 'System');
+            N'SELECT ItemCode, TotalQuantity AS ConsumptionQty, CAST(CAST(Yer AS VARCHAR(4)) + ''-'' + CAST(Mnth AS VARCHAR(2)) + ''-01'' AS DATE) AS ConsumptionDate FROM QGetItemConsumption WHERE ItemCode = @ItemCode ORDER BY ConsumptionDate DESC;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT ItemCode, ConsumptionQty, ConsumptionDate FROM PUR.ItemConsumption WHERE ItemCode = @ItemCode ORDER BY ConsumptionDate DESC;'
+    SET [QuerySQL] = N'SELECT ItemCode, TotalQuantity AS ConsumptionQty, CAST(CAST(Yer AS VARCHAR(4)) + ''-'' + CAST(Mnth AS VARCHAR(2)) + ''-01'' AS DATE) AS ConsumptionDate FROM QGetItemConsumption WHERE ItemCode = @ItemCode ORDER BY ConsumptionDate DESC;'
     WHERE [PageGroupID] = 'safety_stock_item_master' AND [Operation] = 'GetItemConsumption';
 END
 
@@ -163,12 +163,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'safety_s
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('safety_stock_item_master', N'Get Item Open POs', N'[PLS].[APIPlusOperation]', 'GetItemOpenPOs', N'Retrieve outstanding open purchase orders for an item', 
-            N'SELECT PurchaseOrderNumber, OrderedQuantity, RecievedQuantity FROM PUR.PurchaseOrderLine WHERE ItemCode = @ItemCode AND RecievedQuantity < OrderedQuantity;', 'System');
+            N'SELECT OrderNumber AS PurchaseOrderNumber, QuantityOrdered AS OrderedQuantity, QuantityReceived AS RecievedQuantity FROM QGetItemOpenPOs WHERE ItemCode = @ItemCode AND QuantityReceived < QuantityOrdered;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT PurchaseOrderNumber, OrderedQuantity, RecievedQuantity FROM PUR.PurchaseOrderLine WHERE ItemCode = @ItemCode AND RecievedQuantity < OrderedQuantity;'
+    SET [QuerySQL] = N'SELECT OrderNumber AS PurchaseOrderNumber, QuantityOrdered AS OrderedQuantity, QuantityReceived AS RecievedQuantity FROM QGetItemOpenPOs WHERE ItemCode = @ItemCode AND QuantityReceived < QuantityOrdered;'
     WHERE [PageGroupID] = 'safety_stock_item_master' AND [Operation] = 'GetItemOpenPOs';
 END
 
@@ -176,12 +176,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'safety_s
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('safety_stock_item_master', N'Get Item Lead Time', N'[PLS].[APIPlusOperation]', 'GetItemLeadTime', N'Retrieve delivery lead times from supplier logs', 
-            N'SELECT ItemCode, SupplierLeadTime FROM PUR.ItemLeadTime WHERE ItemCode = @ItemCode;', 'System');
+            N'SELECT ItemCode, LeadTime AS SupplierLeadTime FROM QGetItemLeadTime WHERE ItemCode = @ItemCode;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT ItemCode, SupplierLeadTime FROM PUR.ItemLeadTime WHERE ItemCode = @ItemCode;'
+    SET [QuerySQL] = N'SELECT ItemCode, LeadTime AS SupplierLeadTime FROM QGetItemLeadTime WHERE ItemCode = @ItemCode;'
     WHERE [PageGroupID] = 'safety_stock_item_master' AND [Operation] = 'GetItemLeadTime';
 END
 
@@ -189,12 +189,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'safety_s
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('safety_stock_item_master', N'Get Item Status History', N'[PLS].[APIPlusOperation]', 'GetItemStatusHistory', N'Retrieve status transition logs for an item', 
-            N'SELECT LogID, ItemCode, OldStatus, NewStatus, LogDate FROM PUR.SaftyStockStatusHistory WHERE ItemCode = @ItemCode ORDER BY LogDate DESC;', 'System');
+            N'SELECT LogID, ItemCode, OldStatus, NewStatus, LogDate FROM QGetItemStatusHistory WHERE ItemCode = @ItemCode ORDER BY LogDate DESC;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT LogID, ItemCode, OldStatus, NewStatus, LogDate FROM PUR.SaftyStockStatusHistory WHERE ItemCode = @ItemCode ORDER BY LogDate DESC;'
+    SET [QuerySQL] = N'SELECT LogID, ItemCode, OldStatus, NewStatus, LogDate FROM QGetItemStatusHistory WHERE ItemCode = @ItemCode ORDER BY LogDate DESC;'
     WHERE [PageGroupID] = 'safety_stock_item_master' AND [Operation] = 'GetItemStatusHistory';
 END
 
@@ -202,12 +202,12 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [PageGroupID] = 'safety_s
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([PageGroupID], [QueryName], [SPName], [Operation], [Description], [QuerySQL], [CreatedBy])
     VALUES ('safety_stock_item_master', N'Get Item Receipts', N'[PLS].[APIPlusOperation]', 'GetItemReceipts', N'Retrieve stock receipt history logs for an item', 
-            N'SELECT ItemCode, ReceiptQuantity, ReceiptDate FROM PUR.ItemReceipts WHERE ItemCode = @ItemCode ORDER BY ReceiptDate DESC;', 'System');
+            N'SELECT ItemCode, QuantityReceived AS ReceiptQuantity, ReceivingDate AS ReceiptDate FROM QGetItemReceipts WHERE ItemCode = @ItemCode ORDER BY ReceiptDate DESC;', 'System');
 END
 ELSE
 BEGIN
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT ItemCode, ReceiptQuantity, ReceiptDate FROM PUR.ItemReceipts WHERE ItemCode = @ItemCode ORDER BY ReceiptDate DESC;'
+    SET [QuerySQL] = N'SELECT ItemCode, QuantityReceived AS ReceiptQuantity, ReceivingDate AS ReceiptDate FROM QGetItemReceipts WHERE ItemCode = @ItemCode ORDER BY ReceiptDate DESC;'
     WHERE [PageGroupID] = 'safety_stock_item_master' AND [Operation] = 'GetItemReceipts';
 END
 

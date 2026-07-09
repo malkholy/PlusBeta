@@ -407,7 +407,7 @@ export default function PurchaseOrderLinePage({ user }) {
       setLinesError('');
       try {
         const lineData = { OrderNumber: selectedPO.OrderNumber };
-        const d = await apiCall('GetPurchaseOrderLines', lineData, {}, 'plus');
+        const d = await apiCall('GetPurchaseOrderLines', lineData, {}, 'purchasing');
         if (d.State !== 0) {
           setLinesError(d.Message || 'Failed to load purchase lines.');
           setPoLines([]);
@@ -441,7 +441,7 @@ export default function PurchaseOrderLinePage({ user }) {
     async function loadVendors() {
       if (cache.vendorsList) return;
       try {
-        const d = await apiCall('GetVendors', null, {}, 'plus');
+        const d = await apiCall('GetVendors', null, {}, 'purchasing');
         if (d.State === 0) {
           const list = d.List0 || [];
           setVendorsList(list);
@@ -454,7 +454,7 @@ export default function PurchaseOrderLinePage({ user }) {
     async function loadItems() {
       if (cache.itemsList) return;
       try {
-        const d = await apiCall('GetItems', null, {}, 'plus');
+        const d = await apiCall('GetItems', null, {}, 'purchasing');
         if (d.State === 0) {
           const list = d.List0 || [];
           setItemsList(list);
@@ -479,7 +479,7 @@ export default function PurchaseOrderLinePage({ user }) {
         VendorNumber: selectedVendor || null,
         ItemCode: selectedItem || null
       };
-      const d = await apiCall('GetPurchaseOrderLinesAll', lineData, {}, 'plus');
+      const d = await apiCall('GetPurchaseOrderLinesAll', lineData, {}, 'purchasing');
       if (d.State !== 0) {
         setError(d.Message || 'Failed to retrieve purchase order lines.');
         setRows([]);

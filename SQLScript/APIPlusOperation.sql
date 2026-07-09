@@ -1115,7 +1115,7 @@ BEGIN
             SET @State = 0;
             SET @Message = 'Success';
 
-            SELECT PermissionID, Username, QueryID, SQLFilter 
+            SELECT PermissionID, Username, QueryID, SQLFilter, CondMode, CondBuilder
             FROM [PLS].[UserQueryPermissions]
             ORDER BY Username, QueryID;
             RETURN;
@@ -1132,6 +1132,8 @@ BEGIN
             DECLARE @QUser VARCHAR(100) = JSON_VALUE(@LineData, '$.Username');
             DECLARE @QQueryID INT = TRY_CAST(JSON_VALUE(@LineData, '$.QueryID') AS INT);
             DECLARE @QFilter NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.SQLFilter');
+            DECLARE @QMode VARCHAR(50) = JSON_VALUE(@LineData, '$.CondMode');
+            DECLARE @QBuilder NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.CondBuilder');
 
             IF @QUser IS NULL OR @QQueryID IS NULL
             BEGIN
@@ -1140,17 +1142,139 @@ BEGIN
                 RETURN;
             END
 
+            SET @QMode = COALESCE(@QMode, 'sql');
+
             IF EXISTS (SELECT 1 FROM [PLS].[UserQueryPermissions] WHERE Username = @QUser AND QueryID = @QQueryID)
             BEGIN
                 UPDATE [PLS].[UserQueryPermissions] 
-                SET SQLFilter = @QFilter, GrantedBy = @User, GrantedDate = GETDATE()
+                SET SQLFilter = @QFilter, CondMode = @QMode, CondBuilder = @QBuilder, GrantedBy = @User, GrantedDate = GETDATE()
                 WHERE Username = @QUser AND QueryID = @QQueryID;
             END
             ELSE
             BEGIN
-                INSERT INTO [PLS].[UserQueryPermissions] (Username, QueryID, SQLFilter, GrantedBy, GrantedDate)
-                VALUES (@QUser, @QQueryID, @QFilter, @User, GETDATE());
+                INSERT INTO [PLS].[UserQueryPermissions] (Username, QueryID, SQLFilter, CondMode, CondBuilder, GrantedBy, GrantedDate)
+                VALUES (@QUser, @QQueryID, @QFilter, @QMode, @QBuilder, @User, GETDATE());
             END
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: GetQueryFields
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetQueryFields'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Success';
+
+            DECLARE @QFQueryID INT = TRY_CAST(JSON_VALUE(@LineData, '$.QueryID') AS INT);
+            DECLARE @QFTSQL NVARCHAR(MAX);
+
+            SELECT @QFTSQL = QuerySQL FROM [PLS].[QueryMaster] WHERE QueryID = @QFQueryID;
+
+            IF @QFTSQL IS NULL
+            BEGIN
+                SET @State = 1;
+                SET @Message = 'Query not found';
+                RETURN;
+            END
+
+            DECLARE @QFParams NVARCHAR(MAX) = N'@FromDate datetime, @ToDate datetime, @PONumber varchar(100), @ItemCode varchar(100), @ItemID int, @SaftyStock decimal(18,5), @LeadTime int, @PermUser varchar(100), @PermPageGroupID varchar(100), @PermCanView bit';
+
+            -- Execute inside ERPMega database context to resolve tables
+            DECLARE @QFExecSQL NVARCHAR(MAX) = N'
+                SELECT DISTINCT name AS FieldName
+                FROM sys.dm_exec_describe_first_result_set(@QFTSQL, @QFParams, 0)
+                WHERE name IS NOT NULL;
+            ';
+
+            EXEC ERPMega.sys.sp_executesql 
+                @QFExecSQL,
+                N'@QFTSQL NVARCHAR(MAX), @QFParams NVARCHAR(MAX)',
+                @QFTSQL = @QFTSQL,
+                @QFParams = @QFParams;
+            
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
+        -- Operation: ValidateQueryCondition
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'ValidateQueryCondition'
+        BEGIN
+            SET @State = 0;
+            SET @Message = 'Valid';
+
+            DECLARE @ValQueryID INT = TRY_CAST(JSON_VALUE(@LineData, '$.QueryID') AS INT);
+            DECLARE @ValCondition NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.Condition');
+            DECLARE @ValTSQL NVARCHAR(MAX);
+
+            SELECT @ValTSQL = QuerySQL FROM [PLS].[QueryMaster] WHERE QueryID = @ValQueryID;
+
+            IF @ValTSQL IS NULL
+            BEGIN
+                SET @State = 1;
+                SET @Message = 'Query not found';
+                RETURN;
+            END
+
+            IF @ValCondition IS NOT NULL AND RTRIM(LTRIM(@ValCondition)) <> ''
+            BEGIN
+                SET @ValTSQL = RTRIM(LTRIM(@ValTSQL));
+                IF RIGHT(@ValTSQL, 1) = ';'
+                BEGIN
+                    SET @ValTSQL = SUBSTRING(@ValTSQL, 1, LEN(@ValTSQL) - 1);
+                END
+
+                -- Strip outer ORDER BY if present
+                DECLARE @OrderByPos INT = -1;
+                DECLARE @TempTSQL NVARCHAR(MAX) = UPPER(@ValTSQL);
+                DECLARE @SearchPos INT = CHARINDEX('ORDER BY', @TempTSQL);
+                
+                WHILE @SearchPos > 0
+                BEGIN
+                    SET @OrderByPos = @SearchPos;
+                    SET @SearchPos = CHARINDEX('ORDER BY', @TempTSQL, @SearchPos + 1);
+                END
+                
+                -- Check if this ORDER BY is outer (no closing parenthesis after it)
+                IF @OrderByPos > 0
+                BEGIN
+                    DECLARE @AfterOrderBy NVARCHAR(MAX) = SUBSTRING(@ValTSQL, @OrderByPos + 8, LEN(@ValTSQL));
+                    IF CHARINDEX(')', @AfterOrderBy) = 0
+                    BEGIN
+                        SET @ValTSQL = SUBSTRING(@ValTSQL, 1, @OrderByPos - 1);
+                    END
+                END
+
+                DECLARE @ValStatement NVARCHAR(MAX) = N'SELECT * FROM (' + @ValTSQL + N') AS __t WHERE ' + @ValCondition;
+                DECLARE @ValParams NVARCHAR(MAX) = N'@FromDate datetime, @ToDate datetime, @PONumber varchar(100), @ItemCode varchar(100), @ItemID int, @SaftyStock decimal(18,5), @LeadTime int, @PermUser varchar(100), @PermPageGroupID varchar(100), @PermCanView bit';
+                
+                DECLARE @ErrorNumber INT = NULL;
+                DECLARE @ErrorMessage NVARCHAR(4000) = NULL;
+
+                -- Execute inside ERPMega database context to resolve tables
+                DECLARE @ValExecSQL NVARCHAR(MAX) = N'
+                    SELECT TOP 1 @ErrorNumberOut = error_number, @ErrorMessageOut = error_message
+                    FROM sys.dm_exec_describe_first_result_set(@ValStatement, @ValParams, 0)
+                    WHERE error_number IS NOT NULL;
+                ';
+
+                EXEC ERPMega.sys.sp_executesql 
+                    @ValExecSQL,
+                    N'@ValStatement NVARCHAR(MAX), @ValParams NVARCHAR(MAX), @ErrorNumberOut INT OUTPUT, @ErrorMessageOut NVARCHAR(4000) OUTPUT',
+                    @ValStatement = @ValStatement,
+                    @ValParams = @ValParams,
+                    @ErrorNumberOut = @ErrorNumber OUTPUT,
+                    @ErrorMessageOut = @ErrorMessage OUTPUT;
+
+                IF @ErrorNumber IS NOT NULL AND @ErrorNumber <> 0
+                BEGIN
+                    SET @State = 1;
+                    SET @Message = @ErrorMessage;
+                END
+            END
+
+            SELECT @State AS State, @Message AS Message;
             RETURN;
         END
 

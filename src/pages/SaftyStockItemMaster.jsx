@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiCall } from '../shared/api.js';
 import DataGrid from '../shared/DataGrid.jsx';
+import * as XLSX from 'xlsx';
 
 function formatDate(dateStr) {
   if (!dateStr) return '—';
@@ -158,7 +159,7 @@ export default function SaftyStockItemMasterPage({ user }) {
     setLoading(true);
     setError('');
     try {
-      const d = await apiCall('GetSaftyStockItems', null, {}, 'plus');
+      const d = await apiCall('GetSaftyStockItems', null, {}, 'purchasing');
       if (d.State !== 0) {
         setError(d.Message || 'Failed to retrieve safety stock records.');
         setRows([]);
@@ -182,7 +183,7 @@ export default function SaftyStockItemMasterPage({ user }) {
     setBalancesLoading(true);
     setBalancesError('');
     try {
-      const res = await apiCall('GetItemBalance', { ItemCode: code }, {}, 'plus');
+      const res = await apiCall('GetItemBalance', { ItemCode: code }, {}, 'purchasing');
       if (res.State !== 0) {
         setBalancesError(res.Message || 'Failed to load balances.');
       } else {
@@ -202,7 +203,7 @@ export default function SaftyStockItemMasterPage({ user }) {
     setConsumptionLoading(true);
     setConsumptionError('');
     try {
-      const res = await apiCall('GetItemConsumption', { ItemCode: code }, {}, 'plus');
+      const res = await apiCall('GetItemConsumption', { ItemCode: code }, {}, 'purchasing');
       if (res.State !== 0) {
         setConsumptionError(res.Message || 'Failed to load consumption.');
       } else {
@@ -253,6 +254,59 @@ export default function SaftyStockItemMasterPage({ user }) {
     setConsumptionLoading(false);
   }
 
+  const handleExportConsumption = () => {
+    if (consumption.length === 0) return;
+
+    // Prepare array of objects for the worksheet
+    const dataRows = [];
+
+    // Build rows
+    consumption.forEach(c => {
+      const isCurrentMonth = c.Yer === new Date().getFullYear() && c.Mnth === (new Date().getMonth() + 1);
+      const monthLabel = isCurrentMonth ? `${c.Mnth} (Current)` : c.Mnth;
+      
+      if (c.details && c.details.length > 0) {
+        c.details.forEach(d => {
+          dataRows.push({
+            "Item Code": itemCode,
+            "Year": c.Yer,
+            "Month": monthLabel,
+            "Facility": d.Facility || '',
+            "Warehouse": d.Warehouse || '',
+            "Quantity Consumed": d.TotalQuantity || 0
+          });
+        });
+      } else {
+        dataRows.push({
+          "Item Code": itemCode,
+          "Year": c.Yer,
+          "Month": monthLabel,
+          "Facility": "Total",
+          "Warehouse": "Total",
+          "Quantity Consumed": c.TotalQuantity || 0
+        });
+      }
+    });
+
+    // Create a new workbook and add the worksheet
+    const worksheet = XLSX.utils.json_to_sheet(dataRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Consumption History");
+
+    // Auto-fit column widths
+    const maxLens = {};
+    dataRows.forEach(row => {
+      Object.keys(row).forEach(key => {
+        const val = String(row[key] || '');
+        maxLens[key] = Math.max(maxLens[key] || 10, val.length + 2, key.length + 2);
+      });
+    });
+    worksheet["!cols"] = Object.keys(maxLens).map(key => ({ wch: maxLens[key] }));
+
+    // Write file
+    XLSX.writeFile(workbook, `Consumption_${itemCode}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   async function loadOpenPOs(code) {
     if (!code) {
       setOpenPos([]);
@@ -261,7 +315,7 @@ export default function SaftyStockItemMasterPage({ user }) {
     setOpenPosLoading(true);
     setOpenPosError('');
     try {
-      const res = await apiCall('GetItemOpenPOs', { ItemCode: code }, {}, 'plus');
+      const res = await apiCall('GetItemOpenPOs', { ItemCode: code }, {}, 'purchasing');
       if (res.State !== 0) {
         setOpenPosError(res.Message || 'Failed to load open POs.');
       } else {
@@ -281,7 +335,7 @@ export default function SaftyStockItemMasterPage({ user }) {
     setLeadTimesLoading(true);
     setLeadTimesError('');
     try {
-      const res = await apiCall('GetItemLeadTime', { ItemCode: code }, {}, 'plus');
+      const res = await apiCall('GetItemLeadTime', { ItemCode: code }, {}, 'purchasing');
       if (res.State !== 0) {
         setLeadTimesError(res.Message || 'Failed to load lead times.');
       } else {
@@ -301,7 +355,7 @@ export default function SaftyStockItemMasterPage({ user }) {
     setStatusHistoryLoading(true);
     setStatusHistoryError('');
     try {
-      const res = await apiCall('GetItemStatusHistory', { ItemCode: code }, {}, 'plus');
+      const res = await apiCall('GetItemStatusHistory', { ItemCode: code }, {}, 'purchasing');
       if (res.State !== 0) {
         setStatusHistoryError(res.Message || 'Failed to load status history.');
       } else {
@@ -321,7 +375,7 @@ export default function SaftyStockItemMasterPage({ user }) {
     setReceiptsLoading(true);
     setReceiptsError('');
     try {
-      const res = await apiCall('GetItemReceipts', { ItemCode: code }, {}, 'plus');
+      const res = await apiCall('GetItemReceipts', { ItemCode: code }, {}, 'purchasing');
       if (res.State !== 0) {
         setReceiptsError(res.Message || 'Failed to load receipts.');
       } else {
@@ -448,7 +502,7 @@ export default function SaftyStockItemMasterPage({ user }) {
         ServiceLevelFactor: Number(serviceLevelFactor),
         ItemType: itemType
       };
-      const res = await apiCall('SaveSaftyStockItem', payload, { ItemCode: itemCode }, 'plus');
+      const res = await apiCall('SaveSaftyStockItem', payload, { ItemCode: itemCode }, 'purchasing');
       if (res && res.State === 0) {
         await loadData();
         alert('Safety stock and lead time updated successfully.');
@@ -1836,6 +1890,34 @@ export default function SaftyStockItemMasterPage({ user }) {
                           </div>
                         </div>
 
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                            Consumption History Breakdowns
+                          </span>
+                          <button 
+                            onClick={handleExportConsumption}
+                            style={{
+                              background: 'var(--orange)',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: '6px 12px',
+                              fontSize: 11,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              transition: 'opacity 0.2s',
+                              outline: 'none'
+                            }}
+                            onMouseOver={e => e.currentTarget.style.opacity = 0.85}
+                            onMouseOut={e => e.currentTarget.style.opacity = 1}
+                          >
+                            📥 Export to Excel
+                          </button>
+                        </div>
+
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                           <thead>
                             <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
@@ -2270,6 +2352,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                           <thead>
                             <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
                               <th style={{ padding: '8px 4px', color: 'var(--muted)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>PO Number</th>
+                              <th style={{ padding: '8px 4px', color: 'var(--muted)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>Vendor Name</th>
                               <th style={{ padding: '8px 4px', color: 'var(--muted)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>Released</th>
                               <th style={{ padding: '8px 4px', color: 'var(--muted)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>ETD</th>
                               <th style={{ padding: '8px 4px', color: 'var(--muted)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>ETA</th>
@@ -2287,6 +2370,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                               >
                                 <td style={{ padding: '10px 4px', fontWeight: 600 }}>{l.OrderNumber || '—'}</td>
+                                <td style={{ padding: '10px 4px', color: 'var(--text)' }}>{l.VendorName || '—'}</td>
                                 <td style={{ padding: '10px 4px', color: 'var(--muted)' }}>{formatDate(l.ReleaseDate)}</td>
                                 <td style={{ padding: '10px 4px', color: 'var(--muted)' }}>{formatDate(l.ETD)}</td>
                                 <td style={{ padding: '10px 4px', color: 'var(--muted)' }}>{formatDate(l.ETA)}</td>

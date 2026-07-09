@@ -122,14 +122,16 @@ export default function UserPermissions({ user }) {
     setActionLoadingId(null);
   }
 
-  async function handleSaveQueryPermission(queryId, filterText) {
+  async function handleSaveQueryPermission(queryId, filterText, condMode, condBuilder) {
     if (!selectedUser) return;
     setActionLoadingId(`q_${queryId}`);
     try {
       const res = await apiCall('SaveUserQueryPermission', {
         Username: selectedUser.Username,
         QueryID: queryId,
-        SQLFilter: filterText
+        SQLFilter: filterText,
+        CondMode: condMode,
+        CondBuilder: condBuilder
       }, {}, 'plus');
 
       if (res.State !== 0) {
@@ -546,35 +548,30 @@ export default function UserPermissions({ user }) {
                                               </div>
                                             )}
                                             {q.QuerySQL && (
-                                              <details style={{ marginTop: 4 }}>
-                                                <summary style={{ fontSize: 9.5, fontWeight: 700, cursor: 'pointer', color: 'var(--orange)', outline: 'none' }}>
-                                                  Show SQL Query
-                                                </summary>
-                                                <pre style={{
-                                                  marginTop: 6,
-                                                  padding: '6px 10px',
-                                                  background: 'var(--surface)',
-                                                  border: '1px solid var(--border)',
-                                                  borderRadius: 6,
-                                                  fontSize: 9.5,
-                                                  fontFamily: 'monospace',
-                                                  overflowX: 'auto',
-                                                  whiteSpace: 'pre-wrap',
-                                                  color: 'var(--text)',
-                                                  lineHeight: 1.4,
-                                                  textAlign: 'left'
-                                                }}>
-                                                  {q.QuerySQL}
-                                                </pre>
-                                              </details>
+                                              <pre style={{
+                                                marginTop: 6,
+                                                padding: '6px 10px',
+                                                background: 'var(--surface)',
+                                                border: '1px solid var(--border)',
+                                                borderRadius: 6,
+                                                fontSize: 9.5,
+                                                fontFamily: 'monospace',
+                                                overflowX: 'auto',
+                                                whiteSpace: 'pre-wrap',
+                                                color: 'var(--text)',
+                                                lineHeight: 1.4,
+                                                textAlign: 'left'
+                                              }}>
+                                                {q.QuerySQL}
+                                              </pre>
                                             )}
                                             {(() => {
                                               const qPerm = queryPermissions.find(qp => qp.QueryID === q.QueryID);
-                                              const currentFilter = qPerm ? qPerm.SQLFilter : '';
                                               return (
                                                 <SQLFilterInput 
-                                                  value={currentFilter}
-                                                  onSave={(val) => handleSaveQueryPermission(q.QueryID, val)}
+                                                  query={q}
+                                                  qPerm={qPerm}
+                                                  onSave={(val, mode, builder) => handleSaveQueryPermission(q.QueryID, val, mode, builder)}
                                                   isLoading={actionLoadingId === `q_${q.QueryID}`}
                                                 />
                                               );
@@ -695,35 +692,30 @@ export default function UserPermissions({ user }) {
                                           </div>
                                         )}
                                         {q.QuerySQL && (
-                                          <details style={{ marginTop: 4 }}>
-                                            <summary style={{ fontSize: 9.5, fontWeight: 700, cursor: 'pointer', color: 'var(--orange)', outline: 'none' }}>
-                                              Show SQL Query
-                                            </summary>
-                                            <pre style={{
-                                              marginTop: 6,
-                                              padding: '6px 10px',
-                                              background: 'var(--surface)',
-                                              border: '1px solid var(--border)',
-                                              borderRadius: 6,
-                                              fontSize: 9.5,
-                                              fontFamily: 'monospace',
-                                              overflowX: 'auto',
-                                              whiteSpace: 'pre-wrap',
-                                              color: 'var(--text)',
-                                              lineHeight: 1.4,
-                                              textAlign: 'left'
-                                            }}>
-                                              {q.QuerySQL}
-                                            </pre>
-                                          </details>
+                                          <pre style={{
+                                            marginTop: 6,
+                                            padding: '6px 10px',
+                                            background: 'var(--surface)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: 6,
+                                            fontSize: 9.5,
+                                            fontFamily: 'monospace',
+                                            overflowX: 'auto',
+                                            whiteSpace: 'pre-wrap',
+                                            color: 'var(--text)',
+                                            lineHeight: 1.4,
+                                            textAlign: 'left'
+                                          }}>
+                                            {q.QuerySQL}
+                                          </pre>
                                         )}
                                         {(() => {
                                           const qPerm = queryPermissions.find(qp => qp.QueryID === q.QueryID);
-                                          const currentFilter = qPerm ? qPerm.SQLFilter : '';
                                           return (
                                             <SQLFilterInput 
-                                              value={currentFilter}
-                                              onSave={(val) => handleSaveQueryPermission(q.QueryID, val)}
+                                              query={q}
+                                              qPerm={qPerm}
+                                              onSave={(val, mode, builder) => handleSaveQueryPermission(q.QueryID, val, mode, builder)}
                                               isLoading={actionLoadingId === `q_${q.QueryID}`}
                                             />
                                           );
@@ -752,114 +744,489 @@ export default function UserPermissions({ user }) {
   );
 }
 
-function SQLFilterInput({ value, onChange, onSave, isLoading }) {
-  const [text, setText] = useState(value || '');
-  const [showSuggestions, setShowSuggestions] = useState(false);
+function SQLFilterInput({ query, qPerm, onSave, isLoading }) {
+  const [mode, setMode] = useState('sql');
+  const [builder, setBuilder] = useState([]);
+  const [text, setText] = useState('');
   
-  const suggestions = [
-    "Warehouse='1FG'",
-    "Warehouse='2RM'",
-    "Warehouse='3SF'",
-    "VendorNumber='V001'",
-    "OrderState='New'",
-    "Facility='GLC'"
-  ];
+  const [fields, setFields] = useState([]);
+  const [loadingFields, setLoadingFields] = useState(false);
 
-  const filtered = suggestions.filter(s => 
-    s.toLowerCase().includes(text.toLowerCase()) && s.toLowerCase() !== text.toLowerCase()
-  );
+  const [validation, setValidation] = useState(null);
+  const [validating, setValidating] = useState(false);
 
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [ac, setAc] = useState(null); // autocomplete { items, hl }
+
+  const OPS = ["=", "<>", ">", ">=", "<", "<=", "LIKE", "IN", "IS NULL", "IS NOT NULL"];
+  const VARS = ["@UserID", "@Username"];
+
+  // Inject styles dynamically once
   useEffect(() => {
-    setText(value || '');
-  }, [value]);
+    const sId = "up-filter-styles";
+    if (!document.getElementById(sId)) {
+      const el = document.createElement("style");
+      el.id = sId;
+      el.textContent = `
+        .up-filter-wrap {
+          margin-top: 10px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .up-mt {
+          display: inline-flex;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          overflow: hidden;
+          margin-bottom: 8px;
+          align-self: flex-start;
+        }
+        .up-mt button {
+          height: 28px;
+          padding: 0 12px;
+          border: 0;
+          background: var(--surface);
+          font-size: 11px;
+          font-weight: 700;
+          cursor: pointer;
+          color: var(--muted);
+          font-family: var(--font);
+          transition: all 0.15s;
+        }
+        .up-mt button.active {
+          background: var(--orange);
+          color: #fff;
+        }
+        .up-cr {
+          display: grid;
+          grid-template-columns: 80px 1.2fr 80px 1.5fr 28px;
+          gap: 6px;
+          align-items: center;
+          margin-bottom: 6px;
+        }
+        .up-cr.first {
+          grid-template-columns: 1.2fr 80px 1.5fr 28px;
+        }
+        .up-cr select, .up-cr input {
+          height: 30px;
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          padding: 0 7px;
+          font-size: 12px;
+          background: var(--surface);
+          color: var(--text);
+          outline: none;
+          width: 100%;
+          font-family: var(--font);
+        }
+        .up-cr select:focus, .up-cr input:focus {
+          border-color: var(--orange);
+        }
+        .up-cr .conj {
+          color: var(--orange);
+          font-weight: 800;
+        }
+        .up-cr .del {
+          height: 28px;
+          width: 28px;
+          border: 0;
+          border-radius: 6px;
+          background: var(--red-soft);
+          color: var(--red);
+          cursor: pointer;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .up-cr .del:hover {
+          background: var(--red);
+          color: #fff;
+        }
+        .up-addc {
+          height: 28px;
+          border: 1.5px dashed var(--border);
+          border-radius: 6px;
+          background: var(--soft);
+          color: var(--muted);
+          font-weight: 700;
+          font-size: 11.5px;
+          cursor: pointer;
+          width: 100%;
+          transition: all 0.15s;
+          font-family: var(--font);
+          margin-bottom: 8px;
+        }
+        .up-addc:hover {
+          border-color: var(--orange);
+          color: var(--orange);
+          background: var(--surface);
+        }
+        .up-pre {
+          font-family: var(--mono);
+          font-size: 11px;
+          color: var(--muted);
+          background: var(--soft);
+          padding: 6px 10px;
+          border-radius: 6px;
+          border: 1px solid var(--border);
+          word-break: break-all;
+        }
+        .up-pre b {
+          color: var(--orange);
+        }
+        .up-ac {
+          position: absolute;
+          background: var(--surface);
+          border: 1px solid var(--orange);
+          border-radius: 8px;
+          box-shadow: var(--shadow-lg);
+          z-index: 99;
+          max-height: 150px;
+          overflow-y: auto;
+          min-width: 180px;
+          padding: 4px 0;
+        }
+        .up-ai {
+          padding: 6px 12px;
+          font-size: 11px;
+          font-family: var(--mono);
+          cursor: pointer;
+          color: var(--text);
+          transition: all 0.1s;
+        }
+        .up-ai:hover, .up-ai.hl {
+          background: var(--orange-soft);
+          color: var(--orange);
+        }
+        .up-val {
+          margin-top: 6px;
+          padding: 6px 10px;
+          border-radius: 6px;
+          font-size: 11px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .up-val.ok {
+          background: var(--green-soft);
+          color: var(--green);
+          border: 1px solid rgba(22, 163, 74, 0.15);
+        }
+        .up-val.err {
+          background: var(--red-soft);
+          color: var(--red);
+          border: 1px solid rgba(220, 38, 38, 0.15);
+        }
+        .up-sw {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+        }
+      `;
+      document.head.appendChild(el);
+    }
+  }, []);
 
-  const handleSelect = (val) => {
+  // Sync state with qPerm
+  useEffect(() => {
+    if (qPerm) {
+      setMode(qPerm.CondMode || 'sql');
+      setText(qPerm.SQLFilter || '');
+      
+      let parsedBuilder = [];
+      if (qPerm.CondBuilder) {
+        try {
+          parsedBuilder = JSON.parse(qPerm.CondBuilder);
+        } catch (e) {
+          parsedBuilder = [];
+        }
+      }
+      setBuilder(parsedBuilder);
+    } else {
+      setMode('sql');
+      setText('');
+      setBuilder([]);
+    }
+    setValidation(null);
+  }, [qPerm]);
+
+  // Load fields for builder and autocomplete suggestions
+  useEffect(() => {
+    if (query?.QueryID) {
+      loadFields();
+    }
+  }, [query?.QueryID]);
+
+  async function loadFields() {
+    setLoadingFields(true);
+    try {
+      const res = await apiCall('GetQueryFields', { QueryID: query.QueryID }, {}, 'plus');
+      if (res.State === 0) {
+        setFields((res.List0 || []).map(f => f.FieldName));
+      }
+    } catch (e) {
+      console.error('Failed to load query fields:', e);
+    }
+    setLoadingFields(false);
+  }
+
+  function buildSqlText(rows) {
+    return rows.map((r, i) => {
+      const conj = i > 0 ? ` ${(r.conj || 'AND')} ` : '';
+      let valPart = '';
+      if (r.op && !r.op.includes('NULL')) {
+        const val = r.val || '';
+        valPart = ` ${val.startsWith('@') ? val : `'${val}'`}`;
+      }
+      return `${conj}${r.field} ${r.op}${valPart}`;
+    }).join(' ').trim();
+  }
+
+  function savePermission(finalText, finalMode, finalBuilder) {
+    onSave(finalText, finalMode, JSON.stringify(finalBuilder));
+  }
+
+  function handleConjChange(idx, conj) {
+    const updated = [...builder];
+    updated[idx] = { ...updated[idx], conj };
+    setBuilder(updated);
+    const sql = buildSqlText(updated);
+    savePermission(sql, 'builder', updated);
+  }
+
+  function handleFieldChange(idx, field) {
+    const updated = [...builder];
+    updated[idx] = { ...updated[idx], field };
+    setBuilder(updated);
+    const sql = buildSqlText(updated);
+    savePermission(sql, 'builder', updated);
+  }
+
+  function handleOpChange(idx, op) {
+    const updated = [...builder];
+    updated[idx] = { ...updated[idx], op };
+    if (op.includes('NULL')) {
+      updated[idx].val = '';
+    }
+    setBuilder(updated);
+    const sql = buildSqlText(updated);
+    savePermission(sql, 'builder', updated);
+  }
+
+  function handleValueChange(idx, val) {
+    const updated = [...builder];
+    updated[idx] = { ...updated[idx], val };
+    setBuilder(updated);
+  }
+
+  // Auto-save on blur of a text input value in a builder row
+  function handleValueBlur(idx) {
+    const sql = buildSqlText(builder);
+    savePermission(sql, 'builder', builder);
+  }
+
+  function handleAddRow() {
+    const defaultField = fields[0] || '';
+    const updated = [...builder, { field: defaultField, op: '=', val: '', conj: 'AND' }];
+    setBuilder(updated);
+    const sql = buildSqlText(updated);
+    savePermission(sql, 'builder', updated);
+  }
+
+  function handleDelRow(idx) {
+    const updated = builder.filter((_, i) => i !== idx);
+    setBuilder(updated);
+    const sql = buildSqlText(updated);
+    savePermission(sql, 'builder', updated);
+  }
+
+  function handleModeChange(newMode) {
+    setMode(newMode);
+    if (newMode === 'sql' && builder.length > 0) {
+      const sql = buildSqlText(builder);
+      setText(sql);
+      savePermission(sql, 'sql', builder);
+    } else if (newMode === 'builder') {
+      const sql = buildSqlText(builder);
+      savePermission(sql, 'builder', builder);
+    } else {
+      savePermission(text, newMode, builder);
+    }
+  }
+
+  const handleTextChange = (e) => {
+    const val = e.target.value;
     setText(val);
-    setShowSuggestions(false);
-    onSave(val);
+    const pos = e.target.selectionStart;
+    const before = val.slice(0, pos);
+    const m = before.match(/[A-Za-z@_]+$/);
+    if (!m) {
+      setAc(null);
+      return;
+    }
+    const word = m[0].toLowerCase();
+    const pool = [...fields, ...VARS];
+    const items = pool.filter(f => f.toLowerCase().startsWith(word) && f.toLowerCase() !== word);
+    if (!items.length) {
+      setAc(null);
+      return;
+    }
+    setAc({ items, hl: 0 });
   };
 
-  const handleBlur = () => {
+  const handleTextBlur = () => {
     setTimeout(() => {
-      setShowSuggestions(false);
-      if (text !== (value || '')) {
-        onSave(text);
+      setAc(null);
+      if (text !== (qPerm?.SQLFilter || '')) {
+        savePermission(text, 'sql', builder);
       }
     }, 200);
   };
 
-  const handleKeyDown = (e) => {
+  const handleTextKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.target.blur();
     }
   };
 
+  const handleSelectAc = (it) => {
+    const nextText = text.replace(/[A-Za-z@_]+$/, '') + it + ' ';
+    setText(nextText);
+    setAc(null);
+    savePermission(nextText, 'sql', builder);
+  };
+
+  async function handleValidate() {
+    setValidating(true);
+    setValidation(null);
+    const cond = mode === 'builder' ? buildSqlText(builder) : text;
+    try {
+      const res = await apiCall('ValidateQueryCondition', {
+        QueryID: query.QueryID,
+        Condition: cond
+      }, {}, 'plus');
+      if (res.State === 0) {
+        setValidation({ type: 'ok', msg: '✓ Valid SQL Condition' });
+      } else {
+        setValidation({ type: 'err', msg: `✕ Invalid: ${res.Message || 'Verification failed'}` });
+      }
+    } catch (e) {
+      setValidation({ type: 'err', msg: '✕ Validation connection error: ' + e.message });
+    }
+    setValidating(false);
+  }
+
   return (
-    <div style={{ position: 'relative', marginTop: 8, display: 'flex', flexDirection: 'column' }}>
-      <label style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', marginBottom: 4 }}>
-        Row-Level SQL Filter (RLS Clause):
-      </label>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input 
-          type="text"
-          value={text}
-          onChange={e => {
-            setText(e.target.value);
-            setShowSuggestions(true);
-          }}
-          onFocus={() => setShowSuggestions(true)}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          placeholder="e.g. Warehouse='1FG'"
-          style={{
-            flex: 1,
-            height: 32,
-            padding: '0 10px',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 6,
-            fontSize: 11.5,
-            fontFamily: 'monospace',
-            color: 'var(--text)',
-            outline: 'none'
-          }}
-        />
-        {isLoading && <span style={{ fontSize: 10, color: 'var(--orange)' }}>Saving...</span>}
+    <div className="up-filter-wrap">
+      <div className="up-mt">
+        <button className={mode === 'builder' ? 'active' : ''} onClick={() => handleModeChange('builder')}>Builder</button>
+        <button className={mode === 'sql' ? 'active' : ''} onClick={() => handleModeChange('sql')}>Raw SQL</button>
       </div>
-      
-      {showSuggestions && filtered.length > 0 && (
-        <div style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          top: '100%',
-          marginTop: 4,
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 8,
-          boxShadow: 'var(--shadow)',
-          zIndex: 99,
-          maxHeight: 120,
-          overflowY: 'auto',
-          padding: '4px 0'
-        }}>
-          {filtered.map(s => (
-            <div 
-              key={s}
-              onMouseDown={() => handleSelect(s)}
+
+      {mode === 'builder' ? (
+        <>
+          {loadingFields ? (
+            <div style={{ fontSize: 11, color: 'var(--muted)', padding: 6 }}>Loading query fields...</div>
+          ) : (
+            <>
+              {builder.map((r, i) => (
+                <div key={i} className={`up-cr ${i === 0 ? 'first' : ''}`}>
+                  {i > 0 && (
+                    <select className="conj" value={r.conj || 'AND'} onChange={e => handleConjChange(i, e.target.value)}>
+                      <option>AND</option>
+                      <option>OR</option>
+                    </select>
+                  )}
+                  <select value={r.field} onChange={e => handleFieldChange(i, e.target.value)}>
+                    {fields.length === 0 && <option value="">(No fields)</option>}
+                    {fields.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                  <select value={r.op || '='} onChange={e => handleOpChange(i, e.target.value)}>
+                    {OPS.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                  {r.op && r.op.includes('NULL') ? (
+                    <span style={{ color: 'var(--muted)', fontSize: 11, textAlign: 'center' }}>—</span>
+                  ) : (
+                    <input 
+                      value={r.val || ''} 
+                      placeholder="value / @UserID" 
+                      onChange={e => handleValueChange(i, e.target.value)} 
+                      onBlur={() => handleValueBlur(i)}
+                    />
+                  )}
+                  <button className="del" onClick={() => handleDelRow(i)}>✕</button>
+                </div>
+              ))}
+              <button className="up-addc" onClick={handleAddRow}>+ Add Condition Row</button>
+              <div className="up-pre">
+                <b>WHERE</b> {buildSqlText(builder) || '(none)'}
+              </div>
+            </>
+          )}
+        </>
+      ) : (
+        <div className="up-sw">
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input 
+              type="text"
+              value={text}
+              onChange={handleTextChange}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={handleTextBlur}
+              onKeyDown={handleTextKeyDown}
+              placeholder="e.g. Warehouse='1FG'"
               style={{
-                padding: '6px 12px',
-                fontSize: 11,
+                flex: 1,
+                height: 32,
+                padding: '0 10px',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+                fontSize: 11.5,
                 fontFamily: 'monospace',
-                cursor: 'pointer',
-                color: 'var(--text)'
+                color: 'var(--text)',
+                outline: 'none'
               }}
-              onMouseEnter={e => e.currentTarget.style.background = 'var(--soft)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
-              {s}
+            />
+          </div>
+          {ac && showSuggestions && ac.items.length > 0 && (
+            <div className="up-ac" style={{ left: 0, top: '100%', marginTop: 4 }}>
+              {ac.items.map((it, idx) => (
+                <div 
+                  key={it} 
+                  className={`up-ai ${idx === ac.hl ? 'hl' : ''}`}
+                  onMouseDown={() => handleSelectAc(it)}
+                >
+                  {it}
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+          <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 4 }}>
+            Type for autocomplete. Variables: <b>@UserID</b>, <b>@Username</b>
+          </div>
+        </div>
+      )}
+
+      {/* Validation & Status */}
+      <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+        <button 
+          className="btn-secondary" 
+          style={{ height: 26, padding: '0 10px', fontSize: 11 }}
+          onClick={handleValidate}
+          disabled={validating}
+        >
+          {validating ? 'Validating...' : '✓ Validate Condition'}
+        </button>
+        {isLoading && <span style={{ fontSize: 10.5, color: 'var(--orange)', fontWeight: 600 }}>Saving...</span>}
+      </div>
+
+      {validation && (
+        <div className={`up-val ${validation.type}`}>
+          {validation.msg}
         </div>
       )}
     </div>

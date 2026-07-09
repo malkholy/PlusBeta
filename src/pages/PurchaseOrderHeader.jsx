@@ -239,7 +239,7 @@ export default function PurchaseOrderHeaderPage({ user }) {
       setLinesError('');
       try {
         const lineData = { OrderNumber: selectedPO.PurchaseOrderNumber };
-        const d = await apiCall('GetPurchaseOrderLines', lineData, {}, 'plus');
+        const d = await apiCall('GetPurchaseOrderLines', lineData, {}, 'purchasing');
         if (d.State !== 0) {
           setLinesError(d.Message || 'Failed to load purchase lines.');
           setPoLines([]);
@@ -272,7 +272,7 @@ export default function PurchaseOrderHeaderPage({ user }) {
     async function loadVendors() {
       if (cache.vendorsList) return;
       try {
-        const d = await apiCall('GetVendors', null, {}, 'plus');
+        const d = await apiCall('GetVendors', null, {}, 'purchasing');
         if (d.State === 0) {
           const list = d.List0 || [];
           setVendorsList(list);
@@ -295,7 +295,7 @@ export default function PurchaseOrderHeaderPage({ user }) {
         ToDate: toDate || null,
         VendorNumber: selectedVendor || null
       };
-      const d = await apiCall('GetPurchaseOrders', lineData, {}, 'plus');
+      const d = await apiCall('GetPurchaseOrders', lineData, {}, 'purchasing');
       if (d.State !== 0) {
         setError(d.Message || 'Failed to retrieve purchase orders.');
         setRows([]);

@@ -57,6 +57,32 @@ export default defineConfig({
             proxyReq.setHeader('Content-Type', 'application/json')
           })
         }
+      },
+      '/query-api': {
+        target: 'https://quick.glcpaints.com:7003',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/query-api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('SP_Name', 'APIPlusQueryOperation')
+            proxyReq.setHeader('Accept', 'application/json')
+            proxyReq.setHeader('Content-Type', 'application/json')
+          })
+        }
+      },
+      '/purchasing-api': {
+        target: 'https://quick.glcpaints.com:7003',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/purchasing-api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('SP_Name', 'APIPlusPurchasingOperation')
+            proxyReq.setHeader('Accept', 'application/json')
+            proxyReq.setHeader('Content-Type', 'application/json')
+          })
+        }
       }
     }
   }
