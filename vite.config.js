@@ -83,6 +83,19 @@ export default defineConfig({
             proxyReq.setHeader('Content-Type', 'application/json')
           })
         }
+      },
+      '/logistics-api': {
+        target: 'https://quick.glcpaints.com:7003',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/logistics-api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('SP_Name', 'APIPlusLogisticsOperation')
+            proxyReq.setHeader('Accept', 'application/json')
+            proxyReq.setHeader('Content-Type', 'application/json')
+          })
+        }
       }
     }
   }

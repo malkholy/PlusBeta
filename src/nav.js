@@ -24,6 +24,20 @@ const NAV = [
         desc: 'Manage and monitor safety stock levels for item masters',
       }
     ]
+  },
+  {
+    id: 'logistics_group',
+    label: 'Logistics',
+    icon: '📦',
+    isGroup: true,
+    children: [
+      {
+        id: 'logistics_tracking_history',
+        label: 'Tracking History',
+        icon: '📜',
+        desc: 'Track shipment history and logistical states'
+      }
+    ]
   }
 ];
 

@@ -72,5 +72,20 @@ BEGIN
     INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
     VALUES ('query_master', N'Query Master Registry', N'⚙️', N'Manage registered database queries and page mappings', 0, 'admin_group', 120);
 END
+
+-- 8. Logistics (Nav Group)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'logistics_group')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('logistics_group', N'Logistics', N'📦', N'Logistics and tracking management', 1, NULL, 200);
+END
+
+-- 9. Tracking History (Page)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'logistics_tracking_history')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('logistics_tracking_history', N'Tracking History', N'📜', N'Track shipment history and logistical states', 0, 'logistics_group', 210);
+END
 GO
+
 

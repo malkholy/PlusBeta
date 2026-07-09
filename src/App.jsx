@@ -12,6 +12,7 @@ import PurchaseOrderLine from './pages/PurchaseOrderLine.jsx';
 import SaftyStockItemMaster from './pages/SaftyStockItemMaster.jsx';
 import UserPermissions from './pages/UserPermissions.jsx';
 import QueryMaster from './pages/QueryMaster.jsx';
+import TrackingHistory from './pages/TrackingHistory.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -182,6 +183,7 @@ const PAGE_COMPONENTS = {
   safety_stock_item_master: SaftyStockItemMaster,
   user_permissions: UserPermissions,
   query_master: QueryMaster,
+  logistics_tracking_history: TrackingHistory,
 };
 
 function checkIsAdmin(u, fallbackUsername) {

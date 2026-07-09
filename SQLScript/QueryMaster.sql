@@ -41,20 +41,22 @@ BEGIN
 
     IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('PLS.QueryMaster') AND name = 'PageGroupID')
     BEGIN
-        -- Migrate PageGroupID mapping to junction table PageQueries before dropping the column
+        -- Migrate PageGroupID mapping to junction table PageQueries before dropping the column using dynamic SQL to prevent parser errors
         IF OBJECT_ID('PLS.PageQueries', 'U') IS NOT NULL
         BEGIN
-            INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID)
-            SELECT PageGroupID, QueryID 
-            FROM [PLS].[QueryMaster]
-            WHERE PageGroupID IS NOT NULL
-              AND NOT EXISTS (
-                  SELECT 1 FROM [PLS].[PageQueries] pq 
-                  WHERE pq.PageGroupID = [PLS].[QueryMaster].PageGroupID AND pq.QueryID = [PLS].[QueryMaster].QueryID
-              );
+            EXEC('
+                INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID)
+                SELECT PageGroupID, QueryID 
+                FROM [PLS].[QueryMaster]
+                WHERE PageGroupID IS NOT NULL
+                  AND NOT EXISTS (
+                      SELECT 1 FROM [PLS].[PageQueries] pq 
+                      WHERE pq.PageGroupID = [PLS].[QueryMaster].PageGroupID AND pq.QueryID = [PLS].[QueryMaster].QueryID
+                  );
+            ');
         END
 
-        ALTER TABLE [PLS].[QueryMaster] DROP COLUMN PageGroupID;
+        EXEC('ALTER TABLE [PLS].[QueryMaster] DROP COLUMN PageGroupID;');
     END
 END
 GO
@@ -437,4 +439,28 @@ BEGIN
 END
 IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'user_permissions' AND QueryID = @QID)
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('user_permissions', @QID);
+
+-- 18. Logistics Get Tracking History
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [Operation] = 'GetTrackingHistory')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Tracking History', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistory', N'Retrieve detailed logistical tracking history records', 
+            N'SELECT LHID, TrackNumber, TrackState, VendorNumber, BankNumber, ForwarderID, PINumber, ShipmentState, AccountingState, DocumentState, Currency, ETA, ETD, InvoiceNumber, Destination, LogisitcNote, AttachmentID, CustomsBrokerRef, RequestShippingDate, OfficeCourierArrivalDate, BankCourierArrivalDate, SentToBankDate, ReleasedFromBankDate, FactoryArrivalDate, PaymentTermID, IncoTermID, IsLocked, CarrierID, LogisticCreatedBy, LogisticCreatedDate, LogisticLastMaintBy, LogisticLastMaintDate, ClearingAgentID, ForwarderName, LinePackingType, CarrierName, ClearingAgentName, PaymentTermDescription, IncoTermDescription, StateDescription, LineStateDescription, ShipmentStateDescription, DocumentStateDescription, AccountingStateDescription, VendorName, VendorExtraName, BankAccountName, ItemAmount, DiscountAmount, FreightAmount, InsuranceAmount, TotalAmount, ACINumber, BLNumber, BLType, ShipmentMode, PurchaseOrderNumber, PurchaseOrderLineNumber, LineState, LineNumber, NonItemFlag, ItemID, NonInventoryItemDescription, LineQuantity, LogisticLineUnitOfMeasure, LineCurrency, Price, LineAmount, BatchNumber, Origin, RecievedDate, OriginDescription, ItemCode, ItemDescription, ItemExtraDescription, ItemType, ShipmentSize, PurchaseOrderEnteredDate, PurchaseOrderCloseDate, PurchaseOrderReleaseDate, AssignToUser, CertificateNo, RequestArrivalDate FROM QGetTrackingHistory ORDER BY LogisticCreatedDate DESC, TrackNumber DESC;', 'ERPMega', 'dbo', 'QGetTrackingHistory', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [Operation] = 'GetTrackingHistory';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT LHID, TrackNumber, TrackState, VendorNumber, BankNumber, ForwarderID, PINumber, ShipmentState, AccountingState, DocumentState, Currency, ETA, ETD, InvoiceNumber, Destination, LogisitcNote, AttachmentID, CustomsBrokerRef, RequestShippingDate, OfficeCourierArrivalDate, BankCourierArrivalDate, SentToBankDate, ReleasedFromBankDate, FactoryArrivalDate, PaymentTermID, IncoTermID, IsLocked, CarrierID, LogisticCreatedBy, LogisticCreatedDate, LogisticLastMaintBy, LogisticLastMaintDate, ClearingAgentID, ForwarderName, LinePackingType, CarrierName, ClearingAgentName, PaymentTermDescription, IncoTermDescription, StateDescription, LineStateDescription, ShipmentStateDescription, DocumentStateDescription, AccountingStateDescription, VendorName, VendorExtraName, BankAccountName, ItemAmount, DiscountAmount, FreightAmount, InsuranceAmount, TotalAmount, ACINumber, BLNumber, BLType, ShipmentMode, PurchaseOrderNumber, PurchaseOrderLineNumber, LineState, LineNumber, NonItemFlag, ItemID, NonInventoryItemDescription, LineQuantity, LogisticLineUnitOfMeasure, LineCurrency, Price, LineAmount, BatchNumber, Origin, RecievedDate, OriginDescription, ItemCode, ItemDescription, ItemExtraDescription, ItemType, ShipmentSize, PurchaseOrderEnteredDate, PurchaseOrderCloseDate, PurchaseOrderReleaseDate, AssignToUser, CertificateNo, RequestArrivalDate FROM QGetTrackingHistory ORDER BY LogisticCreatedDate DESC, TrackNumber DESC;',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'QGetTrackingHistory',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_tracking_history' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_tracking_history', @QID);
 GO
+
