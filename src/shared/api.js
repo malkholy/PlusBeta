@@ -20,6 +20,8 @@ export async function apiCall(operation, lineData = null, extraParams = {}, apiT
   let url = '';
   let spName = '';
 
+  const isGitHubPages = window.location.hostname === 'malkholy.github.io';
+
   if (target === 'express') {
     url = IS_DEV ? '/express-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7790/General/GeneralAPI/';
     spName = 'APIExprssControlOperation';
@@ -33,8 +35,10 @@ export async function apiCall(operation, lineData = null, extraParams = {}, apiT
     url = IS_DEV ? '/query-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
     spName = 'APIPlusQueryOperation';
   } else if (target === 'purchasing') {
-    url = IS_DEV ? '/purchasing-api/General/GeneralAPI/' : '/plus-api/General/GeneralAPI/';
-    spName = IS_DEV ? 'APIPlusPurchasingOperation' : 'APIPlusOperation';
+    url = (IS_DEV || isGitHubPages) 
+      ? (IS_DEV ? '/purchasing-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/') 
+      : '/plus-api/General/GeneralAPI/';
+    spName = (IS_DEV || isGitHubPages) ? 'APIPlusPurchasingOperation' : 'APIPlusOperation';
   } else if (target === 'logistics') {
     url = IS_DEV ? '/logistics-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
     spName = 'APIPlusLogisticsOperation';
