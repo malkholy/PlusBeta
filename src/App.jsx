@@ -13,6 +13,7 @@ import SaftyStockItemMaster from './pages/SaftyStockItemMaster.jsx';
 import UserPermissions from './pages/UserPermissions.jsx';
 import QueryMaster from './pages/QueryMaster.jsx';
 import TrackingHistory from './pages/TrackingHistory.jsx';
+import TrackDetails from './pages/TrackDetails.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -184,6 +185,7 @@ const PAGE_COMPONENTS = {
   user_permissions: UserPermissions,
   query_master: QueryMaster,
   logistics_tracking_history: TrackingHistory,
+  logistics_track_details: TrackDetails,
 };
 
 function checkIsAdmin(u, fallbackUsername) {
@@ -548,7 +550,7 @@ export default function App() {
         )}
         <div className="page-area">
           {ActivePage
-            ? <ActivePage user={user} def={activeDef} onBack={() => openPage('purchasing')} />
+            ? <ActivePage user={user} def={activeDef} openPage={openPage} onBack={() => openPage('purchasing')} />
             : <div style={{ textAlign: 'center', padding: '48px', color: 'var(--muted)' }}>Select a page from the sidebar</div>
           }
         </div>

@@ -86,6 +86,13 @@ BEGIN
     INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
     VALUES ('logistics_tracking_history', N'Tracking History', N'📜', N'Track shipment history and logistical states', 0, 'logistics_group', 210);
 END
+
+-- 10. Track Details (Page)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'logistics_track_details')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('logistics_track_details', N'Track Details', N'🔍', N'Detailed view of shipment tracking lines and logistical status', 0, 'logistics_group', 220);
+END
 GO
 
 
