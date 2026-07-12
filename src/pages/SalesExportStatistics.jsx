@@ -382,6 +382,7 @@ export default function SalesExportStatistics(props) {
   const [months, setMonths] = useState([now.getMonth() + 1]);
   const [quarters, setQuarters] = useState([Math.ceil((now.getMonth() + 1) / 3)]);
   const [year, setYear] = useState(2026); // Default comparison is 2026 vs 2025
+  const [enlargedPanel, setEnlargedPanel] = useState(null); // 'items' or 'months' or null
 
   // Fetch lookups once
   useEffect(() => {
@@ -712,7 +713,25 @@ export default function SalesExportStatistics(props) {
           flexDirection: 'column',
           minHeight: 350
         }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>📦 Exported Items Breakdown</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>📦 Exported Items Breakdown</h3>
+            <button 
+              onClick={() => setEnlargedPanel('items')}
+              style={{
+                background: 'var(--soft)',
+                border: '0.5px solid var(--border)',
+                borderRadius: 'var(--radius-xs)',
+                padding: '4px 10px',
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: 'var(--muted)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font)'
+              }}
+            >
+              ⛶ Enlarge
+            </button>
+          </div>
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {itemBreakdown.length === 0 ? (
               <div style={{ padding: 20, color: 'var(--muted)', textAlign: 'center' }}>No items match the selected filter.</div>
@@ -761,7 +780,25 @@ export default function SalesExportStatistics(props) {
           flexDirection: 'column',
           minHeight: 350
         }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>📅 Monthly YoY Statistics</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>📅 Monthly YoY Statistics</h3>
+            <button 
+              onClick={() => setEnlargedPanel('months')}
+              style={{
+                background: 'var(--soft)',
+                border: '0.5px solid var(--border)',
+                borderRadius: 'var(--radius-xs)',
+                padding: '4px 10px',
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: 'var(--muted)',
+                cursor: 'pointer',
+                fontFamily: 'var(--font)'
+              }}
+            >
+              ⛶ Enlarge
+            </button>
+          </div>
           <div style={{ overflowY: 'auto', flex: 1 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
               <thead>
@@ -792,6 +829,124 @@ export default function SalesExportStatistics(props) {
           </div>
         </div>
       </div>
+
+      {/* Enlarged Pop-up Modal */}
+      {enlargedPanel && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px'
+        }} onClick={() => setEnlargedPanel(null)}>
+          <div style={{
+            width: '95vw',
+            maxWidth: '1400px',
+            height: '85vh',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: 24,
+            position: 'relative'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>
+                {enlargedPanel === 'items' ? '📦 Exported Items Breakdown (Enlarged)' : '📅 Monthly YoY Statistics (Enlarged)'}
+              </h3>
+              <button 
+                onClick={() => setEnlargedPanel(null)} 
+                style={{
+                  background: 'var(--soft)',
+                  border: '1.5px solid var(--border)',
+                  borderRadius: 8,
+                  padding: '6px 12px',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: 'var(--text)',
+                  fontFamily: 'var(--font)'
+                }}
+              >
+                ✕ Close
+              </button>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {enlargedPanel === 'items' ? (
+                itemBreakdown.length === 0 ? (
+                  <div style={{ padding: 20, color: 'var(--muted)', textAlign: 'center' }}>No items match the selected filter.</div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0, zIndex: 1 }}>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Item</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Qty</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Qty</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Qty Growth</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {itemBreakdown.map((item, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '10px 12px' }}>
+                            <div style={{ fontWeight: 600, color: 'var(--text)' }}>{item.code}</div>
+                            <div style={{ fontSize: 11, color: 'var(--muted)' }}>{item.desc}</div>
+                          </td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{item.qtyPrev.toLocaleString('en-US')}</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{item.qtyActive.toLocaleString('en-US')}</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.qtyPrev, item.qtyActive)}</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{item.wtPrev.toLocaleString('en-US')} kg</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{item.wtActive.toLocaleString('en-US')} kg</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.wtPrev, item.wtActive)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0, zIndex: 1 }}>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Month</th>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Qty</th>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Qty</th>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Qty Growth</th>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight</th>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight</th>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {monthlyData.map((m, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid var(--border)', background: m.qtyActive > 0 ? 'transparent' : 'var(--soft)' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 700 }}>{m.name}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.qtyPrev.toLocaleString('en-US')}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{m.qtyActive.toLocaleString('en-US')}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.qtyPrev, m.qtyActive)}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.wtPrev.toLocaleString('en-US')} kg</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{m.wtActive.toLocaleString('en-US')} kg</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.wtPrev, m.wtActive)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
