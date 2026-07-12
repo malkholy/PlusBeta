@@ -1,32 +1,95 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { apiCall } from '../shared/api.js';
 
-const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+const MONTHS = [
+  { value: 1, label: 'January' }, { value: 2, label: 'February' },
+  { value: 3, label: 'March' },   { value: 4, label: 'April' },
+  { value: 5, label: 'May' },     { value: 6, label: 'June' },
+  { value: 7, label: 'July' },    { value: 8, label: 'August' },
+  { value: 9, label: 'September' },{ value: 10, label: 'October' },
+  { value: 11, label: 'November' },{ value: 12, label: 'December' },
 ];
+const QUARTERS = [
+  { value: 1, label: 'Q1 (Jan-Mar)' }, { value: 2, label: 'Q2 (Apr-Jun)' },
+  { value: 3, label: 'Q3 (Jul-Sep)' }, { value: 4, label: 'Q4 (Oct-Dec)' },
+];
+const YEARS = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i);
+
+function MultiSelect({ options, selected, onChange, placeholder }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    function handle(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
+  const label = selected.length === 0 ? placeholder
+    : selected.length === 1 ? options.find(o => o.value === selected[0])?.label
+    : `${selected.length} selected`;
+  return (
+    <div ref={ref} style={{position:'relative'}}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        height:30, padding:'0 10px', fontSize:12, border:'0.5px solid var(--border)',
+        borderRadius:'var(--radius-xs)', background:'var(--surface)', color:'var(--text)',
+        cursor:'pointer', display:'flex', alignItems:'center', gap:6, minWidth:120, fontFamily:'var(--font)'
+      }}>
+        <span style={{flex:1, textAlign:'left', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{label}</span>
+        {selected.length > 1 && <span style={{background:'var(--orange)', color:'#fff', fontSize:10, fontWeight:700, padding:'1px 5px', borderRadius:999}}>{selected.length}</span>}
+        <span style={{fontSize:10}}>▾</span>
+      </button>
+      {open && (
+        <div style={{
+          position:'absolute', top:34, right:0, background:'var(--surface)',
+          border:'1px solid var(--border)', borderRadius:'var(--radius-sm)',
+          zIndex:100, minWidth:160, boxShadow:'var(--shadow-lg)', maxHeight:240, overflowY:'auto'
+        }}>
+          {options.map(o => (
+            <div key={o.value} onClick={() => {
+              const next = selected.includes(o.value) ? selected.filter(v => v !== o.value) : [...selected, o.value];
+              onChange(next.length ? next : [o.value]);
+            }} style={{
+              display:'flex', alignItems:'center', gap:8, padding:'8px 12px', fontSize:12,
+              cursor:'pointer', color: selected.includes(o.value)?'var(--orange)':'var(--text)',
+              fontWeight: selected.includes(o.value)?600:400,
+              background: selected.includes(o.value)?'var(--orange-soft)':'transparent'
+            }}>
+              <input type="checkbox" checked={selected.includes(o.value)} readOnly style={{accentColor:'var(--orange)', width:13, height:13}} />
+              {o.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function SalesExportStatistics(props) {
+  const now = new Date();
   const [customers, setCustomers] = useState([]);
   const [items, setItems] = useState([]);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Filter States
+  // Primary Filters
   const [selectedCustomer, setSelectedCustomer] = useState('');
   const [selectedItem, setSelectedItem] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState(''); // Empty string means "All Months"
 
-  // Fetch Lookups once on mount
+  // Period / Date Filters (replicated from Sales Details)
+  const [period, setPeriod] = useState('monthly');
+  const [months, setMonths] = useState([now.getMonth() + 1]);
+  const [quarters, setQuarters] = useState([Math.ceil((now.getMonth() + 1) / 3)]);
+  const [year, setYear] = useState(2026); // Default comparison is 2026 vs 2025
+
+  // Fetch lookups once
   useEffect(() => {
     loadLookups();
   }, []);
 
-  // Fetch data when filters change
+  // Fetch raw data when primary filters change
   useEffect(() => {
     loadData();
-  }, [selectedCustomer, selectedItem, selectedMonth]);
+  }, [selectedCustomer, selectedItem]);
 
   async function loadLookups() {
     try {
@@ -47,7 +110,7 @@ export default function SalesExportStatistics(props) {
       const payload = {
         CustomerNo: selectedCustomer || null,
         ItemCode: selectedItem || null,
-        Month: selectedMonth ? Number(selectedMonth) : null
+        Month: null // Fetch all months to filter/compare YoY locally
       };
       const res = await apiCall('GetSalesExportStatistics', payload, {}, 'logistics');
       if (res.State === 0) {
@@ -61,79 +124,104 @@ export default function SalesExportStatistics(props) {
     setLoading(false);
   }
 
-  // Calculate YoY Totals for Cards
-  const totals = (() => {
-    let qty2025 = 0;
-    let qty2026 = 0;
-    let wt2025 = 0;
-    let wt2026 = 0;
-
-    records.forEach(r => {
-      if (r.Year === 2025) {
-        qty2025 += Number(r.TotalQuantity || 0);
-        wt2025 += Number(r.TotalWeight || 0);
-      } else if (r.Year === 2026) {
-        qty2026 += Number(r.TotalQuantity || 0);
-        wt2026 += Number(r.TotalWeight || 0);
-      }
-    });
-
-    return { qty2025, qty2026, wt2025, wt2026 };
+  // Resolve active months list based on selected period
+  const activeMonthsList = (() => {
+    if (period === 'yearly') {
+      return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    }
+    if (period === 'quarterly') {
+      const list = [];
+      quarters.forEach(q => {
+        if (q === 1) list.push(1, 2, 3);
+        else if (q === 2) list.push(4, 5, 6);
+        else if (q === 3) list.push(7, 8, 9);
+        else if (q === 4) list.push(10, 11, 12);
+      });
+      return [...new Set(list)];
+    }
+    return months;
   })();
 
-  // Aggregate monthly data for grid
-  const monthlyData = (() => {
-    const months = Array.from({ length: 12 }, (_, i) => ({
-      monthNum: i + 1,
-      name: MONTH_NAMES[i],
-      qty2025: 0,
-      qty2026: 0,
-      wt2025: 0,
-      wt2026: 0
-    }));
+  const activeYear = year;
+  const prevYear = year - 1;
+
+  // YoY calculations for KPI Cards
+  const totals = (() => {
+    let qtyPrev = 0;
+    let qtyActive = 0;
+    let wtPrev = 0;
+    let wtActive = 0;
 
     records.forEach(r => {
-      const mIdx = r.Month - 1;
-      if (mIdx >= 0 && mIdx < 12) {
-        if (r.Year === 2025) {
-          months[mIdx].qty2025 += Number(r.TotalQuantity || 0);
-          months[mIdx].wt2025 += Number(r.TotalWeight || 0);
-        } else if (r.Year === 2026) {
-          months[mIdx].qty2026 += Number(r.TotalQuantity || 0);
-          months[mIdx].wt2026 += Number(r.TotalWeight || 0);
+      if (activeMonthsList.includes(r.Month)) {
+        if (r.Year === prevYear) {
+          qtyPrev += Number(r.TotalQuantity || 0);
+          wtPrev += Number(r.TotalWeight || 0);
+        } else if (r.Year === activeYear) {
+          qtyActive += Number(r.TotalQuantity || 0);
+          wtActive += Number(r.TotalWeight || 0);
         }
       }
     });
 
-    return selectedMonth 
-      ? months.filter(m => m.monthNum === Number(selectedMonth))
-      : months;
+    return { qtyPrev, qtyActive, wtPrev, wtActive };
   })();
 
-  // Aggregate item breakdown
-  const itemBreakdown = (() => {
-    const itemsMap = {};
+  // Aggregate monthly data for grid (restricted to active list)
+  const monthlyData = (() => {
+    const list = activeMonthsList.map(mNum => ({
+      monthNum: mNum,
+      name: MONTHS.find(m => m.value === mNum)?.label || '',
+      qtyPrev: 0,
+      qtyActive: 0,
+      wtPrev: 0,
+      wtActive: 0
+    }));
+
     records.forEach(r => {
-      if (!itemsMap[r.ItemCode]) {
-        itemsMap[r.ItemCode] = {
-          code: r.ItemCode,
-          desc: r.ItemExtraDescription || 'Unknown Item',
-          qty2025: 0,
-          qty2026: 0,
-          wt2025: 0,
-          wt2026: 0
-        };
-      }
-      if (r.Year === 2025) {
-        itemsMap[r.ItemCode].qty2025 += Number(r.TotalQuantity || 0);
-        itemsMap[r.ItemCode].wt2025 += Number(r.TotalWeight || 0);
-      } else if (r.Year === 2026) {
-        itemsMap[r.ItemCode].qty2026 += Number(r.TotalQuantity || 0);
-        itemsMap[r.ItemCode].wt2026 += Number(r.TotalWeight || 0);
+      if (activeMonthsList.includes(r.Month)) {
+        const item = list.find(x => x.monthNum === r.Month);
+        if (item) {
+          if (r.Year === prevYear) {
+            item.qtyPrev += Number(r.TotalQuantity || 0);
+            item.wtPrev += Number(r.TotalWeight || 0);
+          } else if (r.Year === activeYear) {
+            item.qtyActive += Number(r.TotalQuantity || 0);
+            item.wtActive += Number(r.TotalWeight || 0);
+          }
+        }
       }
     });
 
-    return Object.values(itemsMap).sort((a, b) => b.qty2026 - a.qty2026);
+    return list.sort((a, b) => a.monthNum - b.monthNum);
+  })();
+
+  // Aggregate item breakdown (restricted to active list)
+  const itemBreakdown = (() => {
+    const itemsMap = {};
+    records.forEach(r => {
+      if (activeMonthsList.includes(r.Month)) {
+        if (!itemsMap[r.ItemCode]) {
+          itemsMap[r.ItemCode] = {
+            code: r.ItemCode,
+            desc: r.ItemExtraDescription || 'Unknown Item',
+            qtyPrev: 0,
+            qtyActive: 0,
+            wtPrev: 0,
+            wtActive: 0
+          };
+        }
+        if (r.Year === prevYear) {
+          itemsMap[r.ItemCode].qtyPrev += Number(r.TotalQuantity || 0);
+          itemsMap[r.ItemCode].wtPrev += Number(r.TotalWeight || 0);
+        } else if (r.Year === activeYear) {
+          itemsMap[r.ItemCode].qtyActive += Number(r.TotalQuantity || 0);
+          itemsMap[r.ItemCode].wtActive += Number(r.TotalWeight || 0);
+        }
+      }
+    });
+
+    return Object.values(itemsMap).sort((a, b) => b.qtyActive - a.qtyActive);
   })();
 
   function growth(prev, curr) {
@@ -159,14 +247,24 @@ export default function SalesExportStatistics(props) {
     );
   }
 
+  function resetFilters() {
+    setSelectedCustomer('');
+    setSelectedItem('');
+    setPeriod('monthly');
+    setMonths([now.getMonth() + 1]);
+    setQuarters([Math.ceil((now.getMonth() + 1) / 3)]);
+    setYear(2026);
+    loadData();
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       {/* Title Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>📊 Sales Export Statistics</h2>
           <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>
-            Compare monthly exported quantities and weights YoY for the years 2025 and 2026.
+            Compare monthly exported quantities and weights YoY for the selected filters.
           </p>
         </div>
         <button 
@@ -179,7 +277,47 @@ export default function SalesExportStatistics(props) {
         </button>
       </div>
 
-      {/* Filters Panel */}
+      {/* Date / Period Filters (Replicated from Sales Details) */}
+      <div style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 14,
+        padding: '12px 18px',
+        marginBottom: 16,
+        boxShadow: 'var(--shadow)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        flexWrap: 'wrap'
+      }}>
+        <div style={{ display: 'flex', border: '0.5px solid var(--border2)', borderRadius: 'var(--radius-xs)', overflow: 'hidden' }}>
+          {['monthly', 'quarterly', 'yearly'].map(p => (
+            <button key={p} onClick={() => setPeriod(p)} style={{
+              padding: '5px 14px', fontSize: 12, border: 'none', cursor: 'pointer', fontFamily: 'var(--font)',
+              background: period === p ? 'var(--orange)' : 'var(--surface)',
+              color: period === p ? '#fff' : 'var(--muted)', fontWeight: period === p ? 600 : 400,
+              textTransform: 'capitalize'
+            }}>{p}</button>
+          ))}
+        </div>
+        {period === 'monthly' && <MultiSelect options={MONTHS} selected={months} onChange={setMonths} placeholder="Select months" />}
+        {period === 'quarterly' && <MultiSelect options={QUARTERS} selected={quarters} onChange={setQuarters} placeholder="Select quarters" />}
+        
+        <select 
+          className="filter-select" 
+          value={year} 
+          onChange={e => setYear(Number(e.target.value))} 
+          style={{ height: 30, fontSize: 12, padding: '0 8px', borderRadius: 'var(--radius-xs)', border: '0.5px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'var(--font)' }}
+        >
+          {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+
+        <span style={{ fontSize: 11, color: 'var(--muted)', background: 'var(--soft)', padding: '4px 12px', borderRadius: 999 }}>
+          📅 Comparison: {activeYear} vs {prevYear}
+        </span>
+      </div>
+
+      {/* Primary Customer / Item Filters */}
       <div style={{
         background: 'var(--surface)',
         border: '1px solid var(--border)',
@@ -248,36 +386,8 @@ export default function SalesExportStatistics(props) {
           </select>
         </div>
 
-        <div style={{ flex: '0 1 180px' }}>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
-            Month Filter
-          </label>
-          <select
-            value={selectedMonth}
-            onChange={e => setSelectedMonth(e.target.value)}
-            style={{
-              width: '100%',
-              height: 38,
-              padding: '0 12px',
-              border: '1.5px solid var(--border)',
-              borderRadius: 8,
-              fontSize: 13,
-              color: 'var(--text)',
-              background: 'var(--bg)',
-              outline: 'none'
-            }}
-          >
-            <option value="">All Months</option>
-            {MONTH_NAMES.map((name, idx) => (
-              <option key={idx + 1} value={idx + 1}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </div>
-
         <button 
-          onClick={loadData}
+          onClick={resetFilters}
           disabled={loading}
           style={{
             height: 38,
@@ -301,21 +411,21 @@ export default function SalesExportStatistics(props) {
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 20 }}>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow)' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Total Export Qty (2026)</div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Export Quantity ({activeYear})</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--text)', marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            {totals.qty2026.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)' }}>vs {totals.qty2025.toLocaleString('en-US', { maximumFractionDigits: 0 })} (2025)</span>
+            {totals.qtyActive.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)' }}>vs {totals.qtyPrev.toLocaleString('en-US', { maximumFractionDigits: 0 })} ({prevYear})</span>
           </div>
-          <div style={{ marginTop: 6 }}>{renderGrowthBadge(totals.qty2025, totals.qty2026)}</div>
+          <div style={{ marginTop: 6 }}>{renderGrowthBadge(totals.qtyPrev, totals.qtyActive)}</div>
         </div>
 
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow)' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Total Export Weight (2026)</div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Export Weight ({activeYear})</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--orange)', marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            {totals.wt2026.toLocaleString('en-US', { maximumFractionDigits: 1 })} kg
-            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)' }}>vs {totals.wt2025.toLocaleString('en-US', { maximumFractionDigits: 1 })} kg</span>
+            {totals.wtActive.toLocaleString('en-US', { maximumFractionDigits: 1 })} kg
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)' }}>vs {totals.wtPrev.toLocaleString('en-US', { maximumFractionDigits: 1 })} kg</span>
           </div>
-          <div style={{ marginTop: 6 }}>{renderGrowthBadge(totals.wt2025, totals.wt2026)}</div>
+          <div style={{ marginTop: 6 }}>{renderGrowthBadge(totals.wtPrev, totals.wtActive)}</div>
         </div>
       </div>
 
@@ -338,24 +448,24 @@ export default function SalesExportStatistics(props) {
               <thead>
                 <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0, zIndex: 1 }}>
                   <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Month</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>2025 Qty</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>2026 Qty</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Qty</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Qty</th>
                   <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Qty Growth</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>2025 Weight</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>2026 Weight</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight</th>
                   <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
                 </tr>
               </thead>
               <tbody>
                 {monthlyData.map((m, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid var(--border)', background: m.qty2026 > 0 ? 'transparent' : 'var(--soft)' }}>
+                  <tr key={idx} style={{ borderBottom: '1px solid var(--border)', background: m.qtyActive > 0 ? 'transparent' : 'var(--soft)' }}>
                     <td style={{ padding: '10px 12px', fontWeight: 700 }}>{m.name}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.qty2025.toLocaleString('en-US')}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{m.qty2026.toLocaleString('en-US')}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.qty2025, m.qty2026)}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.wt2025.toLocaleString('en-US')} kg</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{m.wt2026.toLocaleString('en-US')} kg</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.wt2025, m.wt2026)}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.qtyPrev.toLocaleString('en-US')}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{m.qtyActive.toLocaleString('en-US')}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.qtyPrev, m.qtyActive)}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.wtPrev.toLocaleString('en-US')} kg</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{m.wtActive.toLocaleString('en-US')} kg</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.wtPrev, m.wtActive)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -383,9 +493,9 @@ export default function SalesExportStatistics(props) {
                 <thead>
                   <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0, zIndex: 1 }}>
                     <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Item</th>
-                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>2026 Qty</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Qty</th>
                     <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Growth</th>
-                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>2026 Wt</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Wt</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -395,9 +505,9 @@ export default function SalesExportStatistics(props) {
                         <div style={{ fontWeight: 600, color: 'var(--text)' }}>{item.code}</div>
                         <div style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }} title={item.desc}>{item.desc}</div>
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{item.qty2026.toLocaleString('en-US')}</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.qty2025, item.qty2026)}</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{item.wt2026.toLocaleString('en-US')} kg</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{item.qtyActive.toLocaleString('en-US')}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.qtyPrev, item.qtyActive)}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{item.wtActive.toLocaleString('en-US')} kg</td>
                     </tr>
                   ))}
                 </tbody>
