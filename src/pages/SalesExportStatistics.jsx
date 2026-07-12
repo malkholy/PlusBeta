@@ -162,11 +162,21 @@ export default function SalesExportStatistics(props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       {/* Title Header */}
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>📊 Sales Export Statistics</h2>
-        <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>
-          Compare monthly exported quantities and weights YoY for the years 2025 and 2026.
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>📊 Sales Export Statistics</h2>
+          <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>
+            Compare monthly exported quantities and weights YoY for the years 2025 and 2026.
+          </p>
+        </div>
+        <button 
+          onClick={loadData} 
+          disabled={loading}
+          className="btn-primary" 
+          style={{ height: 32, fontSize: 12 }}
+        >
+          {loading ? 'Refreshing...' : '🔄 Refresh'}
+        </button>
       </div>
 
       {/* Filters Panel */}
