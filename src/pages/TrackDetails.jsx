@@ -251,8 +251,8 @@ export default function TrackDetails(props) {
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{headerData.VendorName || headerData.VendorNumber}</div>
             </div>
             <div>
-              <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Forwarder / Carrier</span>
-              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{headerData.ForwarderName || '-'} / {headerData.CarrierName || '-'}</div>
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Clearing Agent / Carrier</span>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{headerData.ClearingAgentName || '-'} / {headerData.CarrierName || '-'}</div>
             </div>
             <div>
               <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Shipment State</span>
