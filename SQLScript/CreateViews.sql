@@ -634,7 +634,7 @@ SELECT
     a.InvoicedQuantity, 
     a.CustomerNo, 
     c.CustomerExtraName, 
-    a.GrossWeight
+    b.GrossWeight
 FROM acr.CustomerInvoiceLine a 
 LEFT OUTER JOIN inv.ItemMaster b on a.ItemID = b.ItemID 
 LEFT OUTER JOIN acr.CustomerMaster c on c.CustomerNo = a.CustomerNo 

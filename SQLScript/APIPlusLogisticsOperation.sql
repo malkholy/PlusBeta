@@ -183,8 +183,8 @@ BEGIN
                 CustomerExtraName,
                 ItemCode,
                 ItemExtraDescription,
-                SUM(InvoicedQuantity) AS TotalQuantity,
-                SUM(GrossWeight) AS TotalWeight
+                SUM(ABS(InvoicedQuantity)) AS TotalQuantity,
+                SUM(ABS(InvoicedQuantity) * GrossWeight) AS TotalWeight
             FROM dbo.QGetSalesExportStatistics
             WHERE (@CustomerNo IS NULL OR CustomerNo = @CustomerNo)
               AND (@ItemCode IS NULL OR ItemCode = @ItemCode)
