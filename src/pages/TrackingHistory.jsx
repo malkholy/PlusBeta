@@ -46,8 +46,8 @@ export default function TrackingHistory(props) {
       render: (val, row) => val || row.VendorNumber || '-'
     },
     {
-      key: 'ForwarderName',
-      label: 'Forwarder Name'
+      key: 'ClearingAgentName',
+      label: 'Clearing Agent'
     },
     {
       key: 'ETA',
