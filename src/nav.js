@@ -36,12 +36,6 @@ const NAV = [
         label: 'Tracking History',
         icon: '📜',
         desc: 'Track shipment history and logistical states'
-      },
-      {
-        id: 'logistics_track_details',
-        label: 'Track Details',
-        icon: '🔍',
-        desc: 'Detailed view of shipment tracking lines and logistical status'
       }
     ]
   }
