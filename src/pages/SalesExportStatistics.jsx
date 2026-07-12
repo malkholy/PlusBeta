@@ -700,7 +700,7 @@ export default function SalesExportStatistics(props) {
       </div>
 
       {/* Grid Dashboard Tables */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20, minHeight: 0, flex: 1 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minHeight: 0, flex: 1 }}>
         {/* Month YoY Comparison Grid */}
         <div style={{ 
           background: 'var(--surface)', 
@@ -710,7 +710,7 @@ export default function SalesExportStatistics(props) {
           boxShadow: 'var(--shadow)',
           display: 'flex',
           flexDirection: 'column',
-          minHeight: 0
+          minHeight: 350
         }}>
           <h3 style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>📅 Monthly YoY Statistics</h3>
           <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -752,7 +752,7 @@ export default function SalesExportStatistics(props) {
           boxShadow: 'var(--shadow)',
           display: 'flex',
           flexDirection: 'column',
-          minHeight: 0
+          minHeight: 350
         }}>
           <h3 style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>📦 Exported Items Breakdown</h3>
           <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -763,9 +763,12 @@ export default function SalesExportStatistics(props) {
                 <thead>
                   <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0, zIndex: 1 }}>
                     <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Item</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Qty</th>
                     <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Qty</th>
-                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Growth</th>
-                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Wt</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Qty Growth</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -773,11 +776,14 @@ export default function SalesExportStatistics(props) {
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
                       <td style={{ padding: '10px 12px' }}>
                         <div style={{ fontWeight: 600, color: 'var(--text)' }}>{item.code}</div>
-                        <div style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }} title={item.desc}>{item.desc}</div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 300 }} title={item.desc}>{item.desc}</div>
                       </td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{item.qtyPrev.toLocaleString('en-US')}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{item.qtyActive.toLocaleString('en-US')}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.qtyPrev, item.qtyActive)}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{item.wtPrev.toLocaleString('en-US')} kg</td>
                       <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{item.wtActive.toLocaleString('en-US')} kg</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.wtPrev, item.wtActive)}</td>
                     </tr>
                   ))}
                 </tbody>
