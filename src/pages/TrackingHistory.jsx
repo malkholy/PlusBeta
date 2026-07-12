@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiCall } from '../shared/api.js';
+import DataGrid from '../shared/DataGrid.jsx';
 
 const getTodayString = () => {
   const today = new Date();
@@ -28,6 +29,84 @@ export default function TrackingHistory(props) {
   const [selectedVendor, setSelectedVendor] = useState('');
   const [fromDate, setFromDate] = useState(getMonthBeginString());
   const [toDate, setToDate] = useState(getTodayString());
+
+  const columns = [
+    {
+      key: 'TrackNumber',
+      label: 'Track Number',
+      render: (val, row) => (
+        <span style={{ fontWeight: 700 }}>
+          {val} {row.IsLocked ? '🔒' : ''}
+        </span>
+      )
+    },
+    {
+      key: 'VendorName',
+      label: 'Vendor Name',
+      render: (val, row) => val || row.VendorNumber || '-'
+    },
+    {
+      key: 'ForwarderName',
+      label: 'Forwarder Name'
+    },
+    {
+      key: 'ETA',
+      label: 'ETA',
+      render: (val) => formatDate(val)
+    },
+    {
+      key: 'TotalAmount',
+      label: 'Total Amount',
+      render: (val, row) => (
+        <div style={{ fontWeight: 700 }}>
+          {Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} <span style={{ fontSize: 10, color: 'var(--muted)' }}>{row.Currency}</span>
+        </div>
+      )
+    },
+    {
+      key: 'ShipmentStateDescription',
+      label: 'Shipment State',
+      render: (val) => (
+        <span style={{
+          fontSize: 11,
+          padding: '2.5px 8px',
+          borderRadius: 6,
+          background: 'var(--blue-soft)',
+          color: 'var(--blue)',
+          fontWeight: 600
+        }}>
+          {val || 'Unknown'}
+        </span>
+      )
+    },
+    {
+      key: 'StateDescription',
+      label: 'Tracking State',
+      render: (val) => (
+        <span style={{
+          fontSize: 11,
+          padding: '2.5px 8px',
+          borderRadius: 6,
+          background: 'var(--soft)',
+          color: 'var(--muted)',
+          fontWeight: 600
+        }}>
+          {val || 'N/A'}
+        </span>
+      )
+    },
+    {
+      key: 'IsLocked',
+      label: 'Status',
+      render: (val) => (
+        val ? (
+          <span style={{ color: 'var(--green)', fontSize: 11, fontWeight: 700 }}>✓ Locked</span>
+        ) : (
+          <span style={{ color: 'var(--orange)', fontSize: 11, fontWeight: 700 }}>• Active</span>
+        )
+      )
+    }
+  ];
 
   useEffect(() => {
     loadVendors();
@@ -263,116 +342,20 @@ export default function TrackingHistory(props) {
 
       {/* Data Section */}
       <div style={{ display: 'flex', flex: 1, gap: 20, minHeight: 0 }}>
-        {/* Main Grid table */}
-        <div style={{
-          flex: 1,
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 14,
-          boxShadow: 'var(--shadow)',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0
-        }}>
-          {error && (
-            <div style={{ margin: 16, background: 'var(--red-soft)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.2)', padding: 12, borderRadius: 8, fontSize: 13 }}>
-              {error}
-            </div>
-          )}
-
-          <div style={{ flex: 1, overflow: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: 'var(--soft)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 1 }}>
-                  <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)' }}>Track Number</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)' }}>Vendor Name</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)' }}>Forwarder</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)' }}>ETA</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)' }}>Total Amount</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)' }}>Shipment State</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)' }}>Tracking State</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--muted)' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="8" style={{ padding: 32, textAlign: 'center', color: 'var(--muted)' }}>
-                      Loading tracking history...
-                    </td>
-                  </tr>
-                ) : rows.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" style={{ padding: 32, textAlign: 'center', color: 'var(--muted)' }}>
-                      No tracking historical data found.
-                    </td>
-                  </tr>
-                ) : (
-                  rows.map((row, idx) => {
-                    return (
-                      <tr 
-                        key={idx} 
-                        onClick={() => {
-                          sessionStorage.setItem('selectedTrackNumber', row.TrackNumber);
-                          if (props.openPage) props.openPage('logistics_track_details');
-                        }}
-                        style={{
-                          borderBottom: '1px solid var(--border)',
-                          cursor: 'pointer',
-                          transition: 'all 0.15s'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'var(--soft)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                      >
-                        <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--text)' }}>
-                          {row.TrackNumber} {row.IsLocked ? '🔒' : ''}
-                        </td>
-                        <td style={{ padding: '12px 16px', color: 'var(--text)' }}>{row.VendorName || row.VendorNumber}</td>
-                        <td style={{ padding: '12px 16px', color: 'var(--muted)' }}>{row.ForwarderName || '-'}</td>
-                        <td style={{ padding: '12px 16px', color: 'var(--text)' }}>{formatDate(row.ETA)}</td>
-                        <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--text)' }}>
-                          {row.TotalAmount?.toLocaleString('en-US', { minimumFractionDigits: 2 })} <span style={{ fontSize: 10, color: 'var(--muted)' }}>{row.Currency}</span>
-                        </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{
-                            fontSize: 11,
-                            padding: '2px 8px',
-                            borderRadius: 6,
-                            background: 'var(--blue-soft)',
-                            color: 'var(--blue)',
-                            fontWeight: 600
-                          }}>
-                            {row.ShipmentStateDescription || 'Unknown'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{
-                            fontSize: 11,
-                            padding: '2px 8px',
-                            borderRadius: 6,
-                            background: 'var(--soft)',
-                            color: 'var(--muted)',
-                            fontWeight: 600
-                          }}>
-                            {row.StateDescription || 'N/A'}
-                          </span>
-                        </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          {row.IsLocked ? (
-                            <span style={{ color: 'var(--green)', fontSize: 11, fontWeight: 700 }}>✓ Locked</span>
-                          ) : (
-                            <span style={{ color: 'var(--orange)', fontSize: 11, fontWeight: 700 }}>• Active</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
+        <DataGrid
+          title="Tracking History List"
+          subtitle="View and manage logistics tracking headers"
+          columns={columns}
+          rows={rows}
+          loading={loading}
+          onRowClick={(row) => {
+            sessionStorage.setItem('selectedTrackNumber', row.TrackNumber);
+            if (props.openPage) props.openPage('logistics_track_details');
+          }}
+          hideHeader={true}
+          hideSearch={true}
+          hideRefresh={true}
+        />
       </div>
     </div>
   );
