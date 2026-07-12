@@ -32,6 +32,32 @@ export default function TrackingHistory() {
   // Selected row for details panel
   const [selectedRow, setSelectedRow] = useState(null);
 
+  // Drawer tab states for lines details
+  const [lines, setLines] = useState([]);
+  const [loadingLines, setLoadingLines] = useState(false);
+  const [activeDrawerTab, setActiveDrawerTab] = useState('lines');
+
+  useEffect(() => {
+    if (selectedRow) {
+      loadLines(selectedRow.TrackNumber);
+    } else {
+      setLines([]);
+    }
+  }, [selectedRow]);
+
+  async function loadLines(trackNum) {
+    setLoadingLines(true);
+    try {
+      const res = await apiCall('GetTrackingHistoryLines', { TrackNumber: trackNum }, {}, 'logistics');
+      if (res.State === 0) {
+        setLines(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Failed to load lines:', e);
+    }
+    setLoadingLines(false);
+  }
+
   useEffect(() => {
     loadVendors();
     // Use helper dates directly on first load to prevent race condition on initial render closure
@@ -374,9 +400,10 @@ export default function TrackingHistory() {
         </div>
 
         {/* Side Details Panel */}
+        {/* Side Details Panel */}
         {selectedRow && (
           <div style={{
-            width: 420,
+            width: 650,
             flexShrink: 0,
             background: 'var(--surface)',
             border: '1px solid var(--border)',
@@ -386,124 +413,211 @@ export default function TrackingHistory() {
             flexDirection: 'column',
             minHeight: 0
           }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--text)' }}>Tracking Details</h3>
-                <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>LHID: {selectedRow.LHID}</span>
+            {/* Header & Tabs */}
+            <div style={{ padding: '16px 20px 0 20px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div>
+                  <h3 style={{ fontSize: 14.5, fontWeight: 800, color: 'var(--text)' }}>Tracking Details</h3>
+                  <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>Track Number: {selectedRow.TrackNumber} | LHID: {selectedRow.LHID}</span>
+                </div>
+                <button 
+                  onClick={() => setSelectedRow(null)}
+                  style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: 'var(--muted)' }}
+                >
+                  ✕
+                </button>
               </div>
-              <button 
-                onClick={() => setSelectedRow(null)}
-                style={{ background: 'none', border: 'none', fontSize: 16, cursor: 'pointer', color: 'var(--muted)' }}
-              >
-                ✕
-              </button>
+              <div style={{ display: 'flex', gap: 16 }}>
+                <button 
+                  onClick={() => setActiveDrawerTab('lines')}
+                  style={{
+                    padding: '8px 4px',
+                    border: 'none',
+                    background: 'none',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    color: activeDrawerTab === 'lines' ? 'var(--orange)' : 'var(--muted)',
+                    borderBottom: activeDrawerTab === 'lines' ? '2px solid var(--orange)' : '2px solid transparent',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  📦 Lines ({lines.length})
+                </button>
+                <button 
+                  onClick={() => setActiveDrawerTab('details')}
+                  style={{
+                    padding: '8px 4px',
+                    border: 'none',
+                    background: 'none',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    color: activeDrawerTab === 'details' ? 'var(--orange)' : 'var(--muted)',
+                    borderBottom: activeDrawerTab === 'details' ? '2px solid var(--orange)' : '2px solid transparent',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  ⚙️ General Details
+                </button>
+              </div>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {/* Shipment Identifiers */}
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Identifiers</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div style={{ background: 'var(--bg)', padding: 10, borderRadius: 8 }}>
-                    <div style={{ fontSize: 9.5, color: 'var(--muted)' }}>Track Number</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{selectedRow.TrackNumber}</div>
+            {activeDrawerTab === 'lines' ? (
+              <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                {loadingLines ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>Loading lines...</div>
+                ) : lines.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>No line items found for this track.</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)' }}>
+                          <th style={{ padding: '8px 10px', fontWeight: 800, color: 'var(--muted)' }}>#</th>
+                          <th style={{ padding: '8px 10px', fontWeight: 800, color: 'var(--muted)' }}>PO #</th>
+                          <th style={{ padding: '8px 10px', fontWeight: 800, color: 'var(--muted)' }}>Item Code</th>
+                          <th style={{ padding: '8px 10px', fontWeight: 800, color: 'var(--muted)' }}>Description</th>
+                          <th style={{ padding: '8px 10px', fontWeight: 800, color: 'var(--muted)' }}>Qty</th>
+                          <th style={{ padding: '8px 10px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>Price</th>
+                          <th style={{ padding: '8px 10px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {lines.map((line, lIdx) => (
+                          <tr key={lIdx} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '8px 10px', color: 'var(--text)', fontWeight: 600 }}>{line.LineNumber}</td>
+                            <td style={{ padding: '8px 10px', color: 'var(--text)' }}>{line.PurchaseOrderNumber || '-'}</td>
+                            <td style={{ padding: '8px 10px', color: 'var(--orange)', fontFamily: 'monospace', fontWeight: 600 }}>{line.LogisticItemCode || '-'}</td>
+                            <td style={{ padding: '8px 10px', color: 'var(--text)' }}>
+                              <div style={{ fontWeight: 600 }}>{line.ItemDescription || '-'}</div>
+                              {line.ItemExtraDescription && (
+                                <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>{line.ItemExtraDescription}</div>
+                              )}
+                            </td>
+                            <td style={{ padding: '8px 10px', color: 'var(--text)', whiteSpace: 'nowrap' }}>
+                              {line.LineQuantity} <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>{line.LogisticLineUnitOfMeasure}</span>
+                            </td>
+                            <td style={{ padding: '8px 10px', color: 'var(--text)', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              {line.Price?.toLocaleString('en-US', { minimumFractionDigits: 2 })} <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>{line.Currency}</span>
+                            </td>
+                            <td style={{ padding: '8px 10px', color: 'var(--text)', textAlign: 'right', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                              {line.Amount?.toLocaleString('en-US', { minimumFractionDigits: 2 })} <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>{line.Currency}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  <div style={{ background: 'var(--bg)', padding: 10, borderRadius: 8 }}>
-                    <div style={{ fontSize: 9.5, color: 'var(--muted)' }}>PI Number</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{selectedRow.PINumber || '-'}</div>
-                  </div>
-                  <div style={{ background: 'var(--bg)', padding: 10, borderRadius: 8 }}>
-                    <div style={{ fontSize: 9.5, color: 'var(--muted)' }}>ACI Number</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{selectedRow.ACINumber || '-'}</div>
-                  </div>
-                  <div style={{ background: 'var(--bg)', padding: 10, borderRadius: 8 }}>
-                    <div style={{ fontSize: 9.5, color: 'var(--muted)' }}>BL Number</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{selectedRow.BLNumber || '-'}</div>
-                  </div>
-                </div>
+                )}
               </div>
-
-              {/* Logistic States */}
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Courier & Customs Dates</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--bg)', padding: 12, borderRadius: 8 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: 'var(--muted)' }}>Sent to Bank:</span>
-                    <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDate(selectedRow.SentToBankDate)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: 'var(--muted)' }}>Released from Bank:</span>
-                    <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDate(selectedRow.ReleasedFromBankDate)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: 'var(--muted)' }}>Office Courier Arrival:</span>
-                    <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDate(selectedRow.OfficeCourierArrivalDate)}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-                    <span style={{ color: 'var(--muted)' }}>Factory Arrival:</span>
-                    <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDate(selectedRow.FactoryArrivalDate)}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Shipment Logistics & Mode */}
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Shipment & Cargo Info</div>
-                <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                    <div>
-                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Shipment Mode</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.ShipmentMode || '-'}</div>
+            ) : (
+              <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Shipment Identifiers */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Identifiers</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div style={{ background: 'var(--bg)', padding: 10, borderRadius: 8 }}>
+                      <div style={{ fontSize: 9.5, color: 'var(--muted)' }}>Track Number</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{selectedRow.TrackNumber}</div>
                     </div>
-                    <div>
-                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Shipment Size</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.ShipmentSize || '-'}</div>
+                    <div style={{ background: 'var(--bg)', padding: 10, borderRadius: 8 }}>
+                      <div style={{ fontSize: 9.5, color: 'var(--muted)' }}>PI Number</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{selectedRow.PINumber || '-'}</div>
                     </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
-                    <div>
-                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Destination</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.Destination || '-'}</div>
+                    <div style={{ background: 'var(--bg)', padding: 10, borderRadius: 8 }}>
+                      <div style={{ fontSize: 9.5, color: 'var(--muted)' }}>ACI Number</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{selectedRow.ACINumber || '-'}</div>
                     </div>
-                    <div>
-                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Clearing Agent</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.ClearingAgentName || '-'}</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
-                    <div>
-                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Customs Broker Ref</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.CustomsBrokerRef || '-'}</div>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Certificate No</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.CertificateNo || '-'}</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
-                    <div>
-                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Assign to User</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.AssignToUser || '-'}</div>
-                    </div>
-                    <div>
-                      <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Request Shipping Date</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{formatDate(selectedRow.RequestShippingDate)}</div>
+                    <div style={{ background: 'var(--bg)', padding: 10, borderRadius: 8 }}>
+                      <div style={{ fontSize: 9.5, color: 'var(--muted)' }}>BL Number</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>{selectedRow.BLNumber || '-'}</div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Extra Logistic details */}
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Logistical Notes</div>
-                <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, fontSize: 12, color: 'var(--text)', lineHeight: 1.4 }}>
-                  {selectedRow.LogisitcNote || '(no logistic notes configured)'}
+                {/* Logistic States */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Courier & Customs Dates</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: 'var(--bg)', padding: 12, borderRadius: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                      <span style={{ color: 'var(--muted)' }}>Sent to Bank:</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDate(selectedRow.SentToBankDate)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                      <span style={{ color: 'var(--muted)' }}>Released from Bank:</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDate(selectedRow.ReleasedFromBankDate)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                      <span style={{ color: 'var(--muted)' }}>Office Courier Arrival:</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDate(selectedRow.OfficeCourierArrivalDate)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                      <span style={{ color: 'var(--muted)' }}>Factory Arrival:</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text)' }}>{formatDate(selectedRow.FactoryArrivalDate)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Shipment Logistics & Mode */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Shipment & Cargo Info</div>
+                  <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                      <div>
+                        <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Shipment Mode</span>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.ShipmentMode || '-'}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Shipment Size</span>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.ShipmentSize || '-'}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+                      <div>
+                        <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Destination</span>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.Destination || '-'}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Clearing Agent</span>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.ClearingAgentName || '-'}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+                      <div>
+                        <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Customs Broker Ref</span>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.CustomsBrokerRef || '-'}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Certificate No</span>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.CertificateNo || '-'}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}>
+                      <div>
+                        <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Assign to User</span>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{selectedRow.AssignToUser || '-'}</div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 9.5, color: 'var(--muted)' }}>Request Shipping Date</span>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>{formatDate(selectedRow.RequestShippingDate)}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Extra Logistic details */}
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Logistical Notes</div>
+                  <div style={{ background: 'var(--bg)', padding: 12, borderRadius: 8, fontSize: 12, color: 'var(--text)', lineHeight: 1.4 }}>
+                    {selectedRow.LogisitcNote || '(no logistic notes configured)'}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

@@ -462,5 +462,28 @@ BEGIN
 END
 IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_tracking_history' AND QueryID = @QID)
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_tracking_history', @QID);
+
+-- 19. Logistics Get Tracking History Lines
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [Operation] = 'GetTrackingHistoryLines')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Tracking History Lines', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryLines', N'Retrieve detailed lines of logistical tracking history records', 
+            N'SELECT ll.*, im.ItemDescription, poh.RequestArrivalDate FROM LGI.LogisticLine ll Left outer join INV.ItemMaster im on im.ItemID=ll.ItemID LEFT OUTER JOIN PUR.PurchaseOrderHeader poh on poh.PurchaseOrderNumber=ll.PurchaseOrderNumber WHERE ll.TrackNumber = @TrackNumber ORDER BY LineNumber;', 'ERPMega', 'dbo', 'LogisticLine', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [Operation] = 'GetTrackingHistoryLines';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT ll.*, im.ItemDescription, poh.RequestArrivalDate FROM LGI.LogisticLine ll Left outer join INV.ItemMaster im on im.ItemID=ll.ItemID LEFT OUTER JOIN PUR.PurchaseOrderHeader poh on poh.PurchaseOrderNumber=ll.PurchaseOrderNumber WHERE ll.TrackNumber = @TrackNumber ORDER BY LineNumber;',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'LogisticLine',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_tracking_history' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_tracking_history', @QID);
 GO
 

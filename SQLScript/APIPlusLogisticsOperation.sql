@@ -64,6 +64,47 @@ BEGIN
             RETURN;
         END
 
+        -- ---------------------------------------------------------------------
+        -- Operation: GetTrackingHistoryLines
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetTrackingHistoryLines'
+        BEGIN
+            DECLARE @LineTrackNumber VARCHAR(100) = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @LineTrackNumber = JSON_VALUE(@LineData, '$.TrackNumber');
+            END
+
+            SELECT ll.*, im.ItemDescription, poh.RequestArrivalDate, (CASE
+                WHEN LineType='S' THEN (select SampleDescription From PUR.SampleMaster s where ll.ItemID=s.SampleID)
+                WHEN LineType='A' THEN (select AssetExtraDescription From ASS.AssetMaster s where ll.ItemID=s.AssetID)
+                WHEN LineType='N' THEN (select ItemDescription From PUR.NonStockItemMaster s where ll.ItemID=s.NonStockItemID)
+                WHEN LineType='I' THEN (select ItemExtraDescription From INV.ItemMaster s where ll.ItemID=s.ItemID)
+                WHEN LineType='T' THEN (select ItemExtraDescription From IT.ITItemMaster s where ll.ItemID=s.ITItemID)	
+            END)ItemExtraDescription , (CASE WHEN ll.LineType = 'A' THEN
+             (SELECT        ass.AssetCode
+             FROM            ass.AssetMaster ass
+             WHERE        ll.ItemID = ass.AssetID) WHEN ll.LineType = 'I' THEN
+                                         (SELECT        ass.ItemCode
+                                           FROM            INV.ItemMaster ass
+                                           WHERE        ll.ItemID = ass.ItemID) WHEN ll.LineType = 'N' THEN
+                                         (SELECT        ass.ItemCode
+                                           FROM            PUR.NonStockItemMaster ass
+                                           WHERE        ll.ItemID = ass.NonStockItemID) WHEN ll.LineType = 'S' THEN
+                                         (SELECT        ass.SampleCode
+                                           FROM            PUR.SampleMaster ass
+                                           WHERE        ll.ItemID = ass.SampleID) ELSE
+                                         (SELECT        ass.ITCode
+                                           FROM            IT.ITItemMaster ass
+                                           WHERE        ll.ItemID = ass.ITItemID) END) AS LogisticItemCode 
+            FROM LGI.LogisticLine ll 
+            Left outer join INV.ItemMaster im on im.ItemID=ll.ItemID 
+            LEFT OUTER JOIN PUR.PurchaseOrderHeader poh on poh.PurchaseOrderNumber=ll.PurchaseOrderNumber   
+            WHERE ll.TrackNumber = @LineTrackNumber 
+            Order By LineNumber;
+            RETURN;
+        END
+
         -- Fallback: Unsupported Operation
         SET @Message = 'Unsupported Operation: ' + COALESCE(@Operation, 'NULL');
         SET @State = 1;
