@@ -159,6 +159,24 @@ BEGIN
             RETURN;
         END
 
+        -- ---------------------------------------------------------------------
+        -- Operation: GetTrackingHistoryContainers
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetTrackingHistoryContainers'
+        BEGIN
+            DECLARE @ConTrackNumber VARCHAR(100) = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @ConTrackNumber = JSON_VALUE(@LineData, '$.TrackNumber');
+            END
+
+            SELECT lc.*, im.ItemDescription 
+            FROM LGI.LogisticContainer lc 
+            LEFT OUTER JOIN INV.ItemMaster im ON lc.ItemID = im.ItemID  
+            WHERE lc.TrackNumber = @ConTrackNumber;
+            RETURN;
+        END
+
         -- Fallback: Unsupported Operation
         SET @Message = 'Unsupported Operation: ' + COALESCE(@Operation, 'NULL');
         SET @State = 1;

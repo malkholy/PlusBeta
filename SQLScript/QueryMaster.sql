@@ -602,5 +602,28 @@ BEGIN
 END
 IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
+
+-- 25. Get Track Details Containers
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Containers')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Track Details Containers', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryContainers', N'Retrieve containers for a track', 
+            N'SELECT lc.*, im.ItemDescription FROM LGI.LogisticContainer lc LEFT OUTER JOIN INV.ItemMaster im ON lc.ItemID = im.ItemID WHERE lc.TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'LogisticContainer', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Containers';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT lc.*, im.ItemDescription FROM LGI.LogisticContainer lc LEFT OUTER JOIN INV.ItemMaster im ON lc.ItemID = im.ItemID WHERE lc.TrackNumber = @TrackNumber;',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'LogisticContainer',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
 GO
 

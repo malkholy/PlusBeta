@@ -22,6 +22,10 @@ export default function TrackDetails(props) {
   const [batches, setBatches] = useState([]);
   const [loadingBatches, setLoadingBatches] = useState(false);
 
+  // Containers state
+  const [containers, setContainers] = useState([]);
+  const [loadingContainers, setLoadingContainers] = useState(false);
+
   useEffect(() => {
     const selectedTrack = sessionStorage.getItem('selectedTrackNumber');
     if (selectedTrack) {
@@ -40,6 +44,7 @@ export default function TrackDetails(props) {
     setPayments([]);
     setReferences([]);
     setBatches([]);
+    setContainers([]);
 
     // 1. Fetch Header Details
     setLoadingHeader(true);
@@ -104,6 +109,18 @@ export default function TrackDetails(props) {
       console.error('Batches load failed:', e);
     }
     setLoadingBatches(false);
+
+    // 6. Fetch Containers
+    setLoadingContainers(true);
+    try {
+      const res = await apiCall('GetTrackingHistoryContainers', { TrackNumber: cleanTrackNum }, {}, 'logistics');
+      if (res.State === 0) {
+        setContainers(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Containers load failed:', e);
+    }
+    setLoadingContainers(false);
   }
 
   function handleSearch(e) {
@@ -352,6 +369,22 @@ export default function TrackDetails(props) {
                 }}
               >
                 🏷️ Batch Numbers ({batches.length})
+              </button>
+              <button 
+                onClick={() => setActiveTab('containers')}
+                style={{
+                  padding: '14px 4px',
+                  border: 'none',
+                  background: 'none',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: activeTab === 'containers' ? 'var(--orange)' : 'var(--muted)',
+                  borderBottom: activeTab === 'containers' ? '2.5px solid var(--orange)' : '2.5px solid transparent',
+                  transition: 'all 0.15s'
+                }}
+              >
+                🚢 Containers ({containers.length})
               </button>
             </div>
 
@@ -637,6 +670,49 @@ export default function TrackDetails(props) {
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(bat.ExpirationDate)}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{bat.PurchaseOrderNumber || '-'}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--muted)' }}>{bat.LogisticLineNumber || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'containers' && (
+              <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                {loadingContainers ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>Loading containers...</div>
+                ) : containers.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>No container records found for this track.</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0 }}>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Container Number</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Container Size</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Item Code</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Description</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>PO #</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>PO Line</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Notes</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Created By</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Created Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {containers.map((con, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '10px 12px', color: 'var(--orange)', fontWeight: 700, fontFamily: 'monospace' }}>{con.ContainerNumber || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{con.ContainerSize || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{con.ItemCode || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{con.ItemDescription || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{con.PO || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--muted)' }}>{con.POLine || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{con.ContainerNotes || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{con.ContainerCreatedBy || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(con.ContainerCreatedDate)}</td>
                           </tr>
                         ))}
                       </tbody>
