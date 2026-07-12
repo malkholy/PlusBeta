@@ -549,7 +549,6 @@ export default function TrackDetails(props) {
                           <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Reference ID</th>
                           <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Reference Name</th>
                           <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Reference Value</th>
-                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Data Type</th>
                           <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Created By</th>
                           <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Created Date</th>
                         </tr>
@@ -560,18 +559,6 @@ export default function TrackDetails(props) {
                             <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{ref.ReferenceID || ref.LRID}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--orange)', fontWeight: 700 }}>{ref.ReferenceName || '-'}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600, fontFamily: 'monospace' }}>{ref.ReferenceValue || '-'}</td>
-                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>
-                              <span style={{
-                                fontSize: 11,
-                                padding: '2px 8px',
-                                borderRadius: 6,
-                                background: 'var(--soft)',
-                                color: 'var(--muted)',
-                                fontWeight: 600
-                              }}>
-                                {ref.ReferenceDataType || 'Text'}
-                              </span>
-                            </td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{ref.LogisticReferenceCreatedBy || '-'}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(ref.LogisticReferenceCreatedDate)}</td>
                           </tr>
