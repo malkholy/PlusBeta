@@ -556,5 +556,28 @@ BEGIN
 END
 IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
+
+-- 23. Get Track Details References
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details References')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Track Details References', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryReferences', N'Retrieve reference logs for a track', 
+            N'SELECT lr.*, rm.ReferenceDataType, rm.ReferenceName FROM LGI.LogisticReference lr LEFT OUTER JOIN LGI.ReferenceMaster rm ON rm.ReferenceID=lr.ReferenceID WHERE lr.TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'LogisticReference', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details References';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT lr.*, rm.ReferenceDataType, rm.ReferenceName FROM LGI.LogisticReference lr LEFT OUTER JOIN LGI.ReferenceMaster rm ON rm.ReferenceID=lr.ReferenceID WHERE lr.TrackNumber = @TrackNumber;',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'LogisticReference',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
 GO
 

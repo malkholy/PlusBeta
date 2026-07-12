@@ -123,6 +123,24 @@ BEGIN
             RETURN;
         END
 
+        -- ---------------------------------------------------------------------
+        -- Operation: GetTrackingHistoryReferences
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetTrackingHistoryReferences'
+        BEGIN
+            DECLARE @RefTrackNumber VARCHAR(100) = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @RefTrackNumber = JSON_VALUE(@LineData, '$.TrackNumber');
+            END
+
+            SELECT lr.*, rm.ReferenceDataType, rm.ReferenceName 
+            FROM LGI.LogisticReference lr 
+            LEFT OUTER JOIN LGI.ReferenceMaster rm ON rm.ReferenceID=lr.ReferenceID  
+            WHERE lr.TrackNumber = @RefTrackNumber;
+            RETURN;
+        END
+
         -- Fallback: Unsupported Operation
         SET @Message = 'Unsupported Operation: ' + COALESCE(@Operation, 'NULL');
         SET @State = 1;

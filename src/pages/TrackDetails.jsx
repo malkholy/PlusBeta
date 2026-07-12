@@ -14,6 +14,10 @@ export default function TrackDetails(props) {
   const [payments, setPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(false);
 
+  // References state
+  const [references, setReferences] = useState([]);
+  const [loadingReferences, setLoadingReferences] = useState(false);
+
   useEffect(() => {
     const selectedTrack = sessionStorage.getItem('selectedTrackNumber');
     if (selectedTrack) {
@@ -30,6 +34,7 @@ export default function TrackDetails(props) {
     setHeaderData(null);
     setLines([]);
     setPayments([]);
+    setReferences([]);
 
     // 1. Fetch Header Details
     setLoadingHeader(true);
@@ -70,6 +75,18 @@ export default function TrackDetails(props) {
       console.error('Payments load failed:', e);
     }
     setLoadingPayments(false);
+
+    // 4. Fetch References
+    setLoadingReferences(true);
+    try {
+      const res = await apiCall('GetTrackingHistoryReferences', { TrackNumber: cleanTrackNum }, {}, 'logistics');
+      if (res.State === 0) {
+        setReferences(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('References load failed:', e);
+    }
+    setLoadingReferences(false);
   }
 
   function handleSearch(e) {
@@ -287,6 +304,22 @@ export default function TrackDetails(props) {
               >
                 💳 Payments ({payments.length})
               </button>
+              <button 
+                onClick={() => setActiveTab('references')}
+                style={{
+                  padding: '14px 4px',
+                  border: 'none',
+                  background: 'none',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: activeTab === 'references' ? 'var(--orange)' : 'var(--muted)',
+                  borderBottom: activeTab === 'references' ? '2.5px solid var(--orange)' : '2.5px solid transparent',
+                  transition: 'all 0.15s'
+                }}
+              >
+                📜 References ({references.length})
+              </button>
             </div>
 
             {/* Tab Body */}
@@ -493,6 +526,54 @@ export default function TrackDetails(props) {
                             <td style={{ padding: '10px 12px', color: 'var(--orange)', textAlign: 'right', fontWeight: 700 }}>
                               {pay.PaymentAmount?.toLocaleString('en-US', { minimumFractionDigits: 2 })} <span style={{ fontSize: 10, color: 'var(--muted)' }}>{headerData.Currency}</span>
                             </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'references' && (
+              <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                {loadingReferences ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>Loading references...</div>
+                ) : references.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>No reference logs found for this track.</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0 }}>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Reference ID</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Reference Name</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Reference Value</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Data Type</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Created By</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Created Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {references.map((ref, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{ref.ReferenceID || ref.LRID}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--orange)', fontWeight: 700 }}>{ref.ReferenceName || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600, fontFamily: 'monospace' }}>{ref.ReferenceValue || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>
+                              <span style={{
+                                fontSize: 11,
+                                padding: '2px 8px',
+                                borderRadius: 6,
+                                background: 'var(--soft)',
+                                color: 'var(--muted)',
+                                fontWeight: 600
+                              }}>
+                                {ref.ReferenceDataType || 'Text'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{ref.LogisticReferenceCreatedBy || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(ref.LogisticReferenceCreatedDate)}</td>
                           </tr>
                         ))}
                       </tbody>
