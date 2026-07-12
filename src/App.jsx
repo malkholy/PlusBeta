@@ -14,6 +14,7 @@ import UserPermissions from './pages/UserPermissions.jsx';
 import QueryMaster from './pages/QueryMaster.jsx';
 import TrackingHistory from './pages/TrackingHistory.jsx';
 import TrackDetails from './pages/TrackDetails.jsx';
+import SalesDetail from './pages/SalesDetail.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -186,6 +187,7 @@ const PAGE_COMPONENTS = {
   query_master: QueryMaster,
   logistics_tracking_history: TrackingHistory,
   logistics_track_details: TrackDetails,
+  sales_report_details: SalesDetail,
 };
 
 function checkIsAdmin(u, fallbackUsername) {

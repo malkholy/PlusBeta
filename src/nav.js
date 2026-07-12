@@ -38,6 +38,20 @@ const NAV = [
         desc: 'Track shipment history and logistical states'
       }
     ]
+  },
+  {
+    id: 'sales_report_group',
+    label: 'Sales Report',
+    icon: '📊',
+    isGroup: true,
+    children: [
+      {
+        id: 'sales_report_details',
+        label: 'Sales Detail',
+        icon: '📈',
+        desc: 'Sales performance and YoY tonnage/weight reports'
+      }
+    ]
   }
 ];
 
