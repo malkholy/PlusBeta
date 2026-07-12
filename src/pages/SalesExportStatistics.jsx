@@ -701,48 +701,6 @@ export default function SalesExportStatistics(props) {
 
       {/* Grid Dashboard Tables */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minHeight: 0, flex: 1 }}>
-        {/* Month YoY Comparison Grid */}
-        <div style={{ 
-          background: 'var(--surface)', 
-          border: '1px solid var(--border)', 
-          borderRadius: 14, 
-          padding: 20, 
-          boxShadow: 'var(--shadow)',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 350
-        }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>📅 Monthly YoY Statistics</h3>
-          <div style={{ overflowY: 'auto', flex: 1 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
-              <thead>
-                <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0, zIndex: 1 }}>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Month</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Qty</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Qty</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Qty Growth</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
-                </tr>
-              </thead>
-              <tbody>
-                {monthlyData.map((m, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid var(--border)', background: m.qtyActive > 0 ? 'transparent' : 'var(--soft)' }}>
-                    <td style={{ padding: '10px 12px', fontWeight: 700 }}>{m.name}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.qtyPrev.toLocaleString('en-US')}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{m.qtyActive.toLocaleString('en-US')}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.qtyPrev, m.qtyActive)}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.wtPrev.toLocaleString('en-US')} kg</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{m.wtActive.toLocaleString('en-US')} kg</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.wtPrev, m.wtActive)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
         {/* Item Export Breakdown */}
         <div style={{ 
           background: 'var(--surface)', 
@@ -789,6 +747,48 @@ export default function SalesExportStatistics(props) {
                 </tbody>
               </table>
             )}
+          </div>
+        </div>
+
+        {/* Month YoY Comparison Grid */}
+        <div style={{ 
+          background: 'var(--surface)', 
+          border: '1px solid var(--border)', 
+          borderRadius: 14, 
+          padding: 20, 
+          boxShadow: 'var(--shadow)',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 350
+        }}>
+          <h3 style={{ fontSize: 14, fontWeight: 800, marginBottom: 12 }}>📅 Monthly YoY Statistics</h3>
+          <div style={{ overflowY: 'auto', flex: 1 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+              <thead>
+                <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0, zIndex: 1 }}>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Month</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Qty</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Qty</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Qty Growth</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyData.map((m, idx) => (
+                  <tr key={idx} style={{ borderBottom: '1px solid var(--border)', background: m.qtyActive > 0 ? 'transparent' : 'var(--soft)' }}>
+                    <td style={{ padding: '10px 12px', fontWeight: 700 }}>{m.name}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.qtyPrev.toLocaleString('en-US')}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{m.qtyActive.toLocaleString('en-US')}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.qtyPrev, m.qtyActive)}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.wtPrev.toLocaleString('en-US')} kg</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{m.wtActive.toLocaleString('en-US')} kg</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.wtPrev, m.wtActive)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
