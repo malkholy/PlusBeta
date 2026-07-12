@@ -365,6 +365,164 @@ function SearchableItemSelect({ value, onChange, options, placeholder = "Select 
   );
 }
 
+function exportItemsToExcel(data, prevYear, activeYear, fileName = 'SalesExport_ItemBreakdown.xls') {
+  let html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8" />
+      <!--[if gte mso 9]>
+      <xml>
+        <x:ExcelWorkbook>
+          <x:ExcelWorksheets>
+            <x:ExcelWorksheet>
+              <x:Name>Items Breakdown</x:Name>
+              <x:WorksheetOptions>
+                <x:DisplayGridlines/>
+              </WorksheetOptions>
+            </x:ExcelWorksheet>
+          </x:ExcelWorksheets>
+        </x:ExcelWorkbook>
+      </xml>
+      <![endif]-->
+      <style>
+        table { border-collapse: collapse; }
+        th { background-color: #f97316; color: #ffffff; font-weight: bold; border: 1px solid #ea580c; padding: 10px 12px; font-family: sans-serif; font-size: 11pt; }
+        td { border: 1px solid #e5e7eb; padding: 8px 10px; font-family: sans-serif; font-size: 10pt; }
+        .text { mso-number-format: "\\@"; text-align: left; }
+        .number { mso-number-format: "#,##0"; text-align: right; }
+        .center { text-align: center; }
+      </style>
+    </head>
+    <body>
+      <table>
+        <thead>
+          <tr>
+            <th>Item Code</th>
+            <th>Item Description</th>
+            <th>${prevYear} Qty</th>
+            <th>${activeYear} Qty</th>
+            <th>Qty Growth</th>
+            <th>${prevYear} Weight (kg)</th>
+            <th>${activeYear} Weight (kg)</th>
+            <th>Weight Growth</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  data.forEach(item => {
+    const qtyGrowth = item.qtyPrev ? ((item.qtyActive - item.qtyPrev) / item.qtyPrev) : null;
+    const wtGrowth = item.wtPrev ? ((item.wtActive - item.wtPrev) / item.wtPrev) : null;
+
+    html += `
+      <tr>
+        <td class="text">${item.code || ''}</td>
+        <td>${item.desc || ''}</td>
+        <td class="number">${item.qtyPrev}</td>
+        <td class="number">${item.qtyActive}</td>
+        <td class="center">${qtyGrowth !== null ? (qtyGrowth * 100).toFixed(1) + '%' : '—'}</td>
+        <td class="number">${item.wtPrev}</td>
+        <td class="number">${item.wtActive}</td>
+        <td class="center">${wtGrowth !== null ? (wtGrowth * 100).toFixed(1) + '%' : '—'}</td>
+      </tr>
+    `;
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', fileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function exportMonthsToExcel(data, prevYear, activeYear, fileName = 'SalesExport_MonthlyYoY.xls') {
+  let html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8" />
+      <!--[if gte mso 9]>
+      <xml>
+        <x:ExcelWorkbook>
+          <x:ExcelWorksheets>
+            <x:ExcelWorksheet>
+              <x:Name>Monthly YoY</x:Name>
+              <x:WorksheetOptions>
+                <x:DisplayGridlines/>
+              </WorksheetOptions>
+            </x:ExcelWorksheet>
+          </x:ExcelWorksheets>
+        </x:ExcelWorkbook>
+      </xml>
+      <![endif]-->
+      <style>
+        table { border-collapse: collapse; }
+        th { background-color: #f97316; color: #ffffff; font-weight: bold; border: 1px solid #ea580c; padding: 10px 12px; font-family: sans-serif; font-size: 11pt; }
+        td { border: 1px solid #e5e7eb; padding: 8px 10px; font-family: sans-serif; font-size: 10pt; }
+        .text { mso-number-format: "\\@"; text-align: left; }
+        .number { mso-number-format: "#,##0"; text-align: right; }
+        .center { text-align: center; }
+      </style>
+    </head>
+    <body>
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>${prevYear} Qty</th>
+            <th>${activeYear} Qty</th>
+            <th>Qty Growth</th>
+            <th>${prevYear} Weight (kg)</th>
+            <th>${activeYear} Weight (kg)</th>
+            <th>Weight Growth</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  data.forEach(item => {
+    const qtyGrowth = item.qtyPrev ? ((item.qtyActive - item.qtyPrev) / item.qtyPrev) : null;
+    const wtGrowth = item.wtPrev ? ((item.wtActive - item.wtPrev) / item.wtPrev) : null;
+
+    html += `
+      <tr>
+        <td class="text">${item.name || ''}</td>
+        <td class="number">${item.qtyPrev}</td>
+        <td class="number">${item.qtyActive}</td>
+        <td class="center">${qtyGrowth !== null ? (qtyGrowth * 100).toFixed(1) + '%' : '—'}</td>
+        <td class="number">${item.wtPrev}</td>
+        <td class="number">${item.wtActive}</td>
+        <td class="center">${wtGrowth !== null ? (wtGrowth * 100).toFixed(1) + '%' : '—'}</td>
+      </tr>
+    `;
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', fileName);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 export default function SalesExportStatistics(props) {
   const now = new Date();
   const [customers, setCustomers] = useState([]);
@@ -715,22 +873,40 @@ export default function SalesExportStatistics(props) {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>📦 Exported Items Breakdown</h3>
-            <button 
-              onClick={() => setEnlargedPanel('items')}
-              style={{
-                background: 'var(--soft)',
-                border: '0.5px solid var(--border)',
-                borderRadius: 'var(--radius-xs)',
-                padding: '4px 10px',
-                fontSize: 11.5,
-                fontWeight: 600,
-                color: 'var(--muted)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font)'
-              }}
-            >
-              ⛶ Enlarge
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button 
+                onClick={() => exportItemsToExcel(itemBreakdown, prevYear, activeYear)}
+                style={{
+                  background: 'var(--soft)',
+                  border: '0.5px solid var(--border)',
+                  borderRadius: 'var(--radius-xs)',
+                  padding: '4px 10px',
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: 'var(--orange)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font)'
+                }}
+              >
+                📥 Export Excel
+              </button>
+              <button 
+                onClick={() => setEnlargedPanel('items')}
+                style={{
+                  background: 'var(--soft)',
+                  border: '0.5px solid var(--border)',
+                  borderRadius: 'var(--radius-xs)',
+                  padding: '4px 10px',
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: 'var(--muted)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font)'
+                }}
+              >
+                ⛶ Enlarge
+              </button>
+            </div>
           </div>
           <div style={{ overflowY: 'auto', flex: 1 }}>
             {itemBreakdown.length === 0 ? (
@@ -782,22 +958,40 @@ export default function SalesExportStatistics(props) {
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>📅 Monthly YoY Statistics</h3>
-            <button 
-              onClick={() => setEnlargedPanel('months')}
-              style={{
-                background: 'var(--soft)',
-                border: '0.5px solid var(--border)',
-                borderRadius: 'var(--radius-xs)',
-                padding: '4px 10px',
-                fontSize: 11.5,
-                fontWeight: 600,
-                color: 'var(--muted)',
-                cursor: 'pointer',
-                fontFamily: 'var(--font)'
-              }}
-            >
-              ⛶ Enlarge
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button 
+                onClick={() => exportMonthsToExcel(monthlyData, prevYear, activeYear)}
+                style={{
+                  background: 'var(--soft)',
+                  border: '0.5px solid var(--border)',
+                  borderRadius: 'var(--radius-xs)',
+                  padding: '4px 10px',
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: 'var(--orange)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font)'
+                }}
+              >
+                📥 Export Excel
+              </button>
+              <button 
+                onClick={() => setEnlargedPanel('months')}
+                style={{
+                  background: 'var(--soft)',
+                  border: '0.5px solid var(--border)',
+                  borderRadius: 'var(--radius-xs)',
+                  padding: '4px 10px',
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  color: 'var(--muted)',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font)'
+                }}
+              >
+                ⛶ Enlarge
+              </button>
+            </div>
           </div>
           <div style={{ overflowY: 'auto', flex: 1 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
@@ -863,22 +1057,40 @@ export default function SalesExportStatistics(props) {
               <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>
                 {enlargedPanel === 'items' ? '📦 Exported Items Breakdown (Enlarged)' : '📅 Monthly YoY Statistics (Enlarged)'}
               </h3>
-              <button 
-                onClick={() => setEnlargedPanel(null)} 
-                style={{
-                  background: 'var(--soft)',
-                  border: '1.5px solid var(--border)',
-                  borderRadius: 8,
-                  padding: '6px 12px',
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  color: 'var(--text)',
-                  fontFamily: 'var(--font)'
-                }}
-              >
-                ✕ Close
-              </button>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button 
+                  onClick={() => enlargedPanel === 'items' ? exportItemsToExcel(itemBreakdown, prevYear, activeYear) : exportMonthsToExcel(monthlyData, prevYear, activeYear)}
+                  style={{
+                    background: 'var(--soft)',
+                    border: '1.5px solid var(--border)',
+                    borderRadius: 8,
+                    padding: '6px 12px',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    color: 'var(--orange)',
+                    fontFamily: 'var(--font)'
+                  }}
+                >
+                  📥 Export Excel
+                </button>
+                <button 
+                  onClick={() => setEnlargedPanel(null)} 
+                  style={{
+                    background: 'var(--soft)',
+                    border: '1.5px solid var(--border)',
+                    borderRadius: 8,
+                    padding: '6px 12px',
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    color: 'var(--text)',
+                    fontFamily: 'var(--font)'
+                  }}
+                >
+                  ✕ Close
+                </button>
+              </div>
             </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {enlargedPanel === 'items' ? (
