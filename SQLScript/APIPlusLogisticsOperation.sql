@@ -105,6 +105,24 @@ BEGIN
             RETURN;
         END
 
+        -- ---------------------------------------------------------------------
+        -- Operation: GetTrackingHistoryPayments
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetTrackingHistoryPayments'
+        BEGIN
+            DECLARE @PayTrackNumber VARCHAR(100) = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @PayTrackNumber = JSON_VALUE(@LineData, '$.TrackNumber');
+            END
+
+            SELECT lp.*, ps.StateDescription 
+            FROM LGI.LogisticPayment lp 
+            LEFT OUTER JOIN LGI.LogisticPaymentState ps on ps.StateID=lp.PaymentState  
+            WHERE lp.TrackNumber = @PayTrackNumber;
+            RETURN;
+        END
+
         -- Fallback: Unsupported Operation
         SET @Message = 'Unsupported Operation: ' + COALESCE(@Operation, 'NULL');
         SET @State = 1;

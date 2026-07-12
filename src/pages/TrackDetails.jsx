@@ -9,6 +9,10 @@ export default function TrackDetails(props) {
   const [loadingLines, setLoadingLines] = useState(false);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('lines');
+  
+  // Payments state
+  const [payments, setPayments] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
 
   useEffect(() => {
     const selectedTrack = sessionStorage.getItem('selectedTrackNumber');
@@ -25,6 +29,7 @@ export default function TrackDetails(props) {
     setError('');
     setHeaderData(null);
     setLines([]);
+    setPayments([]);
 
     // 1. Fetch Header Details
     setLoadingHeader(true);
@@ -53,6 +58,18 @@ export default function TrackDetails(props) {
       console.error('Lines load failed:', e);
     }
     setLoadingLines(false);
+
+    // 3. Fetch Payments
+    setLoadingPayments(true);
+    try {
+      const res = await apiCall('GetTrackingHistoryPayments', { TrackNumber: cleanTrackNum }, {}, 'logistics');
+      if (res.State === 0) {
+        setPayments(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Payments load failed:', e);
+    }
+    setLoadingPayments(false);
   }
 
   function handleSearch(e) {
@@ -254,10 +271,26 @@ export default function TrackDetails(props) {
               >
                 ⚙️ General Details
               </button>
+              <button 
+                onClick={() => setActiveTab('payments')}
+                style={{
+                  padding: '14px 4px',
+                  border: 'none',
+                  background: 'none',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: activeTab === 'payments' ? 'var(--orange)' : 'var(--muted)',
+                  borderBottom: activeTab === 'payments' ? '2.5px solid var(--orange)' : '2.5px solid transparent',
+                  transition: 'all 0.15s'
+                }}
+              >
+                💳 Payments ({payments.length})
+              </button>
             </div>
 
             {/* Tab Body */}
-            {activeTab === 'lines' ? (
+            {activeTab === 'lines' && (
               <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
                 {loadingLines ? (
                   <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>Loading line items...</div>
@@ -305,7 +338,9 @@ export default function TrackDetails(props) {
                   </div>
                 )}
               </div>
-            ) : (
+            )}
+
+            {activeTab === 'details' && (
               <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {/* 2-Column Info Grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
@@ -410,6 +445,60 @@ export default function TrackDetails(props) {
                     {headerData.LogisitcNote || '(no logistical notes configured for this track)'}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'payments' && (
+              <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                {loadingPayments ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>Loading payments...</div>
+                ) : payments.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>No payments found for this track.</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0 }}>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Payment ID</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Request Date</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Payment Date</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Value Date</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>State</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Bank Reference</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>User Reference</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payments.map((pay, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{pay.PaymentID || pay.LPID}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(pay.RequestDate)}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(pay.PaymentDate)}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(pay.ValueDate)}</td>
+                            <td style={{ padding: '10px 12px' }}>
+                              <span style={{
+                                fontSize: 11,
+                                padding: '2px 8px',
+                                borderRadius: 6,
+                                background: pay.PaymentState === 3 ? 'var(--green-soft)' : 'var(--amber-soft)',
+                                color: pay.PaymentState === 3 ? 'var(--green)' : 'var(--amber)',
+                                fontWeight: 600
+                              }}>
+                                {pay.StateDescription || 'Pending'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{pay.PaymentBankReference || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{pay.UserReference || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--orange)', textAlign: 'right', fontWeight: 700 }}>
+                              {pay.PaymentAmount?.toLocaleString('en-US', { minimumFractionDigits: 2 })} <span style={{ fontSize: 10, color: 'var(--muted)' }}>{headerData.Currency}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
           </div>

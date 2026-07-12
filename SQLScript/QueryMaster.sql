@@ -485,5 +485,76 @@ BEGIN
 END
 IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_tracking_history' AND QueryID = @QID)
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_tracking_history', @QID);
+
+-- 20. Get Track Details Header
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Header')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Track Details Header', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistory', N'Retrieve header detail record for a track', 
+            N'SELECT LHID, TrackNumber, TrackState, VendorNumber, BankNumber, ForwarderID, PINumber, ShipmentState, AccountingState, DocumentState, Currency, ETA, ETD, InvoiceNumber, Destination, LogisitcNote, AttachmentID, CustomsBrokerRef, RequestShippingDate, OfficeCourierArrivalDate, BankCourierArrivalDate, SentToBankDate, ReleasedFromBankDate, FactoryArrivalDate, PaymentTermID, IncoTermID, IsLocked, CarrierID, LogisticCreatedBy, LogisticCreatedDate, LogisticLastMaintBy, LogisticLastMaintDate, ClearingAgentID, ForwarderName, CarrierName, ClearingAgentName, PaymentTermDescription, IncoTermDescription, StateDescription, ShipmentStateDescription, DocumentStateDescription, AccountingStateDescription, VendorName, VendorExtraName, BankAccountName, ItemAmount, DiscountAmount, FreightAmount, InsuranceAmount, TotalAmount, ACINumber, BLNumber, BLType, ShipmentMode, ShipmentSize, AssignToUser, CertificateNo FROM QGetTrackingHistory ORDER BY LogisticCreatedDate DESC, TrackNumber DESC;', 'ERPMega', 'dbo', 'QGetTrackingHistory', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Header';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT LHID, TrackNumber, TrackState, VendorNumber, BankNumber, ForwarderID, PINumber, ShipmentState, AccountingState, DocumentState, Currency, ETA, ETD, InvoiceNumber, Destination, LogisitcNote, AttachmentID, CustomsBrokerRef, RequestShippingDate, OfficeCourierArrivalDate, BankCourierArrivalDate, SentToBankDate, ReleasedFromBankDate, FactoryArrivalDate, PaymentTermID, IncoTermID, IsLocked, CarrierID, LogisticCreatedBy, LogisticCreatedDate, LogisticLastMaintBy, LogisticLastMaintDate, ClearingAgentID, ForwarderName, CarrierName, ClearingAgentName, PaymentTermDescription, IncoTermDescription, StateDescription, ShipmentStateDescription, DocumentStateDescription, AccountingStateDescription, VendorName, VendorExtraName, BankAccountName, ItemAmount, DiscountAmount, FreightAmount, InsuranceAmount, TotalAmount, ACINumber, BLNumber, BLType, ShipmentMode, ShipmentSize, AssignToUser, CertificateNo FROM QGetTrackingHistory ORDER BY LogisticCreatedDate DESC, TrackNumber DESC;',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'QGetTrackingHistory',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
+
+
+-- 21. Get Track Details Lines
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Lines')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Track Details Lines', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryLines', N'Retrieve line items for a track', 
+            N'SELECT ll.*, im.ItemDescription, poh.RequestArrivalDate FROM LGI.LogisticLine ll Left outer join INV.ItemMaster im on im.ItemID=ll.ItemID LEFT OUTER JOIN PUR.PurchaseOrderHeader poh on poh.PurchaseOrderNumber=ll.PurchaseOrderNumber WHERE ll.TrackNumber = @TrackNumber ORDER BY LineNumber;', 'ERPMega', 'dbo', 'LogisticLine', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Lines';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT ll.*, im.ItemDescription, poh.RequestArrivalDate FROM LGI.LogisticLine ll Left outer join INV.ItemMaster im on im.ItemID=ll.ItemID LEFT OUTER JOIN PUR.PurchaseOrderHeader poh on poh.PurchaseOrderNumber=ll.PurchaseOrderNumber WHERE ll.TrackNumber = @TrackNumber ORDER BY LineNumber;',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'LogisticLine',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
+
+
+-- 22. Get Track Details Payments
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Payments')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Track Details Payments', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryPayments', N'Retrieve payments for a track', 
+            N'SELECT lp.*, ps.StateDescription FROM LGI.LogisticPayment lp LEFT OUTER JOIN LGI.LogisticPaymentState ps on ps.StateID=lp.PaymentState WHERE lp.TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'LogisticPayment', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Payments';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT lp.*, ps.StateDescription FROM LGI.LogisticPayment lp LEFT OUTER JOIN LGI.LogisticPaymentState ps on ps.StateID=lp.PaymentState WHERE lp.TrackNumber = @TrackNumber;',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'LogisticPayment',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
 GO
 
