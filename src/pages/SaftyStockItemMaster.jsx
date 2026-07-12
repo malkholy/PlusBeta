@@ -28,6 +28,15 @@ function isFlagActive(val) {
 }
 
 function getInventoryStatus(inventory, reorderLimit, safetyStock, openPO, leadTime, activeLeadTime, minHistLT) {
+  const inv = Number(inventory || 0);
+  if (inv <= 0) {
+    return {
+      label: 'Out of Stock',
+      color: '#8b949e',
+      dot: '⚫'
+    };
+  }
+
   const lt = Number(leadTime || 0);
   const alt = Number(activeLeadTime || 0);
   const mhl = minHistLT !== undefined && minHistLT !== null ? Number(minHistLT) : -1;
@@ -50,17 +59,8 @@ function getInventoryStatus(inventory, reorderLimit, safetyStock, openPO, leadTi
     };
   }
 
-  const inv = Number(inventory || 0);
   const rl = Number(reorderLimit || 0);
   const po = Number(openPO || 0);
-
-  if (inv <= 0) {
-    return {
-      label: 'Out of Stock',
-      color: '#8b949e',
-      dot: '⚫'
-    };
-  }
   if (inv < ss) {
     if (po <= 0) {
       return {
