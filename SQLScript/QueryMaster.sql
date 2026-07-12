@@ -579,5 +579,28 @@ BEGIN
 END
 IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
+
+-- 24. Get Track Details Batches
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Batches')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Track Details Batches', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryBatches', N'Retrieve batches for a track', 
+            N'SELECT lb.*, im.ItemDescription FROM LGI.LogisticBatch lb LEFT OUTER JOIN INV.ItemMaster im ON lb.LogisticLineItemID = im.ItemID WHERE lb.TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'LogisticBatch', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Batches';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT lb.*, im.ItemDescription FROM LGI.LogisticBatch lb LEFT OUTER JOIN INV.ItemMaster im ON lb.LogisticLineItemID = im.ItemID WHERE lb.TrackNumber = @TrackNumber;',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'LogisticBatch',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
 GO
 

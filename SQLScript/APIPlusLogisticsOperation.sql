@@ -141,6 +141,24 @@ BEGIN
             RETURN;
         END
 
+        -- ---------------------------------------------------------------------
+        -- Operation: GetTrackingHistoryBatches
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetTrackingHistoryBatches'
+        BEGIN
+            DECLARE @BatchTrackNumber VARCHAR(100) = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @BatchTrackNumber = JSON_VALUE(@LineData, '$.TrackNumber');
+            END
+
+            SELECT lb.*, im.ItemDescription 
+            FROM LGI.LogisticBatch lb 
+            LEFT OUTER JOIN INV.ItemMaster im ON lb.LogisticLineItemID = im.ItemID  
+            WHERE lb.TrackNumber = @BatchTrackNumber;
+            RETURN;
+        END
+
         -- Fallback: Unsupported Operation
         SET @Message = 'Unsupported Operation: ' + COALESCE(@Operation, 'NULL');
         SET @State = 1;

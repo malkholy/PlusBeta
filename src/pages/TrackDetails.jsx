@@ -18,6 +18,10 @@ export default function TrackDetails(props) {
   const [references, setReferences] = useState([]);
   const [loadingReferences, setLoadingReferences] = useState(false);
 
+  // Batches state
+  const [batches, setBatches] = useState([]);
+  const [loadingBatches, setLoadingBatches] = useState(false);
+
   useEffect(() => {
     const selectedTrack = sessionStorage.getItem('selectedTrackNumber');
     if (selectedTrack) {
@@ -35,6 +39,7 @@ export default function TrackDetails(props) {
     setLines([]);
     setPayments([]);
     setReferences([]);
+    setBatches([]);
 
     // 1. Fetch Header Details
     setLoadingHeader(true);
@@ -87,6 +92,18 @@ export default function TrackDetails(props) {
       console.error('References load failed:', e);
     }
     setLoadingReferences(false);
+
+    // 5. Fetch Batches
+    setLoadingBatches(true);
+    try {
+      const res = await apiCall('GetTrackingHistoryBatches', { TrackNumber: cleanTrackNum }, {}, 'logistics');
+      if (res.State === 0) {
+        setBatches(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Batches load failed:', e);
+    }
+    setLoadingBatches(false);
   }
 
   function handleSearch(e) {
@@ -319,6 +336,22 @@ export default function TrackDetails(props) {
                 }}
               >
                 📜 References ({references.length})
+              </button>
+              <button 
+                onClick={() => setActiveTab('batches')}
+                style={{
+                  padding: '14px 4px',
+                  border: 'none',
+                  background: 'none',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: activeTab === 'batches' ? 'var(--orange)' : 'var(--muted)',
+                  borderBottom: activeTab === 'batches' ? '2.5px solid var(--orange)' : '2.5px solid transparent',
+                  transition: 'all 0.15s'
+                }}
+              >
+                🏷️ Batch Numbers ({batches.length})
               </button>
             </div>
 
@@ -561,6 +594,49 @@ export default function TrackDetails(props) {
                             <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600, fontFamily: 'monospace' }}>{ref.ReferenceValue || '-'}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{ref.LogisticReferenceCreatedBy || '-'}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(ref.LogisticReferenceCreatedDate)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'batches' && (
+              <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                {loadingBatches ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>Loading batches...</div>
+                ) : batches.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>No batch records found for this track.</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0 }}>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Batch Number</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Item Code</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Description</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>Batch Qty</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Production Date</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Expiration Date</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>PO #</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Line #</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {batches.map((bat, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '10px 12px', color: 'var(--orange)', fontWeight: 700, fontFamily: 'monospace' }}>{bat.BatchNumber || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{bat.LogisticLineItemCode || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{bat.ItemDescription || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)', textAlign: 'right', fontWeight: 700 }}>
+                              {bat.BatchQuantity?.toLocaleString('en-US', { minimumFractionDigits: 2 })} <span style={{ fontSize: 10, color: 'var(--muted)' }}>{bat.LogisticLineUnitOfMeasure}</span>
+                            </td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(bat.ProductionDate)}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(bat.ExpirationDate)}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{bat.PurchaseOrderNumber || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--muted)' }}>{bat.LogisticLineNumber || '-'}</td>
                           </tr>
                         ))}
                       </tbody>
