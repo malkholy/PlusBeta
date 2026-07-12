@@ -253,7 +253,6 @@ export default function App() {
         sessionStorage.setItem('FullName', u.Name || u.Username || un);
         sessionStorage.setItem('IsAdmin', isAdmin ? '1' : '0');
         setUser({ Username: u.Username || un, Name: u.Name || un, IsAdmin: isAdmin ? 1 : 0 });
-         openPage('purchasing_po_header');
       } else {
         setLoginErr(d.Message || 'Invalid username or password');
       }
@@ -373,31 +372,7 @@ export default function App() {
 
   useEffect(() => {
     if (user) {
-      loadAllowedPages(user).then((ids) => {
-        // Auto-open starting tab if none are open
-        if (openTabs.length === 0) {
-          const isAdmin = checkIsAdmin(user, user.Username);
-          if (isAdmin || (ids && ids.includes('purchasing_po_header'))) {
-            openPage('purchasing_po_header');
-          } else if (ids && ids.length > 0) {
-            // Find first permitted page
-            const items = getNavItems();
-            let firstPageId = null;
-            for (const item of items) {
-              if (item.isGroup && item.children) {
-                const child = item.children.find(c => ids.includes(c.id));
-                if (child) { firstPageId = child.id; break; }
-              } else if (!item.isGroup && ids.includes(item.id)) {
-                firstPageId = item.id;
-                break;
-              }
-            }
-            if (firstPageId) {
-              openPage(firstPageId);
-            }
-          }
-        }
-      });
+      loadAllowedPages(user);
     } else {
       setAllowedPages([]);
     }
