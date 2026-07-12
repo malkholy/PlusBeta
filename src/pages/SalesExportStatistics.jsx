@@ -390,6 +390,7 @@ function exportItemsToExcel(data, prevYear, activeYear, fileName = 'SalesExport_
         td { border: 1px solid #e5e7eb; padding: 8px 10px; font-family: sans-serif; font-size: 10pt; }
         .text { mso-number-format: "\\@"; text-align: left; }
         .number { mso-number-format: "#,##0"; text-align: right; }
+        .number-dec { mso-number-format: "#,##0.000"; text-align: right; }
         .center { text-align: center; }
       </style>
     </head>
@@ -402,8 +403,8 @@ function exportItemsToExcel(data, prevYear, activeYear, fileName = 'SalesExport_
             <th>${prevYear} Qty</th>
             <th>${activeYear} Qty</th>
             <th>Qty Growth</th>
-            <th>${prevYear} Weight (kg)</th>
-            <th>${activeYear} Weight (kg)</th>
+            <th>${prevYear} Weight (Ton)</th>
+            <th>${activeYear} Weight (Ton)</th>
             <th>Weight Growth</th>
           </tr>
         </thead>
@@ -421,8 +422,8 @@ function exportItemsToExcel(data, prevYear, activeYear, fileName = 'SalesExport_
         <td class="number">${item.qtyPrev}</td>
         <td class="number">${item.qtyActive}</td>
         <td class="center">${qtyGrowth !== null ? (qtyGrowth * 100).toFixed(1) + '%' : '—'}</td>
-        <td class="number">${item.wtPrev}</td>
-        <td class="number">${item.wtActive}</td>
+        <td class="number-dec">${(item.wtPrev / 1000).toFixed(3)}</td>
+        <td class="number-dec">${(item.wtActive / 1000).toFixed(3)}</td>
         <td class="center">${wtGrowth !== null ? (wtGrowth * 100).toFixed(1) + '%' : '—'}</td>
       </tr>
     `;
@@ -470,6 +471,7 @@ function exportMonthsToExcel(data, prevYear, activeYear, fileName = 'SalesExport
         td { border: 1px solid #e5e7eb; padding: 8px 10px; font-family: sans-serif; font-size: 10pt; }
         .text { mso-number-format: "\\@"; text-align: left; }
         .number { mso-number-format: "#,##0"; text-align: right; }
+        .number-dec { mso-number-format: "#,##0.000"; text-align: right; }
         .center { text-align: center; }
       </style>
     </head>
@@ -481,8 +483,8 @@ function exportMonthsToExcel(data, prevYear, activeYear, fileName = 'SalesExport
             <th>${prevYear} Qty</th>
             <th>${activeYear} Qty</th>
             <th>Qty Growth</th>
-            <th>${prevYear} Weight (kg)</th>
-            <th>${activeYear} Weight (kg)</th>
+            <th>${prevYear} Weight (Ton)</th>
+            <th>${activeYear} Weight (Ton)</th>
             <th>Weight Growth</th>
           </tr>
         </thead>
@@ -499,8 +501,8 @@ function exportMonthsToExcel(data, prevYear, activeYear, fileName = 'SalesExport
         <td class="number">${item.qtyPrev}</td>
         <td class="number">${item.qtyActive}</td>
         <td class="center">${qtyGrowth !== null ? (qtyGrowth * 100).toFixed(1) + '%' : '—'}</td>
-        <td class="number">${item.wtPrev}</td>
-        <td class="number">${item.wtActive}</td>
+        <td class="number-dec">${(item.wtPrev / 1000).toFixed(3)}</td>
+        <td class="number-dec">${(item.wtActive / 1000).toFixed(3)}</td>
         <td class="center">${wtGrowth !== null ? (wtGrowth * 100).toFixed(1) + '%' : '—'}</td>
       </tr>
     `;
@@ -851,8 +853,8 @@ export default function SalesExportStatistics(props) {
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow)' }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Export Weight ({activeYear})</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--orange)', marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 8 }}>
-            {totals.wtActive.toLocaleString('en-US', { maximumFractionDigits: 1 })} kg
-            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)' }}>vs {totals.wtPrev.toLocaleString('en-US', { maximumFractionDigits: 1 })} kg</span>
+            {(totals.wtActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)' }}>vs {(totals.wtPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</span>
           </div>
           <div style={{ marginTop: 6 }}>{renderGrowthBadge(totals.wtPrev, totals.wtActive)}</div>
         </div>
@@ -919,8 +921,8 @@ export default function SalesExportStatistics(props) {
                     <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Qty</th>
                     <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Qty</th>
                     <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Qty Growth</th>
-                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight</th>
-                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight (Ton)</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight (Ton)</th>
                     <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
                   </tr>
                 </thead>
@@ -934,8 +936,8 @@ export default function SalesExportStatistics(props) {
                       <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{item.qtyPrev.toLocaleString('en-US')}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{item.qtyActive.toLocaleString('en-US')}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.qtyPrev, item.qtyActive)}</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{item.wtPrev.toLocaleString('en-US')} kg</td>
-                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{item.wtActive.toLocaleString('en-US')} kg</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(item.wtPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{(item.wtActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                       <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.wtPrev, item.wtActive)}</td>
                     </tr>
                   ))}
@@ -1001,8 +1003,8 @@ export default function SalesExportStatistics(props) {
                   <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Qty</th>
                   <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Qty</th>
                   <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Qty Growth</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight</th>
-                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight (Ton)</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight (Ton)</th>
                   <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
                 </tr>
               </thead>
@@ -1013,8 +1015,8 @@ export default function SalesExportStatistics(props) {
                     <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.qtyPrev.toLocaleString('en-US')}</td>
                     <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{m.qtyActive.toLocaleString('en-US')}</td>
                     <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.qtyPrev, m.qtyActive)}</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.wtPrev.toLocaleString('en-US')} kg</td>
-                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{m.wtActive.toLocaleString('en-US')} kg</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(m.wtPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{(m.wtActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                     <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.wtPrev, m.wtActive)}</td>
                   </tr>
                 ))}
@@ -1104,8 +1106,8 @@ export default function SalesExportStatistics(props) {
                         <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Qty</th>
                         <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Qty</th>
                         <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Qty Growth</th>
-                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight</th>
-                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight (Ton)</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight (Ton)</th>
                         <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
                       </tr>
                     </thead>
@@ -1119,8 +1121,8 @@ export default function SalesExportStatistics(props) {
                           <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{item.qtyPrev.toLocaleString('en-US')}</td>
                           <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{item.qtyActive.toLocaleString('en-US')}</td>
                           <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.qtyPrev, item.qtyActive)}</td>
-                          <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{item.wtPrev.toLocaleString('en-US')} kg</td>
-                          <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{item.wtActive.toLocaleString('en-US')} kg</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(item.wtPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{(item.wtActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                           <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.wtPrev, item.wtActive)}</td>
                         </tr>
                       ))}
@@ -1135,8 +1137,8 @@ export default function SalesExportStatistics(props) {
                       <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Qty</th>
                       <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Qty</th>
                       <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Qty Growth</th>
-                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight</th>
-                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight</th>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight (Ton)</th>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight (Ton)</th>
                       <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
                     </tr>
                   </thead>
@@ -1147,8 +1149,8 @@ export default function SalesExportStatistics(props) {
                         <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.qtyPrev.toLocaleString('en-US')}</td>
                         <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{m.qtyActive.toLocaleString('en-US')}</td>
                         <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.qtyPrev, m.qtyActive)}</td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{m.wtPrev.toLocaleString('en-US')} kg</td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{m.wtActive.toLocaleString('en-US')} kg</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(m.wtPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{(m.wtActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                         <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.wtPrev, m.wtActive)}</td>
                       </tr>
                     ))}
