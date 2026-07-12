@@ -625,5 +625,28 @@ BEGIN
 END
 IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
+
+-- 26. Get Sales Export Statistics
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Sales Export Statistics')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Sales Export Statistics', N'[dbo].[APIPlusLogisticsOperation]', 'GetSalesExportStatistics', N'Retrieve customer invoice sales export stats', 
+            N'SELECT * FROM QGetSalesExportStatistics WHERE YEAR(InvoiceDate) IN (2025, 2026) AND CustomerNo LIKE ''6%'';', 'ERPMega', 'dbo', 'QGetSalesExportStatistics', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Sales Export Statistics';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT * FROM QGetSalesExportStatistics WHERE YEAR(InvoiceDate) IN (2025, 2026) AND CustomerNo LIKE ''6%'';',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'QGetSalesExportStatistics',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'sales_export_statistics' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('sales_export_statistics', @QID);
 GO
 

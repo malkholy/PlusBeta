@@ -624,3 +624,20 @@ SELECT lc.*, im.ItemDescription
 FROM LGI.LogisticContainer lc 
 LEFT OUTER JOIN INV.ItemMaster im ON lc.ItemID = im.ItemID;
 GO
+
+-- 23. QGetSalesExportStatistics
+CREATE OR ALTER VIEW [dbo].[QGetSalesExportStatistics] AS
+SELECT 
+    a.InvoiceDate, 
+    a.ItemCode, 
+    b.ItemExtraDescription, 
+    a.InvoicedQuantity, 
+    a.CustomerNo, 
+    c.CustomerExtraName, 
+    a.GrossWeight
+FROM acr.CustomerInvoiceLine a 
+LEFT OUTER JOIN inv.ItemMaster b on a.ItemID = b.ItemID 
+LEFT OUTER JOIN acr.CustomerMaster c on c.CustomerNo = a.CustomerNo 
+WHERE YEAR(a.InvoiceDate) IN (2025, 2026) 
+  AND a.CustomerNo LIKE '6%';
+GO

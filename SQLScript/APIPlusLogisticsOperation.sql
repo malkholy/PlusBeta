@@ -150,6 +150,56 @@ BEGIN
             RETURN;
         END
 
+        -- ---------------------------------------------------------------------
+        -- Operation: GetSalesExportStatistics
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetSalesExportStatistics'
+        BEGIN
+            DECLARE @CustomerNo VARCHAR(50) = NULL;
+            DECLARE @ItemCode VARCHAR(50) = NULL;
+            DECLARE @Month INT = NULL;
+            
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @CustomerNo = NULLIF(JSON_VALUE(@LineData, '$.CustomerNo'), ''),
+                       @ItemCode = NULLIF(JSON_VALUE(@LineData, '$.ItemCode'), ''),
+                       @Month = NULLIF(CAST(JSON_VALUE(@LineData, '$.Month') AS INT), 0);
+            END
+
+            -- Return Lookup data for Filters (Customer list & Item list)
+            SELECT DISTINCT CustomerNo, CustomerExtraName 
+            FROM dbo.QGetSalesExportStatistics 
+            ORDER BY CustomerExtraName;
+
+            SELECT DISTINCT ItemCode, ItemExtraDescription 
+            FROM dbo.QGetSalesExportStatistics 
+            ORDER BY ItemCode;
+
+            -- Return monthly raw records for processing on frontend
+            SELECT 
+                YEAR(InvoiceDate) AS [Year],
+                MONTH(InvoiceDate) AS [Month],
+                CustomerNo,
+                CustomerExtraName,
+                ItemCode,
+                ItemExtraDescription,
+                SUM(InvoicedQuantity) AS TotalQuantity,
+                SUM(GrossWeight) AS TotalWeight
+            FROM dbo.QGetSalesExportStatistics
+            WHERE (@CustomerNo IS NULL OR CustomerNo = @CustomerNo)
+              AND (@ItemCode IS NULL OR ItemCode = @ItemCode)
+              AND (@Month IS NULL OR MONTH(InvoiceDate) = @Month)
+            GROUP BY 
+                YEAR(InvoiceDate), 
+                MONTH(InvoiceDate), 
+                CustomerNo, 
+                CustomerExtraName, 
+                ItemCode, 
+                ItemExtraDescription;
+            
+            RETURN;
+        END
+
         -- Fallback: Unsupported Operation
         SET @Message = 'Unsupported Operation: ' + COALESCE(@Operation, 'NULL');
         SET @State = 1;

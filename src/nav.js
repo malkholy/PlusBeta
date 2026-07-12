@@ -50,6 +50,12 @@ const NAV = [
         label: 'Sales Detail',
         icon: '📈',
         desc: 'Sales performance and YoY tonnage/weight reports'
+      },
+      {
+        id: 'sales_export_statistics',
+        label: 'Sales Export Statistics',
+        icon: '📊',
+        desc: 'Customer invoice YoY sales export statistics'
       }
     ]
   }

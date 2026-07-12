@@ -15,6 +15,7 @@ import QueryMaster from './pages/QueryMaster.jsx';
 import TrackingHistory from './pages/TrackingHistory.jsx';
 import TrackDetails from './pages/TrackDetails.jsx';
 import SalesDetail from './pages/SalesDetail.jsx';
+import SalesExportStatistics from './pages/SalesExportStatistics.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -188,6 +189,7 @@ const PAGE_COMPONENTS = {
   logistics_tracking_history: TrackingHistory,
   logistics_track_details: TrackDetails,
   sales_report_details: SalesDetail,
+  sales_export_statistics: SalesExportStatistics,
 };
 
 function checkIsAdmin(u, fallbackUsername) {

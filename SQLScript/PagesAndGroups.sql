@@ -107,6 +107,13 @@ BEGIN
     INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
     VALUES ('sales_report_details', N'Sales Detail', N'📈', N'Sales performance and YoY tonnage/weight reports', 0, 'sales_report_group', 310);
 END
+
+-- 13. Sales Export Statistics (Page)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'sales_export_statistics')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('sales_export_statistics', N'Sales Export Statistics', N'📊', N'Customer invoice YoY sales export statistics', 0, 'sales_report_group', 320);
+END
 GO
 
 
