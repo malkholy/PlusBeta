@@ -562,3 +562,59 @@ FROM            LGI.LogisticHeader AS a LEFT OUTER JOIN
                          ACC.BankAccountsMaster AS z ON z.BankAccountNumber = a.BankNumber;
 GO
 
+-- 18. QGetTrackDetailsLines
+CREATE OR ALTER VIEW [dbo].[QGetTrackDetailsLines] AS
+SELECT ll.*, im.ItemDescription, poh.RequestArrivalDate, (CASE
+    WHEN LineType='S' THEN (select SampleDescription From PUR.SampleMaster s where ll.ItemID=s.SampleID)
+    WHEN LineType='A' THEN (select AssetExtraDescription From ASS.AssetMaster s where ll.ItemID=s.AssetID)
+    WHEN LineType='N' THEN (select ItemDescription From PUR.NonStockItemMaster s where ll.ItemID=s.NonStockItemID)
+    WHEN LineType='I' THEN (select ItemExtraDescription From INV.ItemMaster s where ll.ItemID=s.ItemID)
+    WHEN LineType='T' THEN (select ItemExtraDescription From IT.ITItemMaster s where ll.ItemID=s.ITItemID)	
+END)ItemExtraDescription , (CASE WHEN ll.LineType = 'A' THEN
+ (SELECT        ass.AssetCode
+ FROM            ass.AssetMaster ass
+ WHERE        ll.ItemID = ass.AssetID) WHEN ll.LineType = 'I' THEN
+                             (SELECT        ass.ItemCode
+                               FROM            INV.ItemMaster ass
+                               WHERE        ll.ItemID = ass.ItemID) WHEN ll.LineType = 'N' THEN
+                             (SELECT        ass.ItemCode
+                               FROM            PUR.NonStockItemMaster ass
+                               WHERE        ll.ItemID = ass.NonStockItemID) WHEN ll.LineType = 'S' THEN
+                             (SELECT        ass.SampleCode
+                               FROM            PUR.SampleMaster ass
+                               WHERE        ll.ItemID = ass.SampleID) ELSE
+                             (SELECT        ass.ITCode
+                               FROM            IT.ITItemMaster ass
+                               WHERE        ll.ItemID = ass.ITItemID) END) AS LogisticItemCode 
+FROM LGI.LogisticLine ll 
+LEFT OUTER JOIN INV.ItemMaster im on im.ItemID=ll.ItemID 
+LEFT OUTER JOIN PUR.PurchaseOrderHeader poh on poh.PurchaseOrderNumber=ll.PurchaseOrderNumber;
+GO
+
+-- 19. QGetTrackDetailsPayments
+CREATE OR ALTER VIEW [dbo].[QGetTrackDetailsPayments] AS
+SELECT lp.*, ps.StateDescription 
+FROM LGI.LogisticPayment lp 
+LEFT OUTER JOIN LGI.LogisticPaymentState ps on ps.StateID=lp.PaymentState;
+GO
+
+-- 20. QGetTrackDetailsReferences
+CREATE OR ALTER VIEW [dbo].[QGetTrackDetailsReferences] AS
+SELECT lr.*, rm.ReferenceDataType, rm.ReferenceName 
+FROM LGI.LogisticReference lr 
+LEFT OUTER JOIN LGI.ReferenceMaster rm ON rm.ReferenceID=lr.ReferenceID;
+GO
+
+-- 21. QGetTrackDetailsBatches
+CREATE OR ALTER VIEW [dbo].[QGetTrackDetailsBatches] AS
+SELECT lb.*, im.ItemDescription 
+FROM LGI.LogisticBatch lb 
+LEFT OUTER JOIN INV.ItemMaster im ON lb.LogisticLineItemID = im.ItemID;
+GO
+
+-- 22. QGetTrackDetailsContainers
+CREATE OR ALTER VIEW [dbo].[QGetTrackDetailsContainers] AS
+SELECT lc.*, im.ItemDescription 
+FROM LGI.LogisticContainer lc 
+LEFT OUTER JOIN INV.ItemMaster im ON lc.ItemID = im.ItemID;
+GO

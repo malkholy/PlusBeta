@@ -515,18 +515,18 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
     VALUES (N'Get Track Details Lines', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryLines', N'Retrieve line items for a track', 
-            N'SELECT ll.*, im.ItemDescription, poh.RequestArrivalDate FROM LGI.LogisticLine ll Left outer join INV.ItemMaster im on im.ItemID=ll.ItemID LEFT OUTER JOIN PUR.PurchaseOrderHeader poh on poh.PurchaseOrderNumber=ll.PurchaseOrderNumber WHERE ll.TrackNumber = @TrackNumber ORDER BY LineNumber;', 'ERPMega', 'dbo', 'LogisticLine', 'Grid', 'System');
+            N'SELECT * FROM QGetTrackDetailsLines WHERE TrackNumber = @TrackNumber ORDER BY LineNumber;', 'ERPMega', 'dbo', 'QGetTrackDetailsLines', 'Grid', 'System');
     SET @QID = SCOPE_IDENTITY();
 END
 ELSE
 BEGIN
     SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Lines';
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT ll.*, im.ItemDescription, poh.RequestArrivalDate FROM LGI.LogisticLine ll Left outer join INV.ItemMaster im on im.ItemID=ll.ItemID LEFT OUTER JOIN PUR.PurchaseOrderHeader poh on poh.PurchaseOrderNumber=ll.PurchaseOrderNumber WHERE ll.TrackNumber = @TrackNumber ORDER BY LineNumber;',
+    SET [QuerySQL] = N'SELECT * FROM QGetTrackDetailsLines WHERE TrackNumber = @TrackNumber ORDER BY LineNumber;',
         [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
         [DatabaseName] = 'ERPMega',
         [SchemaName] = 'dbo',
-        [TableOrViewName] = 'LogisticLine',
+        [TableOrViewName] = 'QGetTrackDetailsLines',
         [QueryType] = 'Grid'
     WHERE QueryID = @QID;
 END
@@ -539,18 +539,18 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
     VALUES (N'Get Track Details Payments', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryPayments', N'Retrieve payments for a track', 
-            N'SELECT lp.*, ps.StateDescription FROM LGI.LogisticPayment lp LEFT OUTER JOIN LGI.LogisticPaymentState ps on ps.StateID=lp.PaymentState WHERE lp.TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'LogisticPayment', 'Grid', 'System');
+            N'SELECT * FROM QGetTrackDetailsPayments WHERE TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'QGetTrackDetailsPayments', 'Grid', 'System');
     SET @QID = SCOPE_IDENTITY();
 END
 ELSE
 BEGIN
     SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Payments';
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT lp.*, ps.StateDescription FROM LGI.LogisticPayment lp LEFT OUTER JOIN LGI.LogisticPaymentState ps on ps.StateID=lp.PaymentState WHERE lp.TrackNumber = @TrackNumber;',
+    SET [QuerySQL] = N'SELECT * FROM QGetTrackDetailsPayments WHERE TrackNumber = @TrackNumber;',
         [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
         [DatabaseName] = 'ERPMega',
         [SchemaName] = 'dbo',
-        [TableOrViewName] = 'LogisticPayment',
+        [TableOrViewName] = 'QGetTrackDetailsPayments',
         [QueryType] = 'Grid'
     WHERE QueryID = @QID;
 END
@@ -562,18 +562,18 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
     VALUES (N'Get Track Details References', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryReferences', N'Retrieve reference logs for a track', 
-            N'SELECT lr.*, rm.ReferenceDataType, rm.ReferenceName FROM LGI.LogisticReference lr LEFT OUTER JOIN LGI.ReferenceMaster rm ON rm.ReferenceID=lr.ReferenceID WHERE lr.TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'LogisticReference', 'Grid', 'System');
+            N'SELECT * FROM QGetTrackDetailsReferences WHERE TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'QGetTrackDetailsReferences', 'Grid', 'System');
     SET @QID = SCOPE_IDENTITY();
 END
 ELSE
 BEGIN
     SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details References';
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT lr.*, rm.ReferenceDataType, rm.ReferenceName FROM LGI.LogisticReference lr LEFT OUTER JOIN LGI.ReferenceMaster rm ON rm.ReferenceID=lr.ReferenceID WHERE lr.TrackNumber = @TrackNumber;',
+    SET [QuerySQL] = N'SELECT * FROM QGetTrackDetailsReferences WHERE TrackNumber = @TrackNumber;',
         [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
         [DatabaseName] = 'ERPMega',
         [SchemaName] = 'dbo',
-        [TableOrViewName] = 'LogisticReference',
+        [TableOrViewName] = 'QGetTrackDetailsReferences',
         [QueryType] = 'Grid'
     WHERE QueryID = @QID;
 END
@@ -585,18 +585,18 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
     VALUES (N'Get Track Details Batches', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryBatches', N'Retrieve batches for a track', 
-            N'SELECT lb.*, im.ItemDescription FROM LGI.LogisticBatch lb LEFT OUTER JOIN INV.ItemMaster im ON lb.LogisticLineItemID = im.ItemID WHERE lb.TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'LogisticBatch', 'Grid', 'System');
+            N'SELECT * FROM QGetTrackDetailsBatches WHERE TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'QGetTrackDetailsBatches', 'Grid', 'System');
     SET @QID = SCOPE_IDENTITY();
 END
 ELSE
 BEGIN
     SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Batches';
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT lb.*, im.ItemDescription FROM LGI.LogisticBatch lb LEFT OUTER JOIN INV.ItemMaster im ON lb.LogisticLineItemID = im.ItemID WHERE lb.TrackNumber = @TrackNumber;',
+    SET [QuerySQL] = N'SELECT * FROM QGetTrackDetailsBatches WHERE TrackNumber = @TrackNumber;',
         [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
         [DatabaseName] = 'ERPMega',
         [SchemaName] = 'dbo',
-        [TableOrViewName] = 'LogisticBatch',
+        [TableOrViewName] = 'QGetTrackDetailsBatches',
         [QueryType] = 'Grid'
     WHERE QueryID = @QID;
 END
@@ -608,18 +608,18 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
     VALUES (N'Get Track Details Containers', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryContainers', N'Retrieve containers for a track', 
-            N'SELECT lc.*, im.ItemDescription FROM LGI.LogisticContainer lc LEFT OUTER JOIN INV.ItemMaster im ON lc.ItemID = im.ItemID WHERE lc.TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'LogisticContainer', 'Grid', 'System');
+            N'SELECT * FROM QGetTrackDetailsContainers WHERE TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'QGetTrackDetailsContainers', 'Grid', 'System');
     SET @QID = SCOPE_IDENTITY();
 END
 ELSE
 BEGIN
     SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Containers';
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT lc.*, im.ItemDescription FROM LGI.LogisticContainer lc LEFT OUTER JOIN INV.ItemMaster im ON lc.ItemID = im.ItemID WHERE lc.TrackNumber = @TrackNumber;',
+    SET [QuerySQL] = N'SELECT * FROM QGetTrackDetailsContainers WHERE TrackNumber = @TrackNumber;',
         [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
         [DatabaseName] = 'ERPMega',
         [SchemaName] = 'dbo',
-        [TableOrViewName] = 'LogisticContainer',
+        [TableOrViewName] = 'QGetTrackDetailsContainers',
         [QueryType] = 'Grid'
     WHERE QueryID = @QID;
 END
