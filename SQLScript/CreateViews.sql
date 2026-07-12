@@ -550,7 +550,13 @@ SELECT        a.LHID, a.TrackNumber, a.TrackState, a.VendorNumber, a.BankNumber,
                                WHERE        (RefID = 41) AND (a.DocumentState = ValueInt)) AS DocumentStateDescription,
                              (SELECT        ValueDescription
                                FROM            dbo.Reference AS x
-                               WHERE        (RefID = 42) AND (a.AccountingState = ValueInt)) AS AccountingStateDescription, g.VendorName, g.VendorExtraName, z.BankAccountName, a.ItemAmount, a.DiscountAmount, a.FreightAmount, a.InsuranceAmount, 
+                               WHERE        (RefID = 42) AND (a.AccountingState = ValueInt)) AS AccountingStateDescription,
+                             (SELECT TOP 1  ps.StateDescription 
+                               FROM            LGI.LogisticPayment AS lp
+                               LEFT OUTER JOIN LGI.LogisticPaymentState AS ps ON ps.StateID = lp.PaymentState
+                               WHERE        (lp.TrackNumber = a.TrackNumber)
+                               ORDER BY     lp.PaymentState DESC) AS PaymentStateDescription,
+                             g.VendorName, g.VendorExtraName, z.BankAccountName, a.ItemAmount, a.DiscountAmount, a.FreightAmount, a.InsuranceAmount, 
                          a.TotalAmount, a.ACINumber, a.BLNumber, a.BLType, a.ShipmentMode, a.ShipmentSize, a.AssignToUser, a.CertificateNo
 FROM            LGI.LogisticHeader AS a LEFT OUTER JOIN
                          LGI.ForwarderMaster AS b ON a.ForwarderID = b.ForwarderID LEFT OUTER JOIN

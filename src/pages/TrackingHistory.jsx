@@ -80,6 +80,22 @@ export default function TrackingHistory(props) {
       )
     },
     {
+      key: 'PaymentStateDescription',
+      label: 'Payment State',
+      render: (val) => (
+        <span style={{
+          fontSize: 11,
+          padding: '2.5px 8px',
+          borderRadius: 6,
+          background: val === 'Paid' ? 'var(--green-soft)' : val === 'Approved' ? 'var(--blue-soft)' : val === 'Requested' ? 'var(--amber-soft)' : 'var(--soft)',
+          color: val === 'Paid' ? 'var(--green)' : val === 'Approved' ? 'var(--blue)' : val === 'Requested' ? 'var(--amber)' : 'var(--muted)',
+          fontWeight: 600
+        }}>
+          {val || '-'}
+        </span>
+      )
+    },
+    {
       key: 'StateDescription',
       label: 'Tracking State',
       render: (val) => (
