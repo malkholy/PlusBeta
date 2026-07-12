@@ -63,6 +63,308 @@ function MultiSelect({ options, selected, onChange, placeholder }) {
   );
 }
 
+function SearchableCustomerSelect({ value, onChange, options, placeholder = "Select Customer" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  const selectedOption = options.find(opt => opt.CustomerNo === value);
+  const triggerLabel = selectedOption 
+    ? `${selectedOption.CustomerExtraName} (${selectedOption.CustomerNo})` 
+    : placeholder;
+
+  const filteredOptions = options.filter(opt => 
+    String(opt.CustomerExtraName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(opt.CustomerNo || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest(".searchable-customer-container")) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("click", handleOutsideClick);
+    return () => document.removeEventListener("click", handleOutsideClick);
+  }, [isOpen]);
+
+  return (
+    <div className="searchable-customer-container" style={{ position: 'relative', width: '100%' }}>
+      <div 
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setSearchTerm("");
+        }}
+        style={{
+          height: 38,
+          padding: '0 12px',
+          border: '1.5px solid var(--border)',
+          borderRadius: 8,
+          background: 'var(--bg)',
+          color: 'var(--text)',
+          fontSize: 13,
+          fontFamily: 'var(--font)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          userSelect: 'none',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          transition: 'all 0.15s'
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: value ? 600 : 500 }}>{triggerLabel}</span>
+        <span style={{ fontSize: 9, color: 'var(--orange)', marginLeft: 6 }}>▼</span>
+      </div>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: 42,
+          left: 0,
+          right: 0,
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.18)',
+          zIndex: 1000,
+          maxHeight: 260,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          <div style={{ padding: 8, borderBottom: '1px solid var(--border)', background: 'var(--soft)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12 }}>🔍</span>
+            <input 
+              type="text"
+              placeholder="Search by customer name or code..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              autoFocus
+              style={{
+                height: 30,
+                width: '100%',
+                padding: '0 8px',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-xs)',
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                outline: 'none',
+                fontSize: 12,
+                fontFamily: 'var(--font)'
+              }}
+            />
+          </div>
+          <div style={{ overflowY: 'auto', flex: 1, maxHeight: 220 }}>
+            {filteredOptions.length === 0 ? (
+              <div style={{ padding: '12px 16px', color: 'var(--muted)', fontSize: 12.5, textAlign: 'center' }}>No customers found</div>
+            ) : (
+              <>
+                {value && (
+                  <div 
+                    onClick={() => {
+                      onChange('');
+                      setIsOpen(false);
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      cursor: 'pointer',
+                      borderBottom: '1px solid var(--border)',
+                      color: 'var(--orange)',
+                      fontWeight: 600,
+                      background: 'rgba(249,115,22,0.04)'
+                    }}
+                  >
+                    ✕ Clear Selection
+                  </div>
+                )}
+                {filteredOptions.map((opt, i) => (
+                  <div 
+                    key={i}
+                    onClick={() => {
+                      onChange(opt.CustomerNo);
+                      setIsOpen(false);
+                    }}
+                    style={{
+                      padding: '10px 12px',
+                      fontSize: 12.5,
+                      cursor: 'pointer',
+                      background: value === opt.CustomerNo ? 'var(--orange-soft)' : 'transparent',
+                      color: value === opt.CustomerNo ? 'var(--orange2)' : 'var(--text)',
+                      fontWeight: value === opt.CustomerNo ? 700 : 500,
+                      borderBottom: '1px solid rgba(0,0,0,0.02)',
+                      transition: 'background .12s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--soft)'}
+                    onMouseLeave={e => e.currentTarget.style.background = value === opt.CustomerNo ? 'var(--orange-soft)' : 'transparent'}
+                  >
+                    <div style={{ fontWeight: 600 }}>{opt.CustomerExtraName}</div>
+                    <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>Code: {opt.CustomerNo}</div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SearchableItemSelect({ value, onChange, options, placeholder = "Select Item" }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  const selectedOption = options.find(opt => opt.ItemCode === value);
+  const triggerLabel = selectedOption 
+    ? `${selectedOption.ItemExtraDescription} (${selectedOption.ItemCode})` 
+    : placeholder;
+
+  const filteredOptions = options.filter(opt => 
+    String(opt.ItemExtraDescription || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(opt.ItemCode || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest(".searchable-item-container")) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("click", handleOutsideClick);
+    return () => document.removeEventListener("click", handleOutsideClick);
+  }, [isOpen]);
+
+  return (
+    <div className="searchable-item-container" style={{ position: 'relative', width: '100%' }}>
+      <div 
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setSearchTerm("");
+        }}
+        style={{
+          height: 38,
+          padding: '0 12px',
+          border: '1.5px solid var(--border)',
+          borderRadius: 8,
+          background: 'var(--bg)',
+          color: 'var(--text)',
+          fontSize: 13,
+          fontFamily: 'var(--font)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          userSelect: 'none',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          transition: 'all 0.15s'
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: value ? 600 : 500 }}>{triggerLabel}</span>
+        <span style={{ fontSize: 9, color: 'var(--orange)', marginLeft: 6 }}>▼</span>
+      </div>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: 42,
+          left: 0,
+          right: 0,
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.18)',
+          zIndex: 1000,
+          maxHeight: 260,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          <div style={{ padding: 8, borderBottom: '1px solid var(--border)', background: 'var(--soft)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12 }}>🔍</span>
+            <input 
+              type="text"
+              placeholder="Search by description or code..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              autoFocus
+              style={{
+                height: 30,
+                width: '100%',
+                padding: '0 8px',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-xs)',
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                outline: 'none',
+                fontSize: 12,
+                fontFamily: 'var(--font)'
+              }}
+            />
+          </div>
+          <div style={{ overflowY: 'auto', flex: 1, maxHeight: 220 }}>
+            {filteredOptions.length === 0 ? (
+              <div style={{ padding: '12px 16px', color: 'var(--muted)', fontSize: 12.5, textAlign: 'center' }}>No items found</div>
+            ) : (
+              <>
+                {value && (
+                  <div 
+                    onClick={() => {
+                      onChange('');
+                      setIsOpen(false);
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      cursor: 'pointer',
+                      borderBottom: '1px solid var(--border)',
+                      color: 'var(--orange)',
+                      fontWeight: 600,
+                      background: 'rgba(249,115,22,0.04)'
+                    }}
+                  >
+                    ✕ Clear Selection
+                  </div>
+                )}
+                {filteredOptions.map((opt, i) => (
+                  <div 
+                    key={i}
+                    onClick={() => {
+                      onChange(opt.ItemCode);
+                      setIsOpen(false);
+                    }}
+                    style={{
+                      padding: '10px 12px',
+                      fontSize: 12.5,
+                      cursor: 'pointer',
+                      background: value === opt.ItemCode ? 'var(--orange-soft)' : 'transparent',
+                      color: value === opt.ItemCode ? 'var(--orange2)' : 'var(--text)',
+                      fontWeight: value === opt.ItemCode ? 700 : 500,
+                      borderBottom: '1px solid rgba(0,0,0,0.02)',
+                      transition: 'background .12s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--soft)'}
+                    onMouseLeave={e => e.currentTarget.style.background = value === opt.ItemCode ? 'var(--orange-soft)' : 'transparent'}
+                  >
+                    <div style={{ fontWeight: 600 }}>{opt.ItemExtraDescription}</div>
+                    <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>Code: {opt.ItemCode}</div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SalesExportStatistics(props) {
   const now = new Date();
   const [customers, setCustomers] = useState([]);
@@ -334,56 +636,24 @@ export default function SalesExportStatistics(props) {
           <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
             Customer (Export 6%)
           </label>
-          <select
+          <SearchableCustomerSelect 
             value={selectedCustomer}
-            onChange={e => setSelectedCustomer(e.target.value)}
-            style={{
-              width: '100%',
-              height: 38,
-              padding: '0 12px',
-              border: '1.5px solid var(--border)',
-              borderRadius: 8,
-              fontSize: 13,
-              color: 'var(--text)',
-              background: 'var(--bg)',
-              outline: 'none'
-            }}
-          >
-            <option value="">All Customers</option>
-            {customers.map(c => (
-              <option key={c.CustomerNo} value={c.CustomerNo}>
-                {c.CustomerExtraName} ({c.CustomerNo})
-              </option>
-            ))}
-          </select>
+            onChange={setSelectedCustomer}
+            options={customers}
+            placeholder="All Customers"
+          />
         </div>
 
         <div style={{ flex: '1 1 220px' }}>
           <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
             Item Description
           </label>
-          <select
+          <SearchableItemSelect 
             value={selectedItem}
-            onChange={e => setSelectedItem(e.target.value)}
-            style={{
-              width: '100%',
-              height: 38,
-              padding: '0 12px',
-              border: '1.5px solid var(--border)',
-              borderRadius: 8,
-              fontSize: 13,
-              color: 'var(--text)',
-              background: 'var(--bg)',
-              outline: 'none'
-            }}
-          >
-            <option value="">All Items</option>
-            {items.map(it => (
-              <option key={it.ItemCode} value={it.ItemCode}>
-                {it.ItemCode} - {it.ItemExtraDescription}
-              </option>
-            ))}
-          </select>
+            onChange={setSelectedItem}
+            options={items}
+            placeholder="All Items"
+          />
         </div>
 
         <button 
