@@ -1007,24 +1007,27 @@ export default function TrackDetails(props) {
 
               {/* Preview Display */}
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'var(--bg)', borderRadius: 10, padding: 20, minHeight: 300, border: '1px dashed var(--border)' }}>
-                {previewAttachment.FileURL ? (
+                {previewAttachment.FileDisplay || previewAttachment.FileURL ? (
                   (() => {
-                    const url = previewAttachment.FileURL.toLowerCase();
+                    const displayUrl = previewAttachment.FileDisplay || previewAttachment.FileURL;
+                    const url = displayUrl.toLowerCase();
                     const isImg = url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.gif') || url.endsWith('.svg') || url.endsWith('.webp');
                     const isPdf = url.endsWith('.pdf');
                     
                     if (isImg) {
-                      return <img src={previewAttachment.FileURL} alt={previewAttachment.FileOrginalName} style={{ maxWidth: '100%', maxHeight: '450px', objectFit: 'contain', borderRadius: 8, boxShadow: 'var(--shadow)' }} />;
+                      return <img src={displayUrl} alt={previewAttachment.FileOrginalName} style={{ maxWidth: '100%', maxHeight: '450px', objectFit: 'contain', borderRadius: 8, boxShadow: 'var(--shadow)' }} />;
                     } else if (isPdf) {
-                      return <iframe src={previewAttachment.FileURL} title={previewAttachment.FileOrginalName} style={{ width: '100%', height: '450px', border: 'none', borderRadius: 8 }} />;
+                      return <iframe src={displayUrl} title={previewAttachment.FileOrginalName} style={{ width: '100%', height: '450px', border: 'none', borderRadius: 8 }} />;
                     } else {
                       return (
                         <div style={{ textAlign: 'center', color: 'var(--muted)' }}>
                           <span style={{ fontSize: 40 }}>📄</span>
                           <div style={{ marginTop: 10, fontWeight: 600 }}>Preview not available for this file type.</div>
-                          <a href={previewAttachment.FileURL} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', marginTop: 14, height: 32, fontSize: 12 }}>
-                            📥 Download File
-                          </a>
+                          {previewAttachment.FileURL && (
+                            <a href={previewAttachment.FileURL} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', marginTop: 14, height: 32, fontSize: 12 }}>
+                              📥 Download File
+                            </a>
+                          )}
                         </div>
                       );
                     }
