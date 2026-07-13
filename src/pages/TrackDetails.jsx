@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { apiCall } from '../shared/api.js';
 
+const EXTRA_TYPE_LABELS = {
+  F: 'Freight',
+  I: 'Insurance',
+  D: 'Discount'
+};
+
 export default function TrackDetails(props) {
   const [trackNumber, setTrackNumber] = useState('');
   const [headerData, setHeaderData] = useState(null);
@@ -779,7 +785,7 @@ export default function TrackDetails(props) {
                           <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
                             <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{ext.PO || '-'}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--muted)' }}>{ext.Line || '-'}</td>
-                            <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{ext.ExtraType || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{EXTRA_TYPE_LABELS[ext.ExtraType] || ext.ExtraType || '-'}</td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--orange)', fontWeight: 700 }}>
                               {ext.Amount ? ext.Amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                             </td>
