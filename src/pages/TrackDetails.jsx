@@ -39,6 +39,7 @@ export default function TrackDetails(props) {
   // Attachments state
   const [attachments, setAttachments] = useState([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
+  const [previewAttachment, setPreviewAttachment] = useState(null);
 
   useEffect(() => {
     const selectedTrack = sessionStorage.getItem('selectedTrackNumber');
@@ -61,6 +62,7 @@ export default function TrackDetails(props) {
     setContainers([]);
     setExtraAmounts([]);
     setAttachments([]);
+    setPreviewAttachment(null);
 
     // 1. Fetch Header Details
     setLoadingHeader(true);
@@ -909,7 +911,14 @@ export default function TrackDetails(props) {
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{att.FileDescription || '-'}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{att.CreatedBy || '-'}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(att.CreatedDate)}</td>
-                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                            <td style={{ padding: '10px 12px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              <button 
+                                onClick={() => setPreviewAttachment(att)}
+                                className="btn-secondary" 
+                                style={{ display: 'inline-flex', alignItems: 'center', height: 26, fontSize: 11, padding: '0 8px', marginRight: 6, cursor: 'pointer' }}
+                              >
+                                👁️ View
+                              </button>
                               {att.FileURL ? (
                                 <a 
                                   href={att.FileURL} 
@@ -932,6 +941,102 @@ export default function TrackDetails(props) {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Attachment Preview Modal */}
+      {previewAttachment && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(0,0,0,0.5)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '24px'
+        }} onClick={() => setPreviewAttachment(null)}>
+          <div style={{
+            width: '90vw',
+            maxWidth: '800px',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: 24,
+            position: 'relative'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 800, margin: 0, color: 'var(--text)' }}>
+                📎 File Preview: {previewAttachment.FileOrginalName}
+              </h3>
+              <button 
+                onClick={() => setPreviewAttachment(null)} 
+                style={{
+                  background: 'var(--soft)',
+                  border: '1.5px solid var(--border)',
+                  borderRadius: 8,
+                  padding: '6px 12px',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: 'var(--text)',
+                  fontFamily: 'var(--font)'
+                }}
+              >
+                ✕ Close
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minHeight: 0, overflowY: 'auto' }}>
+              {/* File Info */}
+              <div style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, fontSize: 12 }}>
+                <div><span style={{ color: 'var(--muted)' }}>File ID:</span> <span style={{ fontWeight: 600 }}>{previewAttachment.FileID}</span></div>
+                <div><span style={{ color: 'var(--muted)' }}>Created By:</span> <span style={{ fontWeight: 600 }}>{previewAttachment.CreatedBy || '-'}</span></div>
+                <div><span style={{ color: 'var(--muted)' }}>Created Date:</span> <span style={{ fontWeight: 600 }}>{formatDate(previewAttachment.CreatedDate)}</span></div>
+                <div><span style={{ color: 'var(--muted)' }}>Description:</span> <span style={{ fontWeight: 600 }}>{previewAttachment.FileDescription || '-'}</span></div>
+              </div>
+
+              {/* Preview Display */}
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'var(--bg)', borderRadius: 10, padding: 20, minHeight: 300, border: '1px dashed var(--border)' }}>
+                {previewAttachment.FileURL ? (
+                  (() => {
+                    const url = previewAttachment.FileURL.toLowerCase();
+                    const isImg = url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.gif') || url.endsWith('.svg') || url.endsWith('.webp');
+                    const isPdf = url.endsWith('.pdf');
+                    
+                    if (isImg) {
+                      return <img src={previewAttachment.FileURL} alt={previewAttachment.FileOrginalName} style={{ maxWidth: '100%', maxHeight: '450px', objectFit: 'contain', borderRadius: 8, boxShadow: 'var(--shadow)' }} />;
+                    } else if (isPdf) {
+                      return <iframe src={previewAttachment.FileURL} title={previewAttachment.FileOrginalName} style={{ width: '100%', height: '450px', border: 'none', borderRadius: 8 }} />;
+                    } else {
+                      return (
+                        <div style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                          <span style={{ fontSize: 40 }}>📄</span>
+                          <div style={{ marginTop: 10, fontWeight: 600 }}>Preview not available for this file type.</div>
+                          <a href={previewAttachment.FileURL} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', marginTop: 14, height: 32, fontSize: 12 }}>
+                            📥 Download File
+                          </a>
+                        </div>
+                      );
+                    }
+                  })()
+                ) : (
+                  <div style={{ textAlign: 'center', color: 'var(--muted)' }}>
+                    <span style={{ fontSize: 40 }}>⚠️</span>
+                    <div style={{ marginTop: 10, fontWeight: 600 }}>Direct preview link not configured.</div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
