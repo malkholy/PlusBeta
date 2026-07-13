@@ -168,6 +168,23 @@ BEGIN
         END
 
         -- ---------------------------------------------------------------------
+        -- Operation: GetTrackingHistoryAttachments
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetTrackingHistoryAttachments'
+        BEGIN
+            DECLARE @AttachTrackNumber VARCHAR(100) = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @AttachTrackNumber = JSON_VALUE(@LineData, '$.TrackNumber');
+            END
+
+            SELECT * 
+            FROM dbo.QGetTrackDetailsAttachments
+            WHERE TrackNumber = @AttachTrackNumber;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
         -- Operation: GetSalesExportStatistics
         -- ---------------------------------------------------------------------
         IF @Operation = 'GetSalesExportStatistics'

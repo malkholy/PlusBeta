@@ -646,3 +646,10 @@ GO
 CREATE OR ALTER VIEW [dbo].[QGetTrackDetailsExtraAmounts] AS
 SELECT * FROM LGI.LogisticExtraAmount;
 GO
+
+-- 25. QGetTrackDetailsAttachments
+CREATE OR ALTER VIEW [dbo].[QGetTrackDetailsAttachments] AS
+SELECT b.ID, b.FileID, b.FileOrginalName, b.FileName, b.FileDescription, b.FileURL, b.CreatedDate, b.CreatedBy, b.IsArchived, b.IsDeleted, b.ServiceID, b.FileDisplay, b.IsExist, a.TrackNumber
+FROM LGI.LogisticHeader a 
+LEFT OUTER JOIN FIL.FileHistory b ON b.FileID = a.AttachmentID;
+GO

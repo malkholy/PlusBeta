@@ -36,6 +36,10 @@ export default function TrackDetails(props) {
   const [extraAmounts, setExtraAmounts] = useState([]);
   const [loadingExtraAmounts, setLoadingExtraAmounts] = useState(false);
 
+  // Attachments state
+  const [attachments, setAttachments] = useState([]);
+  const [loadingAttachments, setLoadingAttachments] = useState(false);
+
   useEffect(() => {
     const selectedTrack = sessionStorage.getItem('selectedTrackNumber');
     if (selectedTrack) {
@@ -56,6 +60,7 @@ export default function TrackDetails(props) {
     setBatches([]);
     setContainers([]);
     setExtraAmounts([]);
+    setAttachments([]);
 
     // 1. Fetch Header Details
     setLoadingHeader(true);
@@ -144,6 +149,20 @@ export default function TrackDetails(props) {
       console.error('Extra Amounts load failed:', e);
     }
     setLoadingExtraAmounts(false);
+
+    // 8. Fetch Attachments
+    setLoadingAttachments(true);
+    try {
+      const res = await apiCall('GetTrackingHistoryAttachments', { TrackNumber: cleanTrackNum }, {}, 'logistics');
+      if (res.State === 0) {
+        // Filter out records where FileID is null/empty due to left join on empty header attachment
+        const list = (res.List0 || []).filter(f => f.FileID);
+        setAttachments(list);
+      }
+    } catch (e) {
+      console.error('Attachments load failed:', e);
+    }
+    setLoadingAttachments(false);
   }
 
   function handleSearch(e) {
@@ -424,6 +443,22 @@ export default function TrackDetails(props) {
                 }}
               >
                 💵 Extra Amounts ({extraAmounts.length})
+              </button>
+              <button 
+                onClick={() => setActiveTab('attachments')}
+                style={{
+                  padding: '14px 4px',
+                  border: 'none',
+                  background: 'none',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: activeTab === 'attachments' ? 'var(--orange)' : 'var(--muted)',
+                  borderBottom: activeTab === 'attachments' ? '2.5px solid var(--orange)' : '2.5px solid transparent',
+                  transition: 'all 0.15s'
+                }}
+              >
+                📎 Attachments ({attachments.length})
               </button>
             </div>
 
@@ -838,6 +873,57 @@ export default function TrackDetails(props) {
                             </td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{ext.CreatedBy || '-'}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(ext.CreatedDate)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'attachments' && (
+              <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                {loadingAttachments ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>Loading attachments...</div>
+                ) : attachments.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>No attachment records found for this track.</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0 }}>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>File ID</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Original Name</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Description</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Created By</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Created Date</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {attachments.map((att, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '10px 12px', color: 'var(--muted)', fontWeight: 600 }}>{att.FileID}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{att.FileOrginalName || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{att.FileDescription || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{att.CreatedBy || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(att.CreatedDate)}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              {att.FileURL ? (
+                                <a 
+                                  href={att.FileURL} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="btn-secondary" 
+                                  style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', height: 26, fontSize: 11, padding: '0 8px' }}
+                                >
+                                  📥 Open Link
+                                </a>
+                              ) : (
+                                <span style={{ color: 'var(--muted)', fontSize: 11 }}>No Link</span>
+                              )}
+                            </td>
                           </tr>
                         ))}
                       </tbody>
