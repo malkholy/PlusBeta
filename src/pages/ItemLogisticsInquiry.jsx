@@ -7,6 +7,7 @@ export default function ItemLogisticsInquiry(props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchItem, setSearchItem] = useState('');
+  const [selectedItemRow, setSelectedItemRow] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -15,6 +16,7 @@ export default function ItemLogisticsInquiry(props) {
   async function loadData() {
     setLoading(true);
     setError('');
+    setSelectedItemRow(null);
     try {
       const res = await apiCall('GetItemLogistics', { SearchItem: searchItem.trim() || null }, {}, 'logistics');
       if (res.State === 0) {
@@ -44,18 +46,56 @@ export default function ItemLogisticsInquiry(props) {
     }
   }
 
-  // Calculate Metrics
+  // Aggregate rows by Item Code
+  const gridRows = (() => {
+    const grouped = {};
+    rows.forEach(r => {
+      const code = r.ItemCode || 'UNKNOWN';
+      if (!grouped[code]) {
+        grouped[code] = {
+          ItemCode: code,
+          ItemDescription: r.ItemDescription || '-',
+          TotalQty: 0,
+          Tracks: new Set(),
+          Etas: [],
+          Shipments: [],
+          UOM: r.UOM || ''
+        };
+      }
+      grouped[code].TotalQty += Number(r.Quantity || 0);
+      if (r.TrackNumber) {
+        grouped[code].Tracks.add(r.TrackNumber);
+      }
+      if (r.ETA) {
+        grouped[code].Etas.push(r.ETA);
+      }
+      grouped[code].Shipments.push(r);
+    });
+
+    return Object.values(grouped).map(g => {
+      const sortedEtas = g.Etas.filter(Boolean).sort((a, b) => new Date(a) - new Date(b));
+      return {
+        ItemCode: g.ItemCode,
+        ItemDescription: g.ItemDescription,
+        TotalQty: g.TotalQty,
+        TotalTracks: g.Tracks.size,
+        EarliestETA: sortedEtas[0] || null,
+        UOM: g.UOM,
+        Shipments: g.Shipments
+      };
+    });
+  })();
+
+  // Calculate Metrics based on aggregated grid rows
   const metrics = (() => {
-    const totalQty = rows.reduce((sum, r) => sum + Number(r.Quantity || 0), 0);
-    const uniqueTracks = new Set(rows.map(r => r.TrackNumber).filter(Boolean)).size;
-    
-    const etas = rows.map(r => r.ETA).filter(Boolean);
-    const earliestEta = etas.length > 0 ? etas.sort((a, b) => new Date(a) - new Date(b))[0] : null;
+    const totalQty = gridRows.reduce((sum, r) => sum + r.TotalQty, 0);
+    const uniqueItems = gridRows.length;
+    const activeTracks = new Set(rows.map(r => r.TrackNumber).filter(Boolean)).size;
 
     return {
       totalQty,
-      uniqueTracks,
-      earliestEta
+      uniqueItems,
+      activeTracks
     };
   })();
 
@@ -75,69 +115,34 @@ export default function ItemLogisticsInquiry(props) {
       render: (val, row, search, highlight) => highlight(val, search)
     },
     {
-      key: 'TrackNumber',
-      label: 'Track Number',
-      render: (val, row, search, highlight) => (
-        <span 
-          style={{ fontWeight: 800, color: 'var(--orange)', cursor: 'pointer', textDecoration: 'underline' }}
-          onClick={() => {
-            sessionStorage.setItem('selectedTrackNumber', val);
-            if (props.openPage) props.openPage('logistics_track_details');
-          }}
-        >
-          {highlight(val, search)}
-        </span>
-      )
-    },
-    {
-      key: 'PurchaseOrderNumber',
-      label: 'PO Number',
-      render: (val, row, search, highlight) => highlight(val, search)
-    },
-    {
-      key: 'Quantity',
-      label: 'Quantity',
+      key: 'TotalQty',
+      label: 'Total Qty',
       render: (val, row) => (
         <div style={{ fontWeight: 700 }}>
-          {Number(val || 0).toLocaleString()} <span style={{ fontSize: 10, color: 'var(--muted)' }}>{row.UOM || ''}</span>
+          {Number(val || 0).toLocaleString()} <span style={{ fontSize: 10, color: 'var(--muted)' }}>{row.UOM}</span>
         </div>
       )
     },
     {
-      key: 'StateDescription',
-      label: 'Tracking State',
-      render: (val, row, search, highlight) => (
+      key: 'TotalTracks',
+      label: 'Total Tracks',
+      render: (val) => (
         <span style={{
           fontSize: 11,
           padding: '2.5px 8px',
           borderRadius: 6,
-          background: 'var(--soft)',
-          color: 'var(--muted)',
-          fontWeight: 600
+          background: 'var(--blue-soft)',
+          color: 'var(--blue)',
+          fontWeight: 700
         }}>
-          {highlight(val || 'N/A', search)}
+          {val} {val === 1 ? 'Track' : 'Tracks'}
         </span>
       )
     },
     {
-      key: 'ETA',
-      label: 'ETA',
+      key: 'EarliestETA',
+      label: 'Earliest ETA',
       render: (val) => formatDate(val)
-    },
-    {
-      key: 'VendorName',
-      label: 'Vendor Name',
-      render: (val, row, search, highlight) => highlight(val || row.VendorNumber || '-', search)
-    },
-    {
-      key: 'BLNumber',
-      label: 'BL Number',
-      render: (val, row, search, highlight) => highlight(val, search)
-    },
-    {
-      key: 'ClearingAgentName',
-      label: 'Clearing Agent',
-      render: (val, row, search, highlight) => highlight(val, search)
     }
   ];
 
@@ -220,33 +225,106 @@ export default function ItemLogisticsInquiry(props) {
         </div>
 
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow)' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Shipments Carrying Item</div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Unique Items</div>
           <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--blue)', marginTop: 6 }}>
-            {metrics.uniqueTracks}
+            {metrics.uniqueItems.toLocaleString()}
           </div>
         </div>
 
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow)' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Earliest Expected Arrival</div>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Total Active Shipments</div>
           <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--orange)', marginTop: 6 }}>
-            {formatDate(metrics.earliestEta)}
+            {metrics.activeTracks.toLocaleString()}
           </div>
         </div>
       </div>
 
-      {/* Grid */}
+      {/* Grid and Details Panel */}
       <div style={{ display: 'flex', flex: 1, gap: 20, minHeight: 0, width: '100%' }}>
-        <DataGrid
-          title="Item Logistics Records"
-          subtitle="Overview of item shipments and statuses"
-          columns={columns}
-          rows={rows}
-          loading={loading}
-          hideHeader={false}
-          hideSearch={false}
-          hideRefresh={false}
-          onRefresh={() => loadData()}
-        />
+        <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
+          <DataGrid
+            title="Item Logistics Records"
+            subtitle="Overview of item shipments and statuses"
+            columns={columns}
+            rows={gridRows}
+            loading={loading}
+            onRowClick={(row) => setSelectedItemRow(row)}
+            hideHeader={false}
+            hideSearch={false}
+            hideRefresh={false}
+            onRefresh={() => loadData()}
+          />
+        </div>
+
+        {selectedItemRow && (
+          <div style={{
+            width: 380,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            boxShadow: 'var(--shadow)',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: 18,
+            minHeight: 0
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Item Shipments</h3>
+              <button 
+                onClick={() => setSelectedItemRow(null)}
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  fontSize: 18,
+                  cursor: 'pointer',
+                  color: 'var(--muted)'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ marginBottom: 18, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{selectedItemRow.ItemCode}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4, lineHeight: '1.4' }}>{selectedItemRow.ItemDescription}</div>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {selectedItemRow.Shipments.map((s, idx) => (
+                <div key={idx} style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 10,
+                  padding: 12,
+                  background: 'var(--bg)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span 
+                      style={{ fontWeight: 800, color: 'var(--orange)', cursor: 'pointer', textDecoration: 'underline', fontSize: 13 }}
+                      onClick={() => {
+                        sessionStorage.setItem('selectedTrackNumber', s.TrackNumber);
+                        if (props.openPage) props.openPage('logistics_track_details');
+                      }}
+                    >
+                      Track: {s.TrackNumber}
+                    </span>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>
+                      {Number(s.Quantity).toLocaleString()} <span style={{ fontSize: 10, color: 'var(--muted)' }}>{s.UOM}</span>
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text)', marginBottom: 5 }}>
+                    <strong>PO:</strong> {s.PurchaseOrderNumber || '-'}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text)', marginBottom: 5 }}>
+                    <strong>ETA:</strong> {formatDate(s.ETA)}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text)' }}>
+                    <strong>State:</strong> <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--soft)', color: 'var(--muted)', fontWeight: 600, marginLeft: 4 }}>{s.StateDescription || 'N/A'}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
