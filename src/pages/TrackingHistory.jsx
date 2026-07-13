@@ -96,6 +96,22 @@ export default function TrackingHistory(props) {
       )
     },
     {
+      key: 'AccountingStateDescription',
+      label: 'Accounting State',
+      render: (val) => (
+        <span style={{
+          fontSize: 11,
+          padding: '2.5px 8px',
+          borderRadius: 6,
+          background: 'var(--soft)',
+          color: 'var(--text)',
+          fontWeight: 600
+        }}>
+          {val || '-'}
+        </span>
+      )
+    },
+    {
       key: 'StateDescription',
       label: 'Tracking State',
       render: (val) => (
