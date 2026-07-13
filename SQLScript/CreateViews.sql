@@ -557,7 +557,8 @@ SELECT        a.LHID, a.TrackNumber, a.TrackState, a.VendorNumber, a.BankNumber,
                                WHERE        (lp.TrackNumber = a.TrackNumber)
                                ORDER BY     lp.PaymentState DESC) AS PaymentStateDescription,
                              g.VendorName, g.VendorExtraName, z.BankAccountName, a.ItemAmount, a.DiscountAmount, a.FreightAmount, a.InsuranceAmount, 
-                         a.TotalAmount, a.ACINumber, a.BLNumber, a.BLType, a.ShipmentMode, a.ShipmentSize, a.AssignToUser, a.CertificateNo
+                         a.TotalAmount, a.ACINumber, a.BLNumber, a.BLType, a.ShipmentMode, a.ShipmentSize, a.AssignToUser, a.CertificateNo,
+                          (SELECT MIN(PurchaseOrderNumber) FROM LGI.LogisticLine WHERE TrackNumber = a.TrackNumber) AS PONumber
 FROM            LGI.LogisticHeader AS a LEFT OUTER JOIN
                          LGI.ForwarderMaster AS b ON a.ForwarderID = b.ForwarderID LEFT OUTER JOIN
                          LGI.CarrierMaster AS c ON c.CarrierID = a.CarrierID LEFT OUTER JOIN

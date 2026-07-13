@@ -35,9 +35,16 @@ export default function TrackingHistory(props) {
       key: 'TrackNumber',
       label: 'Track Number',
       render: (val, row) => (
-        <span style={{ fontWeight: 700 }}>
-          {val} {row.IsLocked ? '🔒' : ''}
-        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <span style={{ fontWeight: 700 }}>
+            {val} {row.IsLocked ? '🔒' : ''}
+          </span>
+          {row.PONumber && (
+            <span style={{ fontSize: 10.5, color: 'var(--muted)', fontWeight: 600 }}>
+              PO: {row.PONumber}
+            </span>
+          )}
+        </div>
       )
     },
     {
