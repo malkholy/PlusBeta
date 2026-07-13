@@ -2971,6 +2971,17 @@ export default function SaftyStockItemMasterPage({ user }) {
                         Inventory is zero or negative.
                       </span>
                     </div>
+
+                    <div style={{ width: '100%', height: 1, background: 'var(--border)' }}></div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#ef4444', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>❌</span> Error
+                      </span>
+                      <span style={{ fontSize: 13, color: 'var(--text)', lineHeight: '1.6' }}>
+                        Safety Stock is zero or negative, or no Lead Time is defined (Lead Time and active/historical lead times are zero or negative).
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
