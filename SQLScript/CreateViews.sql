@@ -704,6 +704,7 @@ INNER JOIN LGI.LogisticHeader h ON ll.TrackNumber = h.TrackNumber
 LEFT OUTER JOIN ACP.VendorMaster v ON v.VendorNumber = h.VendorNumber
 LEFT OUTER JOIN LGI.CarrierMaster c ON c.CarrierID = h.CarrierID
 LEFT OUTER JOIN LGI.ForwarderMaster f ON f.ForwarderID = h.ForwarderID
-LEFT OUTER JOIN LGI.ClearingAgentMaster ca ON ca.ClearingAgentID = h.ClearingAgentID;
+LEFT OUTER JOIN LGI.ClearingAgentMaster ca ON ca.ClearingAgentID = h.ClearingAgentID
+WHERE h.TrackState <> 2;
 GO
 
