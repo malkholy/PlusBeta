@@ -8,6 +8,7 @@ export default function ItemLogisticsInquiry(props) {
   const [error, setError] = useState('');
   const [searchItem, setSearchItem] = useState('');
   const [selectedItemRow, setSelectedItemRow] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -17,6 +18,7 @@ export default function ItemLogisticsInquiry(props) {
     setLoading(true);
     setError('');
     setSelectedItemRow(null);
+    setIsDrawerOpen(false);
     try {
       const res = await apiCall('GetItemLogistics', { SearchItem: searchItem.trim() || null }, {}, 'logistics');
       if (res.State === 0) {
@@ -45,6 +47,19 @@ export default function ItemLogisticsInquiry(props) {
       return dStr;
     }
   }
+
+  // Close drawer on Escape key press
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        setIsDrawerOpen(false);
+      }
+    }
+    if (isDrawerOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDrawerOpen]);
 
   // Aggregate rows by Item Code
   const gridRows = (() => {
@@ -239,93 +254,160 @@ export default function ItemLogisticsInquiry(props) {
         </div>
       </div>
 
-      {/* Grid and Details Panel */}
+      {/* Grid */}
       <div style={{ display: 'flex', flex: 1, gap: 20, minHeight: 0, width: '100%' }}>
-        <div style={{ flex: 1, display: 'flex', minWidth: 0 }}>
-          <DataGrid
-            title="Item Logistics Records"
-            subtitle="Overview of item shipments and statuses"
-            columns={columns}
-            rows={gridRows}
-            loading={loading}
-            onRowClick={(row) => setSelectedItemRow(row)}
-            hideHeader={false}
-            hideSearch={false}
-            hideRefresh={false}
-            onRefresh={() => loadData()}
-          />
-        </div>
+        <DataGrid
+          title="Item Logistics Records"
+          subtitle="Overview of item shipments and statuses"
+          columns={columns}
+          rows={gridRows}
+          loading={loading}
+          onRowClick={(row) => {
+            setSelectedItemRow(row);
+            setIsDrawerOpen(true);
+          }}
+          hideHeader={false}
+          hideSearch={false}
+          hideRefresh={false}
+          onRefresh={() => loadData()}
+        />
+      </div>
 
-        {selectedItemRow && (
-          <div style={{
-            width: 380,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 16,
-            boxShadow: 'var(--shadow)',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: 18,
-            minHeight: 0
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800 }}>Item Shipments</h3>
+      {/* Slide-out Drawer */}
+      {isDrawerOpen && selectedItemRow && (
+        <>
+          {/* Backdrop Overlay */}
+          <div 
+            onClick={() => setIsDrawerOpen(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.5)',
+              backdropFilter: 'blur(4px)',
+              zIndex: 9999
+            }}
+          />
+          
+          {/* Drawer Body */}
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: '50vw',
+              maxWidth: '90vw',
+              background: 'var(--surface)',
+              borderLeft: '1px solid var(--border)',
+              boxShadow: '-10px 0 30px rgba(0,0,0,0.25)',
+              zIndex: 10000,
+              display: 'flex',
+              flexDirection: 'column',
+              fontFamily: 'var(--font)'
+            }}
+          >
+            {/* Drawer Header */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--soft)' }}>
+              <div>
+                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
+                  Item Shipment Logistics
+                </span>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 4 }}>
+                  Active tracks and details carrying this item
+                </div>
+              </div>
               <button 
-                onClick={() => setSelectedItemRow(null)}
-                style={{
-                  border: 'none',
-                  background: 'none',
-                  fontSize: 18,
-                  cursor: 'pointer',
-                  color: 'var(--muted)'
-                }}
+                onClick={() => setIsDrawerOpen(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--muted)' }}
               >
                 ✕
               </button>
             </div>
-
-            <div style={{ marginBottom: 18, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{selectedItemRow.ItemCode}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4, lineHeight: '1.4' }}>{selectedItemRow.ItemDescription}</div>
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {selectedItemRow.Shipments.map((s, idx) => (
-                <div key={idx} style={{
-                  border: '1px solid var(--border)',
-                  borderRadius: 10,
-                  padding: 12,
-                  background: 'var(--bg)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span 
-                      style={{ fontWeight: 800, color: 'var(--orange)', cursor: 'pointer', textDecoration: 'underline', fontSize: 13 }}
-                      onClick={() => {
-                        sessionStorage.setItem('selectedTrackNumber', s.TrackNumber);
-                        if (props.openPage) props.openPage('logistics_track_details');
-                      }}
-                    >
-                      Track: {s.TrackNumber}
-                    </span>
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--text)' }}>
-                      {Number(s.Quantity).toLocaleString()} <span style={{ fontSize: 10, color: 'var(--muted)' }}>{s.UOM}</span>
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text)', marginBottom: 5 }}>
-                    <strong>PO:</strong> {s.PurchaseOrderNumber || '-'}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text)', marginBottom: 5 }}>
-                    <strong>ETA:</strong> {formatDate(s.ETA)}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text)' }}>
-                    <strong>State:</strong> <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--soft)', color: 'var(--muted)', fontWeight: 600, marginLeft: 4 }}>{s.StateDescription || 'N/A'}</span>
-                  </div>
+            
+            {/* Drawer Content */}
+            <div style={{ padding: 24, flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* Item Details Info Block */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 16, background: 'var(--soft)', borderRadius: 12, padding: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 2 }}>Item Code</label>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>{selectedItemRow.ItemCode}</span>
                 </div>
-              ))}
+                <div>
+                  <label style={{ display: 'block', fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 2 }}>Description</label>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', lineHeight: '1.4' }}>{selectedItemRow.ItemDescription}</span>
+                </div>
+              </div>
+
+              {/* Shipments List */}
+              <div>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: 13, fontWeight: 800, textTransform: 'uppercase', color: 'var(--muted)' }}>Shipment Details</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {selectedItemRow.Shipments.map((s, idx) => (
+                    <div key={idx} style={{
+                      border: '1px solid var(--border)',
+                      borderRadius: 12,
+                      background: 'var(--surface)',
+                      boxShadow: 'var(--shadow)',
+                      padding: 16,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12
+                    }}>
+                      {/* Header Row */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: 10 }}>
+                        <span 
+                          style={{ fontWeight: 800, color: 'var(--orange)', cursor: 'pointer', textDecoration: 'underline', fontSize: 14 }}
+                          onClick={() => {
+                            setIsDrawerOpen(false);
+                            sessionStorage.setItem('selectedTrackNumber', s.TrackNumber);
+                            if (props.openPage) props.openPage('logistics_track_details');
+                          }}
+                        >
+                          Track #: {s.TrackNumber}
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>
+                          PO: {s.PurchaseOrderNumber || '-'}
+                        </span>
+                      </div>
+
+                      {/* Grid details */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, fontSize: 12 }}>
+                        <div>
+                          <strong style={{ color: 'var(--muted)', display: 'block', fontSize: 10.5, textTransform: 'uppercase', marginBottom: 2 }}>Quantity</strong>
+                          <span style={{ fontWeight: 700 }}>{Number(s.Quantity).toLocaleString()} {s.UOM}</span>
+                        </div>
+                        <div>
+                          <strong style={{ color: 'var(--muted)', display: 'block', fontSize: 10.5, textTransform: 'uppercase', marginBottom: 2 }}>Price</strong>
+                          <span style={{ fontWeight: 700 }}>{Number(s.Price || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} {s.Currency}</span>
+                        </div>
+                        <div>
+                          <strong style={{ color: 'var(--muted)', display: 'block', fontSize: 10.5, textTransform: 'uppercase', marginBottom: 2 }}>ETA</strong>
+                          <span style={{ fontWeight: 700 }}>{formatDate(s.ETA)}</span>
+                        </div>
+                      </div>
+
+                      {/* Footer details */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 11.5, borderTop: '1px dotted var(--border)', paddingTop: 10 }}>
+                        <div>
+                          <strong style={{ color: 'var(--muted)', display: 'block', fontSize: 10, textTransform: 'uppercase', marginBottom: 2 }}>Vendor</strong>
+                          <span style={{ fontWeight: 600 }}>{s.VendorName || s.VendorNumber || '-'}</span>
+                        </div>
+                        <div>
+                          <strong style={{ color: 'var(--muted)', display: 'block', fontSize: 10, textTransform: 'uppercase', marginBottom: 2 }}>Clearing Agent</strong>
+                          <span style={{ fontWeight: 600 }}>{s.ClearingAgentName || '-'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }
