@@ -574,6 +574,53 @@ export default function TrackDetails(props) {
                       </div>
                     </div>
                   </div>
+
+                  {/* Financial Breakdown */}
+                  <div>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>Financial Breakdown</div>
+                    <div style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                        <span style={{ color: 'var(--muted)' }}>Total Line Items Amount:</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text)' }}>
+                          {headerData.ItemAmount ? headerData.ItemAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'} {headerData.Currency}
+                        </span>
+                      </div>
+                      
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                        <span style={{ color: 'var(--muted)' }}>Total Extra Amount (PO):</span>
+                        <span style={{ fontWeight: 700, color: 'var(--orange)' }}>
+                          {extraAmounts.reduce((sum, ext) => sum + (ext.Amount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {headerData.Currency}
+                        </span>
+                      </div>
+
+                      {/* Display breakdown of Extra Amounts by Type */}
+                      {extraAmounts.length > 0 && (
+                        <div style={{ paddingLeft: 12, borderLeft: '2.5px solid var(--orange)', display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, marginTop: 2 }}>
+                          {Object.entries(
+                            extraAmounts.reduce((acc, curr) => {
+                              const label = EXTRA_TYPE_LABELS[curr.ExtraType] || curr.ExtraType || 'Other';
+                              acc[label] = (acc[label] || 0) + (curr.Amount || 0);
+                              return acc;
+                            }, {})
+                          ).map(([lbl, val]) => (
+                            <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--muted)' }}>
+                              <span>• {lbl}:</span>
+                              <span style={{ fontWeight: 600 }}>{val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {headerData.Currency}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div style={{ width: '100%', height: 1, background: 'var(--border)', margin: '4px 0' }}></div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 800 }}>
+                        <span style={{ color: 'var(--text)' }}>Net Combined Total:</span>
+                        <span style={{ color: 'var(--orange)' }}>
+                          {((headerData.ItemAmount || 0) + extraAmounts.reduce((sum, ext) => sum + (ext.Amount || 0), 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {headerData.Currency}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Logistical Notes */}
