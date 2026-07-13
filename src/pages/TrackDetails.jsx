@@ -658,6 +658,21 @@ export default function TrackDetails(props) {
                       </div>
                     </div>
                   </div>
+
+                  {/* Terms */}
+                  <div>
+                    <div style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8 }}>Terms</div>
+                    <div style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                        <span style={{ color: 'var(--muted)' }}>Inco Term:</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text)' }}>{headerData.IncoTermDescription || '-'}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                        <span style={{ color: 'var(--muted)' }}>Payment Term:</span>
+                        <span style={{ fontWeight: 700, color: 'var(--text)' }}>{headerData.PaymentTermDescription || '-'}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Logistical Notes */}
