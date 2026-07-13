@@ -89,6 +89,11 @@ export default function ItemLogisticsInquiry(props) {
 
     return Object.values(grouped).map(g => {
       const sortedEtas = g.Etas.filter(Boolean).sort((a, b) => new Date(a) - new Date(b));
+      const sortedShipments = [...g.Shipments].sort((a, b) => {
+        if (!a.ETA) return 1;
+        if (!b.ETA) return -1;
+        return new Date(a.ETA) - new Date(b.ETA);
+      });
       return {
         ItemCode: g.ItemCode,
         ItemDescription: g.ItemDescription,
@@ -96,7 +101,7 @@ export default function ItemLogisticsInquiry(props) {
         TotalTracks: g.Tracks.size,
         EarliestETA: sortedEtas[0] || null,
         UOM: g.UOM,
-        Shipments: g.Shipments
+        Shipments: sortedShipments
       };
     });
   })();
