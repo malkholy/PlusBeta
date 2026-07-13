@@ -58,7 +58,7 @@ BEGIN
             SELECT * FROM QGetTrackingHistory
             WHERE (@FromDate IS NULL OR LogisticCreatedDate >= @FromDate)
               AND (@ToDate IS NULL OR LogisticCreatedDate <= @ToDate)
-              AND (@TrackNumber IS NULL OR @TrackNumber = '' OR TrackNumber LIKE '%' + @TrackNumber + '%' OR PONumber LIKE '%' + @TrackNumber + '%')
+              AND (@TrackNumber IS NULL OR @TrackNumber = '' OR TrackNumber LIKE '%' + @TrackNumber + '%')
               AND (@VendorNumber IS NULL OR @VendorNumber = '' OR VendorNumber = @VendorNumber)
             ORDER BY LogisticCreatedDate DESC, TrackNumber DESC;
             RETURN;

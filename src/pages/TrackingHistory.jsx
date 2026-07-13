@@ -208,11 +208,11 @@ export default function TrackingHistory(props) {
       }}>
         <div style={{ flex: '1 1 200px' }}>
           <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
-            Tracking / PO Number
+            Tracking Number
           </label>
           <input 
             type="text"
-            placeholder="Search by Track # or PO #..."
+            placeholder="e.g. TRK12930..."
             value={trackNumber}
             onChange={e => setTrackNumber(e.target.value)}
             style={{
