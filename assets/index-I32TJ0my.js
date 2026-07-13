@@ -1394,7 +1394,7 @@ table.dg-table tfoot td.dg-summary-cell:hover{background:var(--primary-soft)!imp
   .tab-close { font-size: 10px; color: var(--hint); margin-left: 2px; padding: 2px 4px; border-radius: 3px; border: none; background: none; cursor: pointer; font-family: var(--font); }
   .tab-close:hover { background: var(--border); color: var(--muted); }
   .page-area { flex: 1; padding: 24px; display: flex; flex-direction: column; overflow: hidden; }
-  .page-area > div { display: flex !important; flex-direction: column !important; flex: 1 !important; min-height: 0 !important; height: 100% !important; }
+  .page-area > div { display: flex !important; flex-direction: column !important; flex: 1 !important; min-height: 0 !important; }
 
   /* ── SHARED PAGE ── */
   .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; }
