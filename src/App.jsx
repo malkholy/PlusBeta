@@ -150,8 +150,8 @@ const css = `
   .tab-item.active::after { content: ''; position: absolute; top: 0; left: 12px; right: 12px; height: 2.5px; background: linear-gradient(90deg, var(--orange), var(--orange2)); border-radius: 999px; }
   .tab-close { font-size: 10px; color: var(--hint); margin-left: 2px; padding: 2px 4px; border-radius: 3px; border: none; background: none; cursor: pointer; font-family: var(--font); }
   .tab-close:hover { background: var(--border); color: var(--muted); }
-  .page-area { flex: 1; padding: 24px; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
-  .page-area > div { display: flex !important; flex-direction: column !important; flex: 1 !important; min-height: 0 !important; overflow: hidden !important; }
+  .page-area { flex: 1; padding: 24px; display: flex; flex-direction: column; overflow-y: auto; }
+  .page-area > div { display: flex !important; flex-direction: column !important; flex: 1 !important; min-height: 0 !important; }
 
   /* ── SHARED PAGE ── */
   .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; }

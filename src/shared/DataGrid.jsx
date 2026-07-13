@@ -44,7 +44,7 @@ table.dg-table tfoot td.dg-num{text-align:right}
 table.dg-table tfoot td.dg-summary-cell{cursor:context-menu}
 table.dg-table tfoot td.dg-summary-cell:hover{background:var(--primary-soft)!important}
 .dg-summary-badge{display:block;color:var(--primary);font-size:10px;margin-top:3px;font-weight:900}
-.dg-paging{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);z-index:9;box-shadow:0 -4px 12px rgba(0,0,0,0.06);border-radius:0 0 22px 22px}
+.dg-paging{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;background:var(--surface);border-top:1px solid var(--border);z-index:9;box-shadow:0 -4px 12px rgba(0,0,0,0.04);border-radius:0 0 22px 22px;flex-shrink:0}
 .dg-page-size{height:38px;border:1px solid var(--border);border-radius:10px;padding:0 10px;font-size:13px}
 .dg-pager{display:flex;gap:6px}
 .dg-page-btn{height:36px;min-width:36px;border:1px solid var(--border);background:var(--surface);border-radius:10px;font-weight:900;cursor:pointer;font-size:13px}
@@ -159,6 +159,22 @@ export default function DataGrid({
   const exportMenuRef = useRef();
   const summaryMenuRef= useRef();
   const colFilterRef  = useRef();
+  const panelRef      = useRef();
+
+  // Self-measure: set panel height = viewport bottom minus panel top
+  useEffect(() => {
+    function updatePanelHeight() {
+      if (!panelRef.current) return;
+      const top = panelRef.current.getBoundingClientRect().top;
+      const height = window.innerHeight - top - 24;
+      if (height > 100) panelRef.current.style.height = height + 'px';
+    }
+    updatePanelHeight();
+    const ro = new ResizeObserver(updatePanelHeight);
+    ro.observe(document.body);
+    window.addEventListener('resize', updatePanelHeight);
+    return () => { ro.disconnect(); window.removeEventListener('resize', updatePanelHeight); };
+  }, []);
 
   // keep summaryRef in sync with state
   useEffect(() => { summaryRef.current = summary; }, [summary]);
@@ -376,7 +392,7 @@ export default function DataGrid({
     <div tabIndex={0} onKeyDown={handleKeyDown} style={{ outline: "none" }}>
 
 
-      <div className="dg-grid-panel">
+      <div ref={panelRef} className="dg-grid-panel">
         {!hideHeader && (
           <div className="dg-grid-title" style={{alignItems:"center",display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
             <div style={{display:"flex",alignItems:"baseline",gap:8}}>
