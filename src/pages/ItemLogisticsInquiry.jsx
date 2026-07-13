@@ -341,6 +341,34 @@ export default function ItemLogisticsInquiry(props) {
                 </div>
               </div>
 
+              {/* Mini KPI Cards */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: 12
+              }}>
+                <div style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 12, boxShadow: 'var(--shadow-sm)' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Total Qty</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginTop: 4 }}>
+                    {selectedItemRow.TotalQty.toLocaleString()} <span style={{ fontSize: 10, color: 'var(--muted)' }}>{selectedItemRow.UOM}</span>
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 12, boxShadow: 'var(--shadow-sm)' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Active Shipments</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--blue)', marginTop: 4 }}>
+                    {selectedItemRow.TotalTracks}
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 12, boxShadow: 'var(--shadow-sm)' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase' }}>Total Value</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--orange)', marginTop: 4 }}>
+                    {selectedItemRow.Shipments.reduce((sum, s) => sum + (Number(s.Quantity) * Number(s.Price || 0)), 0).toLocaleString('en-US', { maximumFractionDigits: 0 })} <span style={{ fontSize: 9, color: 'var(--muted)' }}>{selectedItemRow.Shipments[0]?.Currency || ''}</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Shipments List */}
               <div>
                 <h4 style={{ margin: '0 0 12px 0', fontSize: 13, fontWeight: 800, textTransform: 'uppercase', color: 'var(--muted)' }}>Shipment Details</h4>
