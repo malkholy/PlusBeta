@@ -314,6 +314,36 @@ export default function TrackDetails(props) {
               </div>
             </div>
             <div>
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Track State</span>
+              <div style={{ marginTop: 2 }}>
+                <span style={{
+                  fontSize: 11,
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  background: 'var(--soft)',
+                  color: 'var(--muted)',
+                  fontWeight: 600
+                }}>
+                  {headerData.StateDescription || 'N/A'}
+                </span>
+              </div>
+            </div>
+            <div>
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Accounting State</span>
+              <div style={{ marginTop: 2 }}>
+                <span style={{
+                  fontSize: 11,
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  background: 'var(--soft)',
+                  color: 'var(--text)',
+                  fontWeight: 600
+                }}>
+                  {headerData.AccountingStateDescription || '-'}
+                </span>
+              </div>
+            </div>
+            <div>
               <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Total Amount</span>
               <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--orange)', marginTop: 2 }}>
                 {headerData.TotalAmount?.toLocaleString('en-US', { minimumFractionDigits: 2 })} <span style={{ fontSize: 11, color: 'var(--muted)' }}>{headerData.Currency}</span>
