@@ -41,6 +41,22 @@ export default function TrackingHistory(props) {
       )
     },
     {
+      key: 'StateDescription',
+      label: 'Tracking State',
+      render: (val) => (
+        <span style={{
+          fontSize: 11,
+          padding: '2.5px 8px',
+          borderRadius: 6,
+          background: 'var(--soft)',
+          color: 'var(--muted)',
+          fontWeight: 600
+        }}>
+          {val || 'N/A'}
+        </span>
+      )
+    },
+    {
       key: 'VendorName',
       label: 'Vendor Name',
       render: (val, row) => val || row.VendorNumber || '-'
@@ -93,33 +109,6 @@ export default function TrackingHistory(props) {
         }}>
           {val || '-'}
         </span>
-      )
-    },
-    {
-      key: 'StateDescription',
-      label: 'Tracking State',
-      render: (val) => (
-        <span style={{
-          fontSize: 11,
-          padding: '2.5px 8px',
-          borderRadius: 6,
-          background: 'var(--soft)',
-          color: 'var(--muted)',
-          fontWeight: 600
-        }}>
-          {val || 'N/A'}
-        </span>
-      )
-    },
-    {
-      key: 'IsLocked',
-      label: 'Status',
-      render: (val) => (
-        val ? (
-          <span style={{ color: 'var(--green)', fontSize: 11, fontWeight: 700 }}>✓ Locked</span>
-        ) : (
-          <span style={{ color: 'var(--orange)', fontSize: 11, fontWeight: 700 }}>• Active</span>
-        )
       )
     }
   ];
