@@ -658,14 +658,13 @@ GO
 -- 26. QGetItemLogistics
 CREATE OR ALTER VIEW [dbo].[QGetItemLogistics] AS
 SELECT 
-    ll.LHID,
     ll.TrackNumber,
     ll.PurchaseOrderNumber,
     ll.ItemID,
     ll.LineNumber,
-    ll.Quantity,
+    ll.LineQuantity AS Quantity,
     ll.LineType,
-    ll.UOM,
+    ll.LogisticLineUnitOfMeasure AS UOM,
     
     -- Item details
     (CASE
