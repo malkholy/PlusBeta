@@ -101,12 +101,6 @@ BEGIN
     VALUES ('sales_report_group', N'Sales Report', N'📊', N'Sales Report navigation group', 1, NULL, 300);
 END
 
--- 12. Sales Detail (Page)
-IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'sales_report_details')
-BEGIN
-    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
-    VALUES ('sales_report_details', N'Sales Detail', N'📈', N'Sales performance and YoY tonnage/weight reports', 0, 'sales_report_group', 310);
-END
 
 -- 13. Sales Export Statistics (Page)
 IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'sales_export_statistics')

@@ -46,12 +46,6 @@ const NAV = [
     isGroup: true,
     children: [
       {
-        id: 'sales_report_details',
-        label: 'Sales Detail',
-        icon: '📈',
-        desc: 'Sales performance and YoY tonnage/weight reports'
-      },
-      {
         id: 'sales_export_statistics',
         label: 'Sales Export Statistics',
         icon: '📊',
