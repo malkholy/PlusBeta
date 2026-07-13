@@ -654,3 +654,57 @@ SELECT b.ID, b.FileID, b.FileOrginalName, b.FileName, b.FileDescription, b.FileU
 FROM LGI.LogisticHeader a 
 LEFT OUTER JOIN FIL.FileHistory b ON b.FileID = a.AttachmentID;
 GO
+
+-- 26. QGetItemLogistics
+CREATE OR ALTER VIEW [dbo].[QGetItemLogistics] AS
+SELECT 
+    ll.LHID,
+    ll.TrackNumber,
+    ll.PurchaseOrderNumber,
+    ll.ItemID,
+    ll.LineNumber,
+    ll.Quantity,
+    ll.LineType,
+    ll.UOM,
+    
+    -- Item details
+    (CASE
+        WHEN ll.LineType='S' THEN (SELECT SampleDescription FROM PUR.SampleMaster WHERE SampleID = ll.ItemID)
+        WHEN ll.LineType='A' THEN (SELECT AssetExtraDescription FROM ASS.AssetMaster WHERE AssetID = ll.ItemID)
+        WHEN ll.LineType='N' THEN (SELECT ItemDescription FROM PUR.NonStockItemMaster WHERE NonStockItemID = ll.ItemID)
+        WHEN ll.LineType='I' THEN (SELECT ItemExtraDescription FROM INV.ItemMaster WHERE ItemID = ll.ItemID)
+        WHEN ll.LineType='T' THEN (SELECT ItemExtraDescription FROM IT.ITItemMaster WHERE ITItemID = ll.ItemID)
+    END) AS ItemDescription,
+    
+    (CASE 
+        WHEN ll.LineType = 'A' THEN (SELECT AssetCode FROM ASS.AssetMaster WHERE AssetID = ll.ItemID)
+        WHEN ll.LineType = 'I' THEN (SELECT ItemCode FROM INV.ItemMaster WHERE ItemID = ll.ItemID)
+        WHEN ll.LineType = 'N' THEN (SELECT ItemCode FROM PUR.NonStockItemMaster WHERE NonStockItemID = ll.ItemID)
+        WHEN ll.LineType = 'S' THEN (SELECT SampleCode FROM PUR.SampleMaster WHERE SampleID = ll.ItemID)
+        ELSE (SELECT ITCode FROM IT.ITItemMaster WHERE ITItemID = ll.ItemID) 
+    END) AS ItemCode,
+    
+    -- Header tracking details
+    h.TrackState,
+    (SELECT StateDescription FROM LGI.LogisticStateMaster WHERE StateValue = h.TrackState) AS StateDescription,
+    h.ShipmentState,
+    (SELECT ValueDescription FROM dbo.Reference WHERE RefID = 40 AND ValueInt = h.ShipmentState) AS ShipmentStateDescription,
+    h.ETA,
+    h.ETD,
+    h.InvoiceNumber,
+    h.BLNumber,
+    h.Destination,
+    h.VendorNumber,
+    v.VendorName,
+    c.CarrierName,
+    f.ForwarderName,
+    ca.ClearingAgentName,
+    h.LogisticCreatedDate
+FROM LGI.LogisticLine ll
+INNER JOIN LGI.LogisticHeader h ON ll.TrackNumber = h.TrackNumber
+LEFT OUTER JOIN ACP.VendorMaster v ON v.VendorNumber = h.VendorNumber
+LEFT OUTER JOIN LGI.CarrierMaster c ON c.CarrierID = h.CarrierID
+LEFT OUTER JOIN LGI.ForwarderMaster f ON f.ForwarderID = h.ForwarderID
+LEFT OUTER JOIN LGI.ClearingAgentMaster ca ON ca.ClearingAgentID = h.ClearingAgentID;
+GO
+

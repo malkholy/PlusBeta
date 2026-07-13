@@ -234,6 +234,23 @@ BEGIN
             RETURN;
         END
 
+        -- ---------------------------------------------------------------------
+        -- Operation: GetItemLogistics
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetItemLogistics'
+        BEGIN
+            DECLARE @SearchItem VARCHAR(100) = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @SearchItem = NULLIF(JSON_VALUE(@LineData, '$.SearchItem'), '');
+            END
+
+            SELECT * FROM QGetItemLogistics
+            WHERE (@SearchItem IS NULL OR @SearchItem = '' OR ItemCode LIKE '%' + @SearchItem + '%' OR ItemDescription LIKE '%' + @SearchItem + '%')
+            ORDER BY LogisticCreatedDate DESC, TrackNumber DESC;
+            RETURN;
+        END
+
         -- Fallback: Unsupported Operation
         SET @Message = 'Unsupported Operation: ' + COALESCE(@Operation, 'NULL');
         SET @State = 1;

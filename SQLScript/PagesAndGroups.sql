@@ -110,4 +110,13 @@ BEGIN
 END
 GO
 
+-- 14. Item Logistics Inquiry (Page)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'logistics_item_inquiry')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('logistics_item_inquiry', N'Item Logistics Inquiry', N'🏷️', N'Track item locations and status across all shipments', 0, 'logistics_group', 210);
+END
+GO
+
+
 

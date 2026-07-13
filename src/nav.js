@@ -36,6 +36,12 @@ const NAV = [
         label: 'Tracking History',
         icon: '📜',
         desc: 'Track shipment history and logistical states'
+      },
+      {
+        id: 'logistics_item_inquiry',
+        label: 'Item Logistics Inquiry',
+        icon: '🏷️',
+        desc: 'Track item locations and status across all shipments'
       }
     ]
   },

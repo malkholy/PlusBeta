@@ -696,3 +696,28 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
 GO
 
+-- 29. Get Item Logistics Inquiry
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Item Logistics Inquiry')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Item Logistics Inquiry', N'[dbo].[APIPlusLogisticsOperation]', 'GetItemLogistics', N'Retrieve active and historical logistics tracking records by item filter', 
+            N'SELECT * FROM QGetItemLogistics WHERE (@SearchItem IS NULL OR @SearchItem = '''' OR ItemCode LIKE ''%'' + @SearchItem + ''%'' OR ItemDescription LIKE ''%'' + @SearchItem + ''%'') ORDER BY LogisticCreatedDate DESC, TrackNumber DESC;', 'ERPMega', 'dbo', 'QGetItemLogistics', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Item Logistics Inquiry';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT * FROM QGetItemLogistics WHERE (@SearchItem IS NULL OR @SearchItem = '''' OR ItemCode LIKE ''%'' + @SearchItem + ''%'' OR ItemDescription LIKE ''%'' + @SearchItem + ''%'') ORDER BY LogisticCreatedDate DESC, TrackNumber DESC;',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'QGetItemLogistics',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_item_inquiry' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_item_inquiry', @QID);
+GO
+
+
