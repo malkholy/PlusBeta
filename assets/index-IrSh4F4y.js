@@ -760,7 +760,7 @@ Error generating stack: `+s.message+`
 .dg-page-head{display:flex;justify-content:space-between;gap:14px;margin-bottom:18px}
 .dg-page-head h1{font-size:26px;font-weight:900}
 .dg-muted{color:var(--muted);font-size:14px}
-.dg-grid-panel{background:var(--surface);border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0}
+.dg-grid-panel{background:var(--surface);border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;flex:1;min-height:0}
 .dg-grid-title{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
 .dg-grid-title h3{font-size:18px;font-weight:900}
 .dg-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:14px 18px;border-bottom:1px solid var(--border)}
@@ -779,7 +779,7 @@ Error generating stack: `+s.message+`
 .dg-menu-item{padding:10px 12px;border-radius:9px;font-weight:900;cursor:pointer;display:flex;justify-content:space-between;font-size:13px}
 .dg-menu-item:hover{background:var(--primary-soft);color:var(--primary-dark)}
 .dg-danger{color:var(--red)}
-.dg-table-wrap{overflow:auto;flex:1;min-height:0}
+.dg-table-wrap{overflow:auto;flex:1;min-height:0;border-radius:0 0 22px 22px}
 table.dg-table{width:100%;border-collapse:collapse;min-width:600px;table-layout:auto}
 table.dg-table th,table.dg-table td{padding:13px 16px;border-bottom:1px solid var(--border);white-space:nowrap;text-align:left;font-size:13px}
 table.dg-table th{background:var(--soft);color:var(--muted);font-size:13px;position:sticky;top:0;z-index:3;font-weight:900;text-transform:none}
@@ -798,7 +798,7 @@ table.dg-table tfoot td.dg-num{text-align:right}
 table.dg-table tfoot td.dg-summary-cell{cursor:context-menu}
 table.dg-table tfoot td.dg-summary-cell:hover{background:var(--primary-soft)!important}
 .dg-summary-badge{display:block;color:var(--primary);font-size:10px;margin-top:3px;font-weight:900}
-.dg-paging{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);z-index:9;box-shadow:0 -4px 12px rgba(0,0,0,0.02)}
+.dg-paging{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);z-index:9;box-shadow:0 -4px 12px rgba(0,0,0,0.06);border-radius:0 0 22px 22px}
 .dg-page-size{height:38px;border:1px solid var(--border);border-radius:10px;padding:0 10px;font-size:13px}
 .dg-pager{display:flex;gap:6px}
 .dg-page-btn{height:36px;min-width:36px;border:1px solid var(--border);background:var(--surface);border-radius:10px;font-weight:900;cursor:pointer;font-size:13px}
@@ -1393,7 +1393,7 @@ table.dg-table tfoot td.dg-summary-cell:hover{background:var(--primary-soft)!imp
   .tab-item.active::after { content: ''; position: absolute; top: 0; left: 12px; right: 12px; height: 2.5px; background: linear-gradient(90deg, var(--orange), var(--orange2)); border-radius: 999px; }
   .tab-close { font-size: 10px; color: var(--hint); margin-left: 2px; padding: 2px 4px; border-radius: 3px; border: none; background: none; cursor: pointer; font-family: var(--font); }
   .tab-close:hover { background: var(--border); color: var(--muted); }
-  .page-area { flex: 1; padding: 24px; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+  .page-area { flex: 1; padding: 24px; display: flex; flex-direction: column; overflow-y: auto; }
   .page-area > div { display: flex !important; flex-direction: column !important; flex: 1 !important; min-height: 0 !important; }
 
   /* ── SHARED PAGE ── */
