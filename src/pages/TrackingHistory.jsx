@@ -184,13 +184,7 @@ export default function TrackingHistory(props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-      {/* Title bar */}
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>Logistics Tracking History</h2>
-        <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>
-          Monitor shipping states, custom clearances, bank courier releases, and tracking metrics.
-        </p>
-      </div>
+
 
       {/* Filter panel */}
       <div style={{
