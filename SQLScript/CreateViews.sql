@@ -663,6 +663,8 @@ SELECT
     ll.ItemID,
     ll.LineNumber,
     ll.LineQuantity AS Quantity,
+    ll.Price,
+    ll.Currency,
     ll.LineType,
     ll.LogisticLineUnitOfMeasure AS UOM,
     
