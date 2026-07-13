@@ -185,13 +185,7 @@ export default function TrackDetails(props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       {/* Title bar */}
-      <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>Logistics Track Details</h2>
-          <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>
-            View comprehensive line specifications and logistical stages for specific track numbers.
-          </p>
-        </div>
+      <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
         {props.openPage && (
           <button
             onClick={() => props.openPage('logistics_tracking_history')}
