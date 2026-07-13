@@ -382,10 +382,29 @@ export default function DataGrid({
   const selRow  = selected.size === 1 ? pageRows[lastSelRef.current] : null;
   const selRows = [...selected].map(i => pageRows[i]).filter(Boolean);
 
+  function highlightText(val, q) {
+    const textStr = String(val ?? "");
+    if (!q || !textStr) return textStr;
+    const parts = textStr.split(new RegExp(`(${q.replace(/[-[\]{}()*+?.,\\^$|#\\s]/g, '\\$&')})`, 'gi'));
+    return (
+      <>
+        {parts.map((part, idx) => 
+          part.toLowerCase() === q.toLowerCase() ? (
+            <mark key={idx} style={{ background: '#ffeb3b', color: '#000', padding: '0 2px', borderRadius: 3 }}>
+              {part}
+            </mark>
+          ) : (
+            part
+          )
+        )}
+      </>
+    );
+  }
+
   function renderCell(col, row) {
-    if (col.render) return col.render(row[col.key], row);
+    if (col.render) return col.render(row[col.key], row, search, highlightText);
     if (col.numeric) return fmtNum(row[col.key]);
-    return String(row[col.key] ?? "");
+    return highlightText(row[col.key], search);
   }
 
   return (

@@ -34,14 +34,14 @@ export default function TrackingHistory(props) {
     {
       key: 'TrackNumber',
       label: 'Track Number',
-      render: (val, row) => (
+      render: (val, row, search, highlight) => (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={{ fontWeight: 700 }}>
-            {val} {row.IsLocked ? '🔒' : ''}
+            {highlight(val, search)} {row.IsLocked ? '🔒' : ''}
           </span>
           {row.PONumber && (
             <span style={{ fontSize: 10.5, color: 'var(--muted)', fontWeight: 600 }}>
-              PO: {row.PONumber}
+              PO: {highlight(row.PONumber, search)}
             </span>
           )}
         </div>
@@ -50,7 +50,7 @@ export default function TrackingHistory(props) {
     {
       key: 'StateDescription',
       label: 'Tracking State',
-      render: (val) => (
+      render: (val, row, search, highlight) => (
         <span style={{
           fontSize: 11,
           padding: '2.5px 8px',
@@ -59,14 +59,14 @@ export default function TrackingHistory(props) {
           color: 'var(--muted)',
           fontWeight: 600
         }}>
-          {val || 'N/A'}
+          {highlight(val || 'N/A', search)}
         </span>
       )
     },
     {
       key: 'VendorName',
       label: 'Vendor Name',
-      render: (val, row) => val || row.VendorNumber || '-'
+      render: (val, row, search, highlight) => highlight(val || row.VendorNumber || '-', search)
     },
     {
       key: 'ClearingAgentName',
@@ -80,7 +80,7 @@ export default function TrackingHistory(props) {
     {
       key: 'TotalAmount',
       label: 'Total Amount',
-      render: (val, row) => (
+      render: (val, row, search, highlight) => (
         <div style={{ fontWeight: 700 }}>
           {Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} <span style={{ fontSize: 10, color: 'var(--muted)' }}>{row.Currency}</span>
         </div>
@@ -89,7 +89,7 @@ export default function TrackingHistory(props) {
     {
       key: 'ShipmentStateDescription',
       label: 'Shipment State',
-      render: (val) => (
+      render: (val, row, search, highlight) => (
         <span style={{
           fontSize: 11,
           padding: '2.5px 8px',
@@ -98,14 +98,14 @@ export default function TrackingHistory(props) {
           color: 'var(--blue)',
           fontWeight: 600
         }}>
-          {val || 'Unknown'}
+          {highlight(val || 'Unknown', search)}
         </span>
       )
     },
     {
       key: 'AccountingStateDescription',
       label: 'Accounting State',
-      render: (val) => (
+      render: (val, row, search, highlight) => (
         <span style={{
           fontSize: 11,
           padding: '2.5px 8px',
@@ -114,7 +114,7 @@ export default function TrackingHistory(props) {
           color: 'var(--text)',
           fontWeight: 600
         }}>
-          {val || '-'}
+          {highlight(val || '-', search)}
         </span>
       )
     }
@@ -358,9 +358,10 @@ export default function TrackingHistory(props) {
             sessionStorage.setItem('selectedTrackNumber', row.TrackNumber);
             if (props.openPage) props.openPage('logistics_track_details');
           }}
-          hideHeader={true}
-          hideSearch={true}
-          hideRefresh={true}
+          hideHeader={false}
+          hideSearch={false}
+          hideRefresh={false}
+          onRefresh={() => loadData()}
         />
       </div>
     </div>
