@@ -429,6 +429,18 @@ export default function ItemLogisticsInquiry(props) {
                         </div>
                       </div>
 
+                      {/* Cargo details */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 11.5, borderTop: '1px dotted var(--border)', paddingTop: 10 }}>
+                        <div>
+                          <strong style={{ color: 'var(--muted)', display: 'block', fontSize: 10, textTransform: 'uppercase', marginBottom: 2 }}>Shipment Mode</strong>
+                          <span style={{ fontWeight: 600 }}>{s.ShipmentMode || '-'}</span>
+                        </div>
+                        <div>
+                          <strong style={{ color: 'var(--muted)', display: 'block', fontSize: 10, textTransform: 'uppercase', marginBottom: 2 }}>Shipment Size (Cargo)</strong>
+                          <span style={{ fontWeight: 600 }}>{s.ShipmentSize || '-'}</span>
+                        </div>
+                      </div>
+
                       {/* Footer details */}
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 11.5, borderTop: '1px dotted var(--border)', paddingTop: 10 }}>
                         <div>

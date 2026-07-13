@@ -695,6 +695,8 @@ SELECT
     h.InvoiceNumber,
     h.BLNumber,
     h.Destination,
+    h.ShipmentMode,
+    h.ShipmentSize,
     h.VendorNumber,
     v.VendorName,
     c.CarrierName,
