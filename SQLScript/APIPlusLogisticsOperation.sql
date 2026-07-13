@@ -151,6 +151,23 @@ BEGIN
         END
 
         -- ---------------------------------------------------------------------
+        -- Operation: GetTrackingHistoryExtraAmounts
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetTrackingHistoryExtraAmounts'
+        BEGIN
+            DECLARE @ExtraTrackNumber VARCHAR(100) = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @ExtraTrackNumber = JSON_VALUE(@LineData, '$.TrackNumber');
+            END
+
+            SELECT * 
+            FROM dbo.QGetTrackDetailsExtraAmounts
+            WHERE TrackNumber = @ExtraTrackNumber;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
         -- Operation: GetSalesExportStatistics
         -- ---------------------------------------------------------------------
         IF @Operation = 'GetSalesExportStatistics'

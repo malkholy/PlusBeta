@@ -648,5 +648,28 @@ BEGIN
 END
 IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'sales_export_statistics' AND QueryID = @QID)
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('sales_export_statistics', @QID);
+
+-- 27. Get Track Details Extra Amounts
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Extra Amounts')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Track Details Extra Amounts', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryExtraAmounts', N'Retrieve extra amounts of PO for a track', 
+            N'SELECT * FROM QGetTrackDetailsExtraAmounts WHERE TrackNumber = @TrackNumber;', 'ERPMega', 'dbo', 'QGetTrackDetailsExtraAmounts', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Extra Amounts';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT * FROM QGetTrackDetailsExtraAmounts WHERE TrackNumber = @TrackNumber;',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'QGetTrackDetailsExtraAmounts',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
 GO
 

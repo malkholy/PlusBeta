@@ -26,6 +26,10 @@ export default function TrackDetails(props) {
   const [containers, setContainers] = useState([]);
   const [loadingContainers, setLoadingContainers] = useState(false);
 
+  // Extra Amounts state
+  const [extraAmounts, setExtraAmounts] = useState([]);
+  const [loadingExtraAmounts, setLoadingExtraAmounts] = useState(false);
+
   useEffect(() => {
     const selectedTrack = sessionStorage.getItem('selectedTrackNumber');
     if (selectedTrack) {
@@ -45,6 +49,7 @@ export default function TrackDetails(props) {
     setReferences([]);
     setBatches([]);
     setContainers([]);
+    setExtraAmounts([]);
 
     // 1. Fetch Header Details
     setLoadingHeader(true);
@@ -121,6 +126,18 @@ export default function TrackDetails(props) {
       console.error('Containers load failed:', e);
     }
     setLoadingContainers(false);
+
+    // 7. Fetch Extra Amounts
+    setLoadingExtraAmounts(true);
+    try {
+      const res = await apiCall('GetTrackingHistoryExtraAmounts', { TrackNumber: cleanTrackNum }, {}, 'logistics');
+      if (res.State === 0) {
+        setExtraAmounts(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Extra Amounts load failed:', e);
+    }
+    setLoadingExtraAmounts(false);
   }
 
   function handleSearch(e) {
@@ -385,6 +402,22 @@ export default function TrackDetails(props) {
                 }}
               >
                 🚢 Containers ({containers.length})
+              </button>
+              <button 
+                onClick={() => setActiveTab('extra_amounts')}
+                style={{
+                  padding: '14px 4px',
+                  border: 'none',
+                  background: 'none',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: activeTab === 'extra_amounts' ? 'var(--orange)' : 'var(--muted)',
+                  borderBottom: activeTab === 'extra_amounts' ? '2.5px solid var(--orange)' : '2.5px solid transparent',
+                  transition: 'all 0.15s'
+                }}
+              >
+                💵 Extra Amounts ({extraAmounts.length})
               </button>
             </div>
 
@@ -713,6 +746,45 @@ export default function TrackDetails(props) {
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{con.ContainerNotes || '-'}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{con.ContainerCreatedBy || '-'}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(con.ContainerCreatedDate)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'extra_amounts' && (
+              <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                {loadingExtraAmounts ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>Loading extra amounts...</div>
+                ) : extraAmounts.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>No extra amount records found for this track.</div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--soft)', borderBottom: '1.5px solid var(--border)', position: 'sticky', top: 0 }}>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>PO #</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>PO Line</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Extra Type</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>Amount</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Created By</th>
+                          <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)' }}>Created Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {extraAmounts.map((ext, idx) => (
+                          <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{ext.PO || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--muted)' }}>{ext.Line || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)', fontWeight: 600 }}>{ext.ExtraType || '-'}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--orange)', fontWeight: 700 }}>
+                              {ext.Amount ? ext.Amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
+                            </td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{ext.CreatedBy || '-'}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{formatDate(ext.CreatedDate)}</td>
                           </tr>
                         ))}
                       </tbody>

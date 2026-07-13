@@ -641,3 +641,8 @@ LEFT OUTER JOIN acr.CustomerMaster c on c.CustomerNo = a.CustomerNo
 WHERE YEAR(a.InvoiceDate) IN (2025, 2026) 
   AND a.CustomerNo LIKE '6%';
 GO
+
+-- 24. QGetTrackDetailsExtraAmounts
+CREATE OR ALTER VIEW [dbo].[QGetTrackDetailsExtraAmounts] AS
+SELECT * FROM LGI.LogisticExtraAmount;
+GO
