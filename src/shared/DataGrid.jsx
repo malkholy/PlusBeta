@@ -408,7 +408,7 @@ export default function DataGrid({
   }
 
   return (
-    <div tabIndex={0} onKeyDown={handleKeyDown} style={{ outline: "none" }}>
+    <div tabIndex={0} onKeyDown={handleKeyDown} style={{ outline: "none", width: '100%', display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
 
 
       <div ref={panelRef} className="dg-grid-panel">

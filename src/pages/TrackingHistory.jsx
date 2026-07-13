@@ -347,7 +347,7 @@ export default function TrackingHistory(props) {
       </div>
 
       {/* Data Section */}
-      <div style={{ display: 'flex', flex: 1, gap: 20, minHeight: 0 }}>
+      <div style={{ display: 'flex', flex: 1, gap: 20, minHeight: 0, width: '100%' }}>
         <DataGrid
           title="Tracking History List"
           subtitle="View and manage logistics tracking headers"
