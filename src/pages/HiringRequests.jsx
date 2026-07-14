@@ -316,6 +316,21 @@ export default function HiringRequests(props) {
               <div style={{ marginBottom: 16, background: 'var(--red-soft)', color: 'var(--red)', padding: 10, borderRadius: 8, fontSize: 12.5 }}>{modalError}</div>
             )}
 
+            {formData.RequestID && rows.find(r => r.RequestID === Number(formData.RequestID))?.ReturnComments && (
+              <div style={{
+                marginBottom: 16,
+                background: 'var(--blue-soft)',
+                color: 'var(--blue)',
+                border: '1px solid rgba(59,130,246,0.2)',
+                padding: 12,
+                borderRadius: 10,
+                fontSize: 13,
+                fontWeight: 600
+              }}>
+                ↩️ Return Comments: {rows.find(r => r.RequestID === Number(formData.RequestID)).ReturnComments}
+              </div>
+            )}
+
             <form onSubmit={handleSaveRequest}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                 <div>

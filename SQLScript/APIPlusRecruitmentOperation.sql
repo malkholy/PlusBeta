@@ -38,7 +38,13 @@ BEGIN
         SELECT 
             r.*,
             (SELECT COUNT(*) FROM [PLS].[Candidate] c WHERE c.RequestID = r.RequestID) AS TotalCandidates,
-            (SELECT COUNT(*) FROM [PLS].[Candidate] c WHERE c.RequestID = r.RequestID AND c.CandidateState = 6) AS HiredCount
+            (SELECT COUNT(*) FROM [PLS].[Candidate] c WHERE c.RequestID = r.RequestID AND c.CandidateState = 6) AS HiredCount,
+            (
+                SELECT TOP 1 Comments 
+                FROM [PLS].[HiringRequestApproval] 
+                WHERE RequestID = r.RequestID AND ApprovalState = 3 
+                ORDER BY ActionDate DESC
+            ) AS ReturnComments
         FROM [PLS].[HiringRequest] r
         ORDER BY r.CreatedDate DESC;
         RETURN;
