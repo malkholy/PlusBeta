@@ -727,17 +727,17 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Expre
 BEGIN
     INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
     VALUES (N'Get Express Serials', N'[dbo].[APIPlusExpressGenerateCodeOperation]', 'Get Serials', N'Retrieve Express serial summary details', 
-            N'SELECT * FROM code.CardSerialSummary;', 'ERPMega', 'code', 'CardSerialSummary', 'Grid', 'System');
+            N'SELECT * FROM [Express].[Code].[CardSerialSummary];', 'Express', 'Code', 'CardSerialSummary', 'Grid', 'System');
     SET @QID = SCOPE_IDENTITY();
 END
 ELSE
 BEGIN
     SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Express Serials';
     UPDATE [PLS].[QueryMaster]
-    SET [QuerySQL] = N'SELECT * FROM code.CardSerialSummary;',
+    SET [QuerySQL] = N'SELECT * FROM [Express].[Code].[CardSerialSummary];',
         [SPName] = N'[dbo].[APIPlusExpressGenerateCodeOperation]',
-        [DatabaseName] = 'ERPMega',
-        [SchemaName] = 'code',
+        [DatabaseName] = 'Express',
+        [SchemaName] = 'Code',
         [TableOrViewName] = 'CardSerialSummary',
         [QueryType] = 'Grid'
     WHERE QueryID = @QID;

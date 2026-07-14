@@ -34,7 +34,17 @@ BEGIN
     
     IF @Operation = 'Get Serials'
     BEGIN
-        SELECT * FROM code.CardSerialSummary;
+        SELECT 
+            [CardType]
+            ,[FromSerial]
+            ,[ToSerial]
+            ,[DeliverdDate]
+            ,[Note]
+            ,[CreatedBy]
+            ,[CreatedDate]
+            ,[LastMaintDate]
+            ,[LastMaintBy]
+        FROM [Express].[Code].[CardSerialSummary];
         RETURN;
     END
 END
