@@ -42,7 +42,7 @@ export default function HiringRequests(props) {
 
   async function loadDepartments() {
     try {
-      const res = await apiCall('Get Department List', null, {}, 'recruitment_requests');
+      const res = await apiCall('Get Departments', null, {}, 'recruitment_requests');
       if (res.State === 0) {
         setDepartments(res.List0 || []);
       }
