@@ -30,7 +30,7 @@ export default function CodeSerials(props) {
               key: k,
               label: label.charAt(0).toUpperCase() + label.slice(1),
               render: (val, row, search, highlight) => {
-                if (val === true || val === 1 || String(val).toLowerCase() === 'true') {
+                if (val === true || String(val).toLowerCase() === 'true') {
                   return (
                     <span style={{
                       fontSize: 11,
@@ -44,7 +44,7 @@ export default function CodeSerials(props) {
                     </span>
                   );
                 }
-                if (val === false || val === 0 || String(val).toLowerCase() === 'false') {
+                if (val === false || String(val).toLowerCase() === 'false') {
                   return (
                     <span style={{
                       fontSize: 11,
