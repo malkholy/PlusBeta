@@ -118,5 +118,13 @@ BEGIN
 END
 GO
 
+-- 15. Express Group (Nav Group)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'express_group')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('express_group', N'Express', N'⚡', N'Express tracking navigation group', 1, NULL, 400);
+END
+GO
+
 
 

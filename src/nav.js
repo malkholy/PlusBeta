@@ -58,6 +58,13 @@ const NAV = [
         desc: 'Customer invoice YoY sales export statistics'
       }
     ]
+  },
+  {
+    id: 'express_group',
+    label: 'Express',
+    icon: '⚡',
+    isGroup: true,
+    children: []
   }
 ];
 
