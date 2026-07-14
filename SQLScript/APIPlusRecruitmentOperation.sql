@@ -492,6 +492,26 @@ BEGIN
     END
 
     -- ---------------------------------------------------------------------
+    -- ---------------------------------------------------------------------
+    -- Operation: Get Request Approval History
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Get Request Approval History'
+    BEGIN
+        DECLARE @HistReqID INT = JSON_VALUE(@LineData, '$.RequestID');
+        SELECT 
+            ap.*,
+            CASE ap.ApprovalState
+                WHEN 0 THEN 'Pending'
+                WHEN 1 THEN 'Approved'
+                WHEN 2 THEN 'Rejected'
+                WHEN 3 THEN 'Returned for Edits'
+                ELSE 'Unknown'
+            END AS StateText
+        FROM [PLS].[HiringRequestApproval] ap
+        WHERE ap.RequestID = @HistReqID
+        ORDER BY ap.StepNumber ASC, ap.ActionDate ASC;
+        RETURN;
+    -- ---------------------------------------------------------------------
     -- Operation: Get Departments
     -- ---------------------------------------------------------------------
     IF @Operation = 'Get Departments'
