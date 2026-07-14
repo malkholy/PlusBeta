@@ -97,5 +97,14 @@ BEGIN
         SET @Message = 'Serial created successfully.';
         RETURN;
     END
+
+    IF @Operation = 'Get Card Types'
+    BEGIN
+        SELECT 
+            [CardType],
+            [Description]
+        FROM [Express].[Code].[CardTypeMaster];
+        RETURN;
+    END
 END
 GO

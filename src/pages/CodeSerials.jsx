@@ -20,9 +20,23 @@ export default function CodeSerials(props) {
     Note: ''
   });
 
+  const [cardTypes, setCardTypes] = useState([]);
+
   useEffect(() => {
     loadData();
+    loadCardTypes();
   }, []);
+
+  async function loadCardTypes() {
+    try {
+      const res = await apiCall('Get Card Types', null, {}, 'express_codes');
+      if (res.State === 0) {
+        setCardTypes(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Failed to load card types:', e.message);
+    }
+  }
 
   async function loadData() {
     setLoading(true);
@@ -265,10 +279,11 @@ export default function CodeSerials(props) {
                   required
                 >
                   <option value="">Select Card Type</option>
-                  <option value="Red">Red</option>
-                  <option value="White">White</option>
-                  <option value="Gold">Gold</option>
-                  <option value="Black">Black</option>
+                  {cardTypes.map(c => (
+                    <option key={c.CardType} value={c.CardType}>
+                      {c.Description ? `${c.CardType} - ${c.Description}` : c.CardType}
+                    </option>
+                  ))}
                 </select>
               </div>
 
