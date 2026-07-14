@@ -1,0 +1,24 @@
+USE [HR]
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Candidate' AND schema_id = SCHEMA_ID('PLS'))
+BEGIN
+    CREATE TABLE [PLS].[Candidate] (
+        [CandidateID] INT IDENTITY(1,1) PRIMARY KEY,
+        [RequestID] INT NOT NULL FOREIGN KEY REFERENCES [PLS].[HiringRequest]([RequestID]) ON DELETE CASCADE,
+        [FullName] NVARCHAR(150) NOT NULL,
+        [Email] NVARCHAR(150) NOT NULL,
+        [Phone] NVARCHAR(50) NULL,
+        [CVFileName] NVARCHAR(250) NULL,
+        [CVFileContent] NVARCHAR(MAX) NULL,
+        [Source] NVARCHAR(50) NOT NULL, -- Board/Agency/Referral/etc.
+        [CandidateState] INT NOT NULL DEFAULT 0, -- 0: New, 1: Shortlisted, 2: Rejected, 3: Interviewing, 4: Selected, 5: On Hold, 6: Hired
+        [RejectionReason] NVARCHAR(300) NULL,
+        [CreatedBy] NVARCHAR(100) NOT NULL,
+        [CreatedDate] DATETIME NOT NULL DEFAULT GETDATE()
+    );
+END
+GO

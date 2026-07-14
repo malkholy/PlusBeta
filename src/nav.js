@@ -72,6 +72,32 @@ const NAV = [
         desc: 'Express cards serial numbers and usage logs'
       }
     ]
+  },
+  {
+    id: 'recruitment_group',
+    label: 'Recruitment',
+    icon: '👥',
+    isGroup: true,
+    children: [
+      {
+        id: 'recruitment_requests',
+        label: 'Hiring Requests',
+        icon: '📋',
+        desc: 'Manage personnel requisitions and approvals'
+      },
+      {
+        id: 'recruitment_candidates',
+        label: 'Candidates Pool',
+        icon: '🔍',
+        desc: 'Screen applicants, log CVs, and record interview feedback'
+      },
+      {
+        id: 'recruitment_offers',
+        label: 'Job Offers',
+        icon: '💼',
+        desc: 'Draft contracts and track employee onboarding handoff'
+      }
+    ]
   }
 ];
 

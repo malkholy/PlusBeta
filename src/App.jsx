@@ -17,6 +17,9 @@ import TrackDetails from './pages/TrackDetails.jsx';
 import SalesExportStatistics from './pages/SalesExportStatistics.jsx';
 import ItemLogisticsInquiry from './pages/ItemLogisticsInquiry.jsx';
 import CodeSerials from './pages/CodeSerials.jsx';
+import HiringRequests from './pages/HiringRequests.jsx';
+import CandidatesPool from './pages/CandidatesPool.jsx';
+import JobOffers from './pages/JobOffers.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -192,6 +195,9 @@ const PAGE_COMPONENTS = {
   sales_export_statistics: SalesExportStatistics,
   logistics_item_inquiry: ItemLogisticsInquiry,
   express_code_serials: CodeSerials,
+  recruitment_requests: HiringRequests,
+  recruitment_candidates: CandidatesPool,
+  recruitment_offers: JobOffers,
 };
 
 function checkIsAdmin(u, fallbackUsername) {

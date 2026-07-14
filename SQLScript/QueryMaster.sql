@@ -777,6 +777,81 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
 GO
 
+-- 37. Get Hiring Requests
+DECLARE @QID INT;
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Hiring Requests')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Hiring Requests', N'[PLS].[APIPlusRecruitmentOperation]', 'Get Hiring Requests', N'Retrieve personnel requisitions list', 
+            N'SELECT * FROM [PLS].[HiringRequest] ORDER BY CreatedDate DESC;', 'HR', 'PLS', 'HiringRequest', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Hiring Requests';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT * FROM [PLS].[HiringRequest] ORDER BY CreatedDate DESC;',
+        [SPName] = N'[PLS].[APIPlusRecruitmentOperation]',
+        [DatabaseName] = 'HR',
+        [SchemaName] = 'PLS',
+        [TableOrViewName] = 'HiringRequest',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'recruitment_requests' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('recruitment_requests', @QID);
+GO
+
+-- 38. Get Candidate Pool
+DECLARE @QID INT;
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Candidate Pool')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Candidate Pool', N'[PLS].[APIPlusRecruitmentOperation]', 'Get Candidates', N'Retrieve applicants details linked to requests', 
+            N'SELECT c.*, r.PositionTitle, r.Department FROM [PLS].[Candidate] c JOIN [PLS].[HiringRequest] r ON c.RequestID = r.RequestID ORDER BY c.CreatedDate DESC;', 'HR', 'PLS', 'Candidate', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Candidate Pool';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT c.*, r.PositionTitle, r.Department FROM [PLS].[Candidate] c JOIN [PLS].[HiringRequest] r ON c.RequestID = r.RequestID ORDER BY c.CreatedDate DESC;',
+        [SPName] = N'[PLS].[APIPlusRecruitmentOperation]',
+        [DatabaseName] = 'HR',
+        [SchemaName] = 'PLS',
+        [TableOrViewName] = 'Candidate',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'recruitment_candidates' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('recruitment_candidates', @QID);
+GO
+
+-- 39. Get Job Offers
+DECLARE @QID INT;
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Job Offers')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Job Offers', N'[PLS].[APIPlusRecruitmentOperation]', 'Get Job Offers', N'Retrieve candidate employment proposals', 
+            N'SELECT jo.*, c.FullName, c.Email, r.PositionTitle, r.SalaryMax FROM [PLS].[JobOffer] jo JOIN [PLS].[Candidate] c ON jo.CandidateID = c.CandidateID JOIN [PLS].[HiringRequest] r ON c.RequestID = r.RequestID;', 'HR', 'PLS', 'JobOffer', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Job Offers';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT jo.*, c.FullName, c.Email, r.PositionTitle, r.SalaryMax FROM [PLS].[JobOffer] jo JOIN [PLS].[Candidate] c ON jo.CandidateID = c.CandidateID JOIN [PLS].[HiringRequest] r ON c.RequestID = r.RequestID;',
+        [SPName] = N'[PLS].[APIPlusRecruitmentOperation]',
+        [DatabaseName] = 'HR',
+        [SchemaName] = 'PLS',
+        [TableOrViewName] = 'JobOffer',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'recruitment_offers' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('recruitment_offers', @QID);
+GO
+
 -- Update ApiUrl for all queries in QueryMaster
 UPDATE [PLS].[QueryMaster]
 SET [ApiUrl] = 'https://quick.glcpaints.com:7003/General/GeneralAPI/'
@@ -789,7 +864,7 @@ WHERE [SPName] IN (
 
 UPDATE [PLS].[QueryMaster]
 SET [ApiUrl] = 'https://quick.glcpaints.com:7001/General/GeneralAPI/'
-WHERE [SPName] = N'APIHRControlOperation' OR [Operation] = 'GetHREmployees';
+WHERE [SPName] IN (N'APIHRControlOperation', N'[PLS].[APIPlusRecruitmentOperation]') OR [Operation] = 'GetHREmployees';
 
 UPDATE [PLS].[QueryMaster]
 SET [ApiUrl] = 'https://quick.glcpaints.com:7790/General/GeneralAPI/'

@@ -134,5 +134,38 @@ BEGIN
 END
 GO
 
+-- 17. Recruitment Group (Nav Group)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'recruitment_group')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('recruitment_group', N'Recruitment', '👥', N'Recruitment and hiring workflow group', 1, NULL, 500);
+END
+GO
+
+-- 18. Hiring Requests (Page)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'recruitment_requests')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('recruitment_requests', N'Hiring Requests', '📋', N'Manage personnel requisitions and approvals', 0, 'recruitment_group', 510);
+END
+GO
+
+-- 19. Candidates Pool (Page)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'recruitment_candidates')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('recruitment_candidates', N'Candidates Pool', '🔍', N'Screen applicants, log CVs, and record interview feedback', 0, 'recruitment_group', 520);
+END
+GO
+
+-- 20. Job Offers (Page)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'recruitment_offers')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('recruitment_offers', N'Job Offers', '💼', N'Draft contracts and track employee onboarding handoff', 0, 'recruitment_group', 530);
+END
+GO
+
+
 
 
