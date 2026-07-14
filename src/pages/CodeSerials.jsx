@@ -164,6 +164,15 @@ export default function CodeSerials(props) {
     };
   })();
 
+  const serialDiff = (() => {
+    const from = Number(addFormData.FromSerial);
+    const to = Number(addFormData.ToSerial);
+    if (!isNaN(from) && !isNaN(to) && to >= from && addFormData.FromSerial !== '' && addFormData.ToSerial !== '') {
+      return (to - from + 1).toLocaleString('en-US');
+    }
+    return null;
+  })();
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       {error && (
@@ -335,6 +344,25 @@ export default function CodeSerials(props) {
                   />
                 </div>
               </div>
+
+              {serialDiff !== null && (
+                <div style={{
+                  marginBottom: 16,
+                  padding: '10px 14px',
+                  background: 'var(--primary-soft)',
+                  color: 'var(--primary-dark)',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 800,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  border: '1px solid rgba(249,115,22,0.15)'
+                }}>
+                  <span>Total Code Count:</span>
+                  <span style={{ fontSize: 15, fontWeight: 900 }}>{serialDiff} cards</span>
+                </div>
+              )}
 
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
