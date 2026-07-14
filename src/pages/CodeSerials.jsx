@@ -98,10 +98,14 @@ export default function CodeSerials(props) {
                     color = 'var(--orange)';
                     bg = 'var(--orange-soft)';
                   } else if (stateVal === 2) {
+                    label = 'Processing';
+                    color = 'var(--amber)';
+                    bg = 'var(--amber-soft)';
+                  } else if (stateVal === 3) {
                     label = 'Generated';
                     color = 'var(--green)';
                     bg = 'var(--green-soft)';
-                  } else if (stateVal === 3) {
+                  } else if (stateVal === 4) {
                     label = 'Moved';
                     color = '#6366f1';
                     bg = '#e0e7ff';
@@ -206,20 +210,16 @@ export default function CodeSerials(props) {
   // Derived KPI Metrics
   const metrics = (() => {
     const total = rows.length;
-    // Find active/used counts if columns are present
-    const usedCol = Object.keys(rows[0] || {}).find(k => k.toLowerCase() === 'isused' || k.toLowerCase() === 'used' || k.toLowerCase() === 'status');
-    let usedCount = 0;
-    if (usedCol) {
-      usedCount = rows.filter(r => {
-        const v = r[usedCol];
-        return v === true || v === 1 || String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'used';
-      }).length;
-    }
+    const requested = rows.filter(r => Number(r.SerialState) === 1).length;
+    const processing = rows.filter(r => Number(r.SerialState) === 2).length;
+    const generated = rows.filter(r => Number(r.SerialState) === 3).length;
+    const moved = rows.filter(r => Number(r.SerialState) === 4).length;
     return {
       total,
-      used: usedCount,
-      active: total - usedCount,
-      hasStatus: !!usedCol
+      requested,
+      processing,
+      generated,
+      moved
     };
   })();
 
@@ -243,34 +243,44 @@ export default function CodeSerials(props) {
       {/* KPI Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: 20,
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: 16,
         marginBottom: 20
       }}>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow)' }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 16, boxShadow: 'var(--shadow)' }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Total Serials</div>
-          <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', marginTop: 6 }}>
+          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', marginTop: 6 }}>
             {metrics.total.toLocaleString()}
           </div>
         </div>
 
-        {metrics.hasStatus && (
-          <>
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow)' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Active Serials</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--green)', marginTop: 6 }}>
-                {metrics.active.toLocaleString()}
-              </div>
-            </div>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 16, boxShadow: 'var(--shadow)' }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Requested</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--orange)', marginTop: 6 }}>
+            {metrics.requested.toLocaleString()}
+          </div>
+        </div>
 
-            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow)' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Used Serials</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--orange)', marginTop: 6 }}>
-                {metrics.used.toLocaleString()}
-              </div>
-            </div>
-          </>
-        )}
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 16, boxShadow: 'var(--shadow)' }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Processing</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--amber)', marginTop: 6 }}>
+            {metrics.processing.toLocaleString()}
+          </div>
+        </div>
+
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 16, boxShadow: 'var(--shadow)' }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Generated</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--green)', marginTop: 6 }}>
+            {metrics.generated.toLocaleString()}
+          </div>
+        </div>
+
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 16, boxShadow: 'var(--shadow)' }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Moved</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#6366f1', marginTop: 6 }}>
+            {metrics.moved.toLocaleString()}
+          </div>
+        </div>
       </div>
 
       {/* Grid */}
