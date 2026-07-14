@@ -1,4 +1,4 @@
-USE [ERPMega]
+USE Express
 GO
 
 SET ANSI_NULLS ON
@@ -35,6 +35,7 @@ BEGIN
     IF @Operation = 'Get Serials'
     BEGIN
         SELECT 
+			ID , 
             [CardType]
             ,[FromSerial]
             ,[ToSerial]
@@ -45,6 +46,55 @@ BEGIN
             ,[LastMaintDate]
             ,[LastMaintBy]
         FROM [Express].[Code].[CardSerialSummary];
+        RETURN;
+    END
+
+    IF @Operation = 'New Serial'
+    BEGIN
+        DECLARE @CardType NVARCHAR(100) = JSON_VALUE(@LineData, '$.CardType');
+        DECLARE @FromSerial BIGINT = JSON_VALUE(@LineData, '$.FromSerial');
+        DECLARE @ToSerial BIGINT = JSON_VALUE(@LineData, '$.ToSerial');
+        DECLARE @DeliverdDate DATETIME = NULLIF(JSON_VALUE(@LineData, '$.DeliverdDate'), '');
+        DECLARE @Note NVARCHAR(500) = JSON_VALUE(@LineData, '$.Note');
+
+        IF @CardType IS NULL OR @CardType = ''
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Card Type is required.';
+            RETURN;
+        END
+
+        IF @FromSerial IS NULL OR @ToSerial IS NULL
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'From Serial and To Serial are required.';
+            RETURN;
+        END
+
+        INSERT INTO [Express].[Code].[CardSerialSummary] (
+            [CardType]
+            ,[FromSerial]
+            ,[ToSerial]
+            ,[DeliverdDate]
+            ,[Note]
+            ,[CreatedBy]
+            ,[CreatedDate]
+            ,[LastMaintDate]
+            ,[LastMaintBy]
+        )
+        VALUES (
+            @CardType
+            ,@FromSerial
+            ,@ToSerial
+            ,COALESCE(@DeliverdDate, GETDATE())
+            ,@Note
+            ,@User
+            ,GETDATE()
+            ,NULL
+            ,''
+        );
+
+        SET @Message = 'Serial created successfully.';
         RETURN;
     END
 END

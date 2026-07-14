@@ -8,6 +8,18 @@ export default function CodeSerials(props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Add Serial Modal State
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [modalError, setModalError] = useState('');
+  const [addFormData, setAddFormData] = useState({
+    CardType: '',
+    FromSerial: '',
+    ToSerial: '',
+    DeliverdDate: new Date().toISOString().split('T')[0],
+    Note: ''
+  });
+
   useEffect(() => {
     loadData();
   }, []);
@@ -84,6 +96,40 @@ export default function CodeSerials(props) {
     setLoading(false);
   }
 
+  async function handleCreateSerial(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    setModalError('');
+    try {
+      const payload = {
+        CardType: addFormData.CardType,
+        FromSerial: Number(addFormData.FromSerial),
+        ToSerial: Number(addFormData.ToSerial),
+        DeliverdDate: addFormData.DeliverdDate ? new Date(addFormData.DeliverdDate).toISOString() : null,
+        Note: addFormData.Note
+      };
+
+      const res = await apiCall('New Serial', payload, {}, 'express_codes');
+      if (res.State === 0) {
+        setShowAddModal(false);
+        // Reset Form
+        setAddFormData({
+          CardType: '',
+          FromSerial: '',
+          ToSerial: '',
+          DeliverdDate: new Date().toISOString().split('T')[0],
+          Note: ''
+        });
+        loadData();
+      } else {
+        setModalError(res.Message || 'Failed to create card serial.');
+      }
+    } catch (err) {
+      setModalError('Connection error: ' + err.message);
+    }
+    setSubmitting(false);
+  }
+
   // Derived KPI Metrics
   const metrics = (() => {
     const total = rows.length;
@@ -157,8 +203,209 @@ export default function CodeSerials(props) {
           hideSearch={false}
           hideRefresh={false}
           onRefresh={loadData}
+          onAdd={() => setShowAddModal(true)}
         />
       </div>
+
+      {/* Add Serial Modal */}
+      {showAddModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15,23,42,0.45)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 99999,
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            width: 'min(480px, calc(100vw - 28px))',
+            background: 'var(--surface)',
+            borderRadius: 22,
+            boxShadow: 'var(--shadow)',
+            padding: 24,
+            border: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>Create New Serial</h3>
+              <button 
+                onClick={() => setShowAddModal(false)}
+                style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: 'var(--muted)', outline: 'none' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {modalError && (
+              <div style={{ marginBottom: 16, background: 'var(--red-soft)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.2)', padding: 10, borderRadius: 8, fontSize: 12.5 }}>
+                {modalError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateSerial}>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+                  Card Type
+                </label>
+                <select 
+                  value={addFormData.CardType}
+                  onChange={e => setAddFormData({ ...addFormData, CardType: e.target.value })}
+                  style={{
+                    width: '100%',
+                    height: 38,
+                    padding: '0 12px',
+                    border: '1.5px solid var(--border)',
+                    borderRadius: 10,
+                    fontSize: 13,
+                    color: 'var(--text)',
+                    background: 'var(--bg)',
+                    outline: 'none'
+                  }}
+                  required
+                >
+                  <option value="">Select Card Type</option>
+                  <option value="Red">Red</option>
+                  <option value="White">White</option>
+                  <option value="Gold">Gold</option>
+                  <option value="Black">Black</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+                    From Serial
+                  </label>
+                  <input 
+                    type="number"
+                    value={addFormData.FromSerial}
+                    onChange={e => setAddFormData({ ...addFormData, FromSerial: e.target.value })}
+                    placeholder="e.g. 1"
+                    style={{
+                      width: '100%',
+                      height: 38,
+                      padding: '0 12px',
+                      border: '1.5px solid var(--border)',
+                      borderRadius: 10,
+                      fontSize: 13,
+                      color: 'var(--text)',
+                      background: 'var(--bg)',
+                      outline: 'none'
+                    }}
+                    required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+                    To Serial
+                  </label>
+                  <input 
+                    type="number"
+                    value={addFormData.ToSerial}
+                    onChange={e => setAddFormData({ ...addFormData, ToSerial: e.target.value })}
+                    placeholder="e.g. 1000000"
+                    style={{
+                      width: '100%',
+                      height: 38,
+                      padding: '0 12px',
+                      border: '1.5px solid var(--border)',
+                      borderRadius: 10,
+                      fontSize: 13,
+                      color: 'var(--text)',
+                      background: 'var(--bg)',
+                      outline: 'none'
+                    }}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+                  Delivered Date
+                </label>
+                <input 
+                  type="date"
+                  value={addFormData.DeliverdDate}
+                  onChange={e => setAddFormData({ ...addFormData, DeliverdDate: e.target.value })}
+                  style={{
+                    width: '100%',
+                    height: 38,
+                    padding: '0 12px',
+                    border: '1.5px solid var(--border)',
+                    borderRadius: 10,
+                    fontSize: 13,
+                    color: 'var(--text)',
+                    background: 'var(--bg)',
+                    outline: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+                  Note
+                </label>
+                <textarea 
+                  value={addFormData.Note}
+                  onChange={e => setAddFormData({ ...addFormData, Note: e.target.value })}
+                  placeholder="Optional notes..."
+                  style={{
+                    width: '100%',
+                    height: 60,
+                    padding: '8px 12px',
+                    border: '1.5px solid var(--border)',
+                    borderRadius: 10,
+                    fontSize: 13,
+                    color: 'var(--text)',
+                    background: 'var(--bg)',
+                    outline: 'none',
+                    resize: 'none'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddModal(false)}
+                  style={{
+                    height: 38,
+                    padding: '0 18px',
+                    border: '1px solid var(--border)',
+                    background: 'var(--surface)',
+                    borderRadius: 10,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    fontSize: 13
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={submitting}
+                  style={{
+                    height: 38,
+                    padding: '0 20px',
+                    border: 0,
+                    background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                    color: '#fff',
+                    borderRadius: 10,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    opacity: submitting ? 0.7 : 1
+                  }}
+                >
+                  {submitting ? 'Creating...' : 'Create Serial'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
