@@ -45,6 +45,7 @@ BEGIN
             ,[CreatedDate]
             ,[LastMaintDate]
             ,[LastMaintBy]
+            ,[SerialState]
         FROM [Express].[Code].[CardSerialSummary];
         RETURN;
     END

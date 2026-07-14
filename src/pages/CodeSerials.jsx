@@ -84,6 +84,41 @@ export default function CodeSerials(props) {
                     </span>
                   );
                 }
+                if (k.toLowerCase() === 'serialstate') {
+                  const stateVal = Number(val);
+                  let label = 'Unknown';
+                  let color = 'var(--muted)';
+                  let bg = 'var(--soft)';
+                  if (stateVal === 0) {
+                    label = 'New';
+                    color = 'var(--blue)';
+                    bg = 'var(--blue-soft)';
+                  } else if (stateVal === 1) {
+                    label = 'Requested';
+                    color = 'var(--orange)';
+                    bg = 'var(--orange-soft)';
+                  } else if (stateVal === 2) {
+                    label = 'Generated';
+                    color = 'var(--green)';
+                    bg = 'var(--green-soft)';
+                  } else if (stateVal === 3) {
+                    label = 'Moved';
+                    color = '#6366f1';
+                    bg = '#e0e7ff';
+                  }
+                  return (
+                    <span style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      color,
+                      background: bg,
+                      padding: '3px 8px',
+                      borderRadius: 6
+                    }}>
+                      {label}
+                    </span>
+                  );
+                }
                 if (k.toLowerCase().includes('serial') && val !== null && val !== '' && !isNaN(val)) {
                   return highlight(Number(val).toLocaleString('en-US'), search);
                 }
