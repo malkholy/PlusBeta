@@ -49,7 +49,7 @@ BEGIN
     -- ---------------------------------------------------------------------
     IF @Operation = 'Save Hiring Request'
     BEGIN
-        DECLARE @RequestID INT = JSON_VALUE(@LineData, '$.RequestID');
+        DECLARE @RequestID INT = NULLIF(JSON_VALUE(@LineData, '$.RequestID'), '');
         DECLARE @PositionTitle NVARCHAR(150) = JSON_VALUE(@LineData, '$.PositionTitle');
         DECLARE @Department NVARCHAR(100) = JSON_VALUE(@LineData, '$.Department');
         DECLARE @Headcount INT = COALESCE(NULLIF(JSON_VALUE(@LineData, '$.Headcount'), ''), 1);
@@ -220,7 +220,7 @@ BEGIN
     -- ---------------------------------------------------------------------
     IF @Operation = 'Save Candidate'
     BEGIN
-        DECLARE @CandidateID INT = JSON_VALUE(@LineData, '$.CandidateID');
+        DECLARE @CandidateID INT = NULLIF(JSON_VALUE(@LineData, '$.CandidateID'), '');
         DECLARE @CandReqID INT = JSON_VALUE(@LineData, '$.RequestID');
         DECLARE @FullName NVARCHAR(150) = JSON_VALUE(@LineData, '$.FullName');
         DECLARE @Email NVARCHAR(150) = JSON_VALUE(@LineData, '$.Email');
@@ -389,7 +389,7 @@ BEGIN
     -- ---------------------------------------------------------------------
     IF @Operation = 'Save Job Offer'
     BEGIN
-        DECLARE @OfferID INT = JSON_VALUE(@LineData, '$.OfferID');
+        DECLARE @OfferID INT = NULLIF(JSON_VALUE(@LineData, '$.OfferID'), '');
         DECLARE @OffCandID INT = JSON_VALUE(@LineData, '$.CandidateID');
         DECLARE @Salary DECIMAL(18,2) = JSON_VALUE(@LineData, '$.ProposedSalary');
         DECLARE @StartDate DATE = JSON_VALUE(@LineData, '$.ProposedStartDate');
