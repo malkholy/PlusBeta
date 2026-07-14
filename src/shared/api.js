@@ -15,7 +15,21 @@ const BASE_BODY = {
 };
 
 export async function apiCall(operation, lineData = null, extraParams = {}, apiType = 'default') {
-  const target = (apiType === true || apiType === 'express') ? 'express' : (apiType === 'hr' ? 'hr' : (apiType === 'plus' ? 'plus' : (apiType === 'query' ? 'query' : (apiType === 'purchasing' ? 'purchasing' : (apiType === 'logistics' ? 'logistics' : 'default')))));
+  const target = (apiType === true || apiType === 'express') 
+    ? 'express' 
+    : (apiType === 'hr' 
+      ? 'hr' 
+      : (apiType === 'plus' 
+        ? 'plus' 
+        : (apiType === 'query' 
+          ? 'query' 
+          : (apiType === 'purchasing' 
+            ? 'purchasing' 
+            : (apiType === 'logistics' 
+              ? 'logistics' 
+              : (apiType === 'express_codes' 
+                ? 'express_codes' 
+                : 'default'))))));
 
   let url = '';
   let spName = '';
@@ -42,25 +56,49 @@ export async function apiCall(operation, lineData = null, extraParams = {}, apiT
   } else if (target === 'logistics') {
     url = IS_DEV ? '/logistics-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
     spName = 'APIPlusLogisticsOperation';
+  } else if (target === 'express_codes') {
+    url = IS_DEV ? '/express-codes-api/api/General/GeneralAPI' : 'https://be.glcpaints.com:7788/api/General/GeneralAPI';
+    spName = 'APIPlusExpressGenerateCodeOperation';
   } else {
     url = IS_DEV ? '/api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
     spName = 'APIERPControlOperation';
   }
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
+  let method = 'POST';
+  let headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'SP_Name': spName
+  };
+  let body = JSON.stringify({
+    ...BASE_BODY,
+    Operation: operation,
+    LineData: lineData ? JSON.stringify(lineData) : null,
+    User: sessionStorage.getItem('Username') || sessionStorage.getItem('FullName') || '',
+    ...extraParams
+  });
+
+  if (target === 'express_codes') {
+    method = 'GET';
+    headers = {
       'Accept': 'application/json',
-      'Content-Type': 'application/json',
       'SP_Name': spName
-    },
-    body: JSON.stringify({
+    };
+    body = undefined;
+    const qParams = new URLSearchParams({
       ...BASE_BODY,
       Operation: operation,
-      LineData: lineData ? JSON.stringify(lineData) : null,
+      LineData: lineData ? JSON.stringify(lineData) : '',
       User: sessionStorage.getItem('Username') || sessionStorage.getItem('FullName') || '',
       ...extraParams
-    })
+    });
+    url = `${url}?${qParams.toString()}`;
+  }
+
+  const res = await fetch(url, {
+    method,
+    headers,
+    body
   });
   const text = await res.text();
   console.log(operation, 'raw:', text);

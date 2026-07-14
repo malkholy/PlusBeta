@@ -96,6 +96,18 @@ export default defineConfig({
             proxyReq.setHeader('Content-Type', 'application/json')
           })
         }
+      },
+      '/express-codes-api': {
+        target: 'https://be.glcpaints.com:7788',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/express-codes-api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('SP_Name', 'APIPlusExpressGenerateCodeOperation')
+            proxyReq.setHeader('Accept', 'application/json')
+          })
+        }
       }
     }
   }

@@ -16,6 +16,7 @@ import TrackingHistory from './pages/TrackingHistory.jsx';
 import TrackDetails from './pages/TrackDetails.jsx';
 import SalesExportStatistics from './pages/SalesExportStatistics.jsx';
 import ItemLogisticsInquiry from './pages/ItemLogisticsInquiry.jsx';
+import CodeSerials from './pages/CodeSerials.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -190,6 +191,7 @@ const PAGE_COMPONENTS = {
   logistics_track_details: TrackDetails,
   sales_export_statistics: SalesExportStatistics,
   logistics_item_inquiry: ItemLogisticsInquiry,
+  express_code_serials: CodeSerials,
 };
 
 function checkIsAdmin(u, fallbackUsername) {

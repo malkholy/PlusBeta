@@ -126,5 +126,13 @@ BEGIN
 END
 GO
 
+-- 16. Code Serials (Page)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'express_code_serials')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('express_code_serials', N'Code Serials', N'🔑', N'Express cards serial numbers and usage logs', 0, 'express_group', 410);
+END
+GO
+
 
 

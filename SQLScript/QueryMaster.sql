@@ -721,4 +721,29 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_item_inquiry', @QID);
 GO
 
+-- Query registration for Code Serials page
+DECLARE @QID INT;
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Express Serials')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Express Serials', N'[dbo].[APIPlusExpressGenerateCodeOperation]', 'Get Serials', N'Retrieve Express serial summary details', 
+            N'SELECT * FROM code.CardSerialSummary;', 'ERPMega', 'code', 'CardSerialSummary', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Express Serials';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT * FROM code.CardSerialSummary;',
+        [SPName] = N'[dbo].[APIPlusExpressGenerateCodeOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'code',
+        [TableOrViewName] = 'CardSerialSummary',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'express_code_serials' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('express_code_serials', @QID);
+GO
+
 

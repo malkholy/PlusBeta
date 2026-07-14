@@ -64,7 +64,14 @@ const NAV = [
     label: 'Express',
     icon: '⚡',
     isGroup: true,
-    children: []
+    children: [
+      {
+        id: 'express_code_serials',
+        label: 'Code Serials',
+        icon: '🔑',
+        desc: 'Express cards serial numbers and usage logs'
+      }
+    ]
   }
 ];
 
