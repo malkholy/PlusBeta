@@ -58,6 +58,9 @@ export default function CodeSerials(props) {
                     </span>
                   );
                 }
+                if (k.toLowerCase().includes('serial') && val !== null && val !== '' && !isNaN(val)) {
+                  return highlight(Number(val).toLocaleString('en-US'), search);
+                }
                 if (k.toLowerCase().includes('date') && val) {
                   try {
                     const d = new Date(val);
