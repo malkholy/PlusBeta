@@ -134,6 +134,50 @@ export default function CodeSerials(props) {
               }
             };
           });
+          cols.push({
+            key: 'actions',
+            label: 'Actions',
+            render: (val, row) => {
+              if (row.SerialState === 0) {
+                return (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRequestSerial(row.ID);
+                    }}
+                    style={{
+                      border: 0,
+                      background: 'var(--primary-soft)',
+                      color: 'var(--primary-dark)',
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      fontSize: 11.5,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      outline: 'none'
+                    }}
+                    onMouseOver={e => {
+                      e.currentTarget.style.background = 'var(--primary)';
+                      e.currentTarget.style.color = '#fff';
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.background = 'var(--primary-soft)';
+                      e.currentTarget.style.color = 'var(--primary-dark)';
+                    }}
+                  >
+                    ⚡ Request
+                  </button>
+                );
+              }
+              return (
+                <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700 }}>
+                  -
+                </span>
+              );
+            }
+          });
+
           setColumns(cols);
         }
       } else {
@@ -141,6 +185,23 @@ export default function CodeSerials(props) {
       }
     } catch (e) {
       setError('Connection error: ' + e.message);
+    }
+    setLoading(false);
+  }
+
+  async function handleRequestSerial(id) {
+    if (!window.confirm('Are you sure you want to request this serial? This will advance its state to Requested.')) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await apiCall('Request Serial', { ID: id }, {}, 'express_codes');
+      if (res.State === 0) {
+        loadData();
+      } else {
+        setError(res.Message || 'Failed to request serial.');
+      }
+    } catch (err) {
+      setError('Connection error: ' + err.message);
     }
     setLoading(false);
   }

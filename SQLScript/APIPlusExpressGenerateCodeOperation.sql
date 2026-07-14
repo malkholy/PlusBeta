@@ -99,6 +99,47 @@ BEGIN
         RETURN;
     END
 
+    IF @Operation = 'Request Serial'
+    BEGIN
+        DECLARE @RequestID INT = JSON_VALUE(@LineData, '$.ID');
+
+        IF @RequestID IS NULL
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'ID is required.';
+            RETURN;
+        END
+
+        -- Validation: check if current state is 0
+        DECLARE @CurrentState INT = NULL;
+        SELECT @CurrentState = [SerialState]
+        FROM [Express].[Code].[CardSerialSummary]
+        WHERE [ID] = @RequestID;
+
+        IF @CurrentState IS NULL
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Serial record not found.';
+            RETURN;
+        END
+
+        IF @CurrentState <> 0
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Only serials in New state can be requested.';
+            RETURN;
+        END
+
+        UPDATE [Express].[Code].[CardSerialSummary]
+        SET [SerialState] = 1
+            ,[LastMaintDate] = GETDATE()
+            ,[LastMaintBy] = @User
+        WHERE [ID] = @RequestID;
+
+        SET @Message = 'Serial requested successfully.';
+        RETURN;
+    END
+
     IF @Operation = 'Get Card Types'
     BEGIN
         SELECT 
