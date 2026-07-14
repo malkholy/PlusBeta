@@ -35,6 +35,10 @@ export default function HiringRequests(props) {
   // Departments list
   const [departments, setDepartments] = useState([]);
 
+  // Searchable Department select state
+  const [deptSearch, setDeptSearch] = useState('');
+  const [showDeptDropdown, setShowDeptDropdown] = useState(false);
+
   useEffect(() => {
     loadData();
     loadDepartments();
@@ -324,14 +328,118 @@ export default function HiringRequests(props) {
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Position Title</label>
                   <input type="text" value={formData.PositionTitle} onChange={e => setFormData({ ...formData, PositionTitle: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required />
                 </div>
-                <div>
+                <div style={{ position: 'relative' }}>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Department</label>
-                  <select value={formData.Department} onChange={e => setFormData({ ...formData, Department: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required>
-                    <option value="">Select Department</option>
-                    {departments.map(d => (
-                      <option key={d.DepartmentID} value={d.DepartmentName}>{d.DepartmentName}</option>
-                    ))}
-                  </select>
+                  <div 
+                    onClick={() => setShowDeptDropdown(!showDeptDropdown)}
+                    style={{
+                      width: '100%', 
+                      height: 38, 
+                      padding: '0 12px', 
+                      border: '1.5px solid var(--border)', 
+                      borderRadius: 10, 
+                      background: 'var(--bg)', 
+                      color: formData.Department ? 'var(--text)' : 'var(--muted)', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: 600
+                    }}
+                  >
+                    <span>{formData.Department || 'Select Department'}</span>
+                    <span>▾</span>
+                  </div>
+
+                  {showDeptDropdown && (
+                    <>
+                      <div 
+                        onClick={() => {
+                          setShowDeptDropdown(false);
+                          setDeptSearch('');
+                        }}
+                        style={{ position: 'fixed', inset: 0, zIndex: 99998 }}
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        width: '100%',
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 10,
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                        zIndex: 99999,
+                        marginTop: 4,
+                        padding: 8
+                      }}>
+                        <input 
+                          type="text" 
+                          placeholder="Search department..." 
+                          value={deptSearch}
+                          onChange={e => setDeptSearch(e.target.value)}
+                          autoFocus
+                          style={{
+                            width: '100%',
+                            height: 34,
+                            padding: '0 10px',
+                            border: '1px solid var(--border)',
+                            borderRadius: 8,
+                            background: 'var(--bg)',
+                            color: 'var(--text)',
+                            outline: 'none',
+                            marginBottom: 8,
+                            fontSize: 13
+                          }}
+                        />
+                        <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {departments
+                            .filter(d => d.DepartmentName.toLowerCase().includes(deptSearch.toLowerCase()))
+                            .map(d => (
+                              <button
+                                key={d.DepartmentID}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, Department: d.DepartmentName });
+                                  setShowDeptDropdown(false);
+                                  setDeptSearch('');
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 10px',
+                                  background: formData.Department === d.DepartmentName ? 'var(--primary-soft)' : 'transparent',
+                                  border: 0,
+                                  borderRadius: 6,
+                                  textAlign: 'left',
+                                  color: formData.Department === d.DepartmentName ? 'var(--primary)' : 'var(--text)',
+                                  fontSize: 13,
+                                  fontWeight: formData.Department === d.DepartmentName ? 700 : 500,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s'
+                                }}
+                                onMouseEnter={e => {
+                                  if (formData.Department !== d.DepartmentName) {
+                                    e.target.style.background = 'var(--soft)';
+                                  }
+                                }}
+                                onMouseLeave={e => {
+                                  if (formData.Department !== d.DepartmentName) {
+                                    e.target.style.background = 'transparent';
+                                  }
+                                }}
+                              >
+                                {d.DepartmentName}
+                              </button>
+                            ))
+                          }
+                          {departments.filter(d => d.DepartmentName.toLowerCase().includes(deptSearch.toLowerCase())).length === 0 && (
+                            <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', padding: 8 }}>No matching departments found</div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
