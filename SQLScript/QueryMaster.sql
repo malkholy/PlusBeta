@@ -852,6 +852,31 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'recruitmen
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('recruitment_offers', @QID);
 GO
 
+-- 40. Get Department List
+DECLARE @QID INT;
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Department List')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Department List', N'[PLS].[APIPlusRecruitmentOperation]', 'Get Departments', N'Retrieve departments drop-down list', 
+            N'SELECT DepartmentID, DepartmentName FROM Department;', 'HR', 'dbo', 'Department', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Department List';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT DepartmentID, DepartmentName FROM Department;',
+        [SPName] = N'[PLS].[APIPlusRecruitmentOperation]',
+        [DatabaseName] = 'HR',
+        [SchemaName] = 'dbo',
+        [TableOrViewName] = 'Department',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'recruitment_requests' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('recruitment_requests', @QID);
+GO
+
 -- Update ApiUrl for all queries in QueryMaster
 UPDATE [PLS].[QueryMaster]
 SET [ApiUrl] = 'https://quick.glcpaints.com:7003/General/GeneralAPI/'

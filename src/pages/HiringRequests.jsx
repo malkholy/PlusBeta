@@ -32,9 +32,24 @@ export default function HiringRequests(props) {
   const [approvalDecision, setApprovalDecision] = useState(1); // 1: Approve, 2: Reject, 3: Return
   const [approvalComments, setApprovalComments] = useState('');
 
+  // Departments list
+  const [departments, setDepartments] = useState([]);
+
   useEffect(() => {
     loadData();
+    loadDepartments();
   }, []);
+
+  async function loadDepartments() {
+    try {
+      const res = await apiCall('Get Department List', null, {}, 'recruitment_requests');
+      if (res.State === 0) {
+        setDepartments(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Failed to load departments:', e);
+    }
+  }
 
   async function loadData() {
     setLoading(true);
@@ -311,7 +326,12 @@ export default function HiringRequests(props) {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Department</label>
-                  <input type="text" value={formData.Department} onChange={e => setFormData({ ...formData, Department: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required />
+                  <select value={formData.Department} onChange={e => setFormData({ ...formData, Department: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required>
+                    <option value="">Select Department</option>
+                    {departments.map(d => (
+                      <option key={d.DepartmentID} value={d.DepartmentName}>{d.DepartmentName}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

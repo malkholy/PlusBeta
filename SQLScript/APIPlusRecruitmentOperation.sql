@@ -475,5 +475,14 @@ BEGIN
         SET @Message = 'Onboarding checklist updated.';
         RETURN;
     END
+
+    -- ---------------------------------------------------------------------
+    -- Operation: Get Departments
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Get Departments'
+    BEGIN
+        SELECT DepartmentID, DepartmentName FROM Department;
+        RETURN;
+    END
 END
 GO
