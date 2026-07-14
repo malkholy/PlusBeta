@@ -180,19 +180,8 @@ export default function HiringRequests(props) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      // Find the matching pending approval record
-      const resPending = await apiCall('Get Pending Approvals', null, {}, 'recruitment_requests');
-      const pendingTask = (resPending.List0 || []).find(p => p.RequestID === approvalRow.RequestID);
-
-      if (!pendingTask) {
-        alert('No pending approval steps found for this request.');
-        setShowApproveModal(false);
-        setSubmitting(false);
-        return;
-      }
-
       const res = await apiCall('Approve Reject Request', {
-        ApprovalID: pendingTask.ApprovalID,
+        RequestID: approvalRow.RequestID,
         Decision: Number(approvalDecision),
         Comments: approvalComments
       }, {}, 'recruitment_requests');

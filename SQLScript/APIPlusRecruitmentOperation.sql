@@ -157,14 +157,23 @@ BEGIN
     -- ---------------------------------------------------------------------
     IF @Operation = 'Approve Reject Request'
     BEGIN
-        DECLARE @AppID INT = JSON_VALUE(@LineData, '$.ApprovalID');
+        DECLARE @AppID INT = NULLIF(JSON_VALUE(@LineData, '$.ApprovalID'), '');
+        DECLARE @ReqID INT = NULLIF(JSON_VALUE(@LineData, '$.RequestID'), '');
         DECLARE @Decision INT = JSON_VALUE(@LineData, '$.Decision'); -- 1: Approve, 2: Reject, 3: Return
         DECLARE @Comments NVARCHAR(500) = JSON_VALUE(@LineData, '$.Comments');
 
-        IF NOT EXISTS (SELECT 1 FROM [PLS].[HiringRequestApproval] WHERE [ApprovalID] = @AppID)
+        IF @AppID IS NULL AND @ReqID IS NOT NULL
+        BEGIN
+            SELECT TOP 1 @AppID = ApprovalID 
+            FROM [PLS].[HiringRequestApproval] 
+            WHERE RequestID = @ReqID AND ApprovalState = 0 
+            ORDER BY StepNumber ASC;
+        END
+
+        IF @AppID IS NULL
         BEGIN
             SET @State = 1;
-            SET @Message = 'Approval record not found.';
+            SET @Message = 'No active pending approval step found for this request.';
             RETURN;
         END
 
@@ -174,7 +183,7 @@ BEGIN
             [ActionDate] = GETDATE()
         WHERE [ApprovalID] = @AppID;
 
-        DECLARE @ReqID INT = (SELECT RequestID FROM [PLS].[HiringRequestApproval] WHERE [ApprovalID] = @AppID);
+        SET @ReqID = (SELECT RequestID FROM [PLS].[HiringRequestApproval] WHERE [ApprovalID] = @AppID);
 
         IF @Decision = 2 -- Rejected
         BEGIN
