@@ -173,6 +173,23 @@ export default function CodeSerials(props) {
     setLoading(false);
   }
 
+  async function handleMoveSerial(id) {
+    if (!window.confirm('Are you sure you want to move this serial? This will advance its state to Moved.')) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await apiCall('Move Serial', { ID: id }, {}, 'express_codes');
+      if (res.State === 0) {
+        loadData();
+      } else {
+        setError(res.Message || 'Failed to move serial.');
+      }
+    } catch (err) {
+      setError('Connection error: ' + err.message);
+    }
+    setLoading(false);
+  }
+
   async function handleCreateSerial(e) {
     e.preventDefault();
     setSubmitting(true);
@@ -301,6 +318,11 @@ export default function CodeSerials(props) {
               label: '⚡ Request Serial',
               show: (row) => row.SerialState === 0,
               onClick: (row) => handleRequestSerial(row.ID)
+            },
+            {
+              label: '🚚 Move Serial',
+              show: (row) => row.SerialState === 3,
+              onClick: (row) => handleMoveSerial(row.ID)
             }
           ]}
         />

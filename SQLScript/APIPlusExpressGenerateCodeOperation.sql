@@ -140,6 +140,47 @@ BEGIN
         RETURN;
     END
 
+    IF @Operation = 'Move Serial'
+    BEGIN
+        DECLARE @MoveID INT = JSON_VALUE(@LineData, '$.ID');
+
+        IF @MoveID IS NULL
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'ID is required.';
+            RETURN;
+        END
+
+        -- Validation: check if current state is 3
+        DECLARE @CurrentState INT = NULL;
+        SELECT @CurrentState = [SerialState]
+        FROM [Express].[Code].[CardSerialSummary]
+        WHERE [ID] = @MoveID;
+
+        IF @CurrentState IS NULL
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Serial record not found.';
+            RETURN;
+        END
+
+        IF @CurrentState <> 3
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Only serials in Generated state can be moved.';
+            RETURN;
+        END
+
+        UPDATE [Express].[Code].[CardSerialSummary]
+        SET [SerialState] = 4
+            ,[LastMaintDate] = GETDATE()
+            ,[LastMaintBy] = @User
+        WHERE [ID] = @MoveID;
+
+        SET @Message = 'Serial moved successfully.';
+        RETURN;
+    END
+
     IF @Operation = 'Get Card Types'
     BEGIN
         SELECT 
