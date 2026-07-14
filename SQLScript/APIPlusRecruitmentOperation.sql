@@ -333,7 +333,7 @@ BEGIN
     BEGIN
         DECLARE @IntID INT = JSON_VALUE(@LineData, '$.InterviewID');
         DECLARE @Rating INT = JSON_VALUE(@LineData, '$.Rating');
-        DECLARE @Comments NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.FeedbackComments');
+        DECLARE @FeedbackComments NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.FeedbackComments');
         DECLARE @Rec INT = JSON_VALUE(@LineData, '$.Recommendation'); -- 0: Proceed, 1: Reject, 2: Hold
 
         IF NOT EXISTS (SELECT 1 FROM [PLS].[CandidateInterview] WHERE [InterviewID] = @IntID)
@@ -345,7 +345,7 @@ BEGIN
 
         UPDATE [PLS].[CandidateInterview]
         SET [Rating] = @Rating,
-            [FeedbackComments] = @Comments,
+            [FeedbackComments] = @FeedbackComments,
             [Recommendation] = @Rec,
             [InterviewState] = 1 -- Completed
         WHERE [InterviewID] = @IntID;
