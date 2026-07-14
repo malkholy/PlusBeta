@@ -752,6 +752,31 @@ IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'express_co
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('express_code_serials', @QID);
 GO
 
+-- 36. Get Track Details Dates
+DECLARE @QID INT;
+IF NOT EXISTS (SELECT 1 FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Dates')
+BEGIN
+    INSERT INTO [PLS].[QueryMaster] ([QueryName], [SPName], [Operation], [Description], [QuerySQL], [DatabaseName], [SchemaName], [TableOrViewName], [QueryType], [CreatedBy])
+    VALUES (N'Get Track Details Dates', N'[dbo].[APIPlusLogisticsOperation]', 'GetTrackingHistoryDates', N'Retrieve dates for a track', 
+            N'SELECT lh.ETA, lh.ETD, lh.PaymentDate, lh.ValueDate, lh.RequestShippingDate, lh.SentToBankDate, lh.OfficeCourierArrivalDate, lh.BankCourierArrivalDate, lh.ReleasedFromBankDate, lh.FactoryArrivalDate FROM LGI.LogisticHeader lh WHERE TrackNumber = @TrackNumber;', 'ERPMega', 'LGI', 'LogisticHeader', 'Grid', 'System');
+    SET @QID = SCOPE_IDENTITY();
+END
+ELSE
+BEGIN
+    SELECT @QID = QueryID FROM [PLS].[QueryMaster] WHERE [QueryName] = N'Get Track Details Dates';
+    UPDATE [PLS].[QueryMaster]
+    SET [QuerySQL] = N'SELECT lh.ETA, lh.ETD, lh.PaymentDate, lh.ValueDate, lh.RequestShippingDate, lh.SentToBankDate, lh.OfficeCourierArrivalDate, lh.BankCourierArrivalDate, lh.ReleasedFromBankDate, lh.FactoryArrivalDate FROM LGI.LogisticHeader lh WHERE TrackNumber = @TrackNumber;',
+        [SPName] = N'[dbo].[APIPlusLogisticsOperation]',
+        [DatabaseName] = 'ERPMega',
+        [SchemaName] = 'LGI',
+        [TableOrViewName] = 'LogisticHeader',
+        [QueryType] = 'Grid'
+    WHERE QueryID = @QID;
+END
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'logistics_track_details' AND QueryID = @QID)
+    INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('logistics_track_details', @QID);
+GO
+
 -- Update ApiUrl for all queries in QueryMaster
 UPDATE [PLS].[QueryMaster]
 SET [ApiUrl] = 'https://quick.glcpaints.com:7003/General/GeneralAPI/'

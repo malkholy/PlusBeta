@@ -185,6 +185,33 @@ BEGIN
         END
 
         -- ---------------------------------------------------------------------
+        -- Operation: GetTrackingHistoryDates
+        -- ---------------------------------------------------------------------
+        IF @Operation = 'GetTrackingHistoryDates'
+        BEGIN
+            DECLARE @DatesTrackNumber VARCHAR(100) = NULL;
+            IF @LineData IS NOT NULL AND ISJSON(@LineData) = 1
+            BEGIN
+                SELECT @DatesTrackNumber = JSON_VALUE(@LineData, '$.TrackNumber');
+            END
+
+            SELECT 
+                lh.ETA, 
+                lh.ETD, 
+                lh.PaymentDate, 
+                lh.ValueDate, 
+                lh.RequestShippingDate, 
+                lh.SentToBankDate, 
+                lh.OfficeCourierArrivalDate, 
+                lh.BankCourierArrivalDate, 
+                lh.ReleasedFromBankDate, 
+                lh.FactoryArrivalDate
+            FROM LGI.LogisticHeader lh 
+            WHERE lh.TrackNumber = @DatesTrackNumber;
+            RETURN;
+        END
+
+        -- ---------------------------------------------------------------------
         -- Operation: GetSalesExportStatistics
         -- ---------------------------------------------------------------------
         IF @Operation = 'GetSalesExportStatistics'

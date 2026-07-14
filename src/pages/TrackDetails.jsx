@@ -41,6 +41,10 @@ export default function TrackDetails(props) {
   const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [previewAttachment, setPreviewAttachment] = useState(null);
 
+  // Dates state
+  const [datesData, setDatesData] = useState(null);
+  const [loadingDates, setLoadingDates] = useState(false);
+
   useEffect(() => {
     const selectedTrack = sessionStorage.getItem('selectedTrackNumber');
     if (selectedTrack) {
@@ -62,6 +66,7 @@ export default function TrackDetails(props) {
     setContainers([]);
     setExtraAmounts([]);
     setAttachments([]);
+    setDatesData(null);
     setPreviewAttachment(null);
 
     // 1. Fetch Header Details
@@ -165,6 +170,18 @@ export default function TrackDetails(props) {
       console.error('Attachments load failed:', e);
     }
     setLoadingAttachments(false);
+
+    // 9. Fetch Dates
+    setLoadingDates(true);
+    try {
+      const res = await apiCall('GetTrackingHistoryDates', { TrackNumber: cleanTrackNum }, {}, 'logistics');
+      if (res.State === 0 && res.List0 && res.List0.length > 0) {
+        setDatesData(res.List0[0]);
+      }
+    } catch (e) {
+      console.error('Dates load failed:', e);
+    }
+    setLoadingDates(false);
   }
 
   function handleSearch(e) {
@@ -389,6 +406,22 @@ export default function TrackDetails(props) {
                 }}
               >
                 ⚙️ General Details
+              </button>
+              <button 
+                onClick={() => setActiveTab('dates')}
+                style={{
+                  padding: '14px 4px',
+                  border: 'none',
+                  background: 'none',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  color: activeTab === 'dates' ? 'var(--orange)' : 'var(--muted)',
+                  borderBottom: activeTab === 'dates' ? '2.5px solid var(--orange)' : '2.5px solid transparent',
+                  transition: 'all 0.15s'
+                }}
+              >
+                📅 Dates
               </button>
               <button 
                 onClick={() => setActiveTab('payments')}
@@ -980,6 +1013,52 @@ export default function TrackDetails(props) {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'dates' && (
+              <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+                {loadingDates ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>Loading dates...</div>
+                ) : !datesData ? (
+                  <div style={{ textAlign: 'center', padding: 20, color: 'var(--muted)' }}>No dates records found.</div>
+                ) : (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                    gap: 16
+                  }}>
+                    {[
+                      { label: 'ETA', value: datesData.ETA },
+                      { label: 'ETD', value: datesData.ETD },
+                      { label: 'Payment Date', value: datesData.PaymentDate },
+                      { label: 'Value Date', value: datesData.ValueDate },
+                      { label: 'Request Shipping Date', value: datesData.RequestShippingDate },
+                      { label: 'Sent To Bank Date', value: datesData.SentToBankDate },
+                      { label: 'Office Courier Arrival Date', value: datesData.OfficeCourierArrivalDate },
+                      { label: 'Bank Courier Arrival Date', value: datesData.BankCourierArrivalDate },
+                      { label: 'Released From Bank Date', value: datesData.ReleasedFromBankDate },
+                      { label: 'Factory Arrival Date', value: datesData.FactoryArrivalDate }
+                    ].map((item, idx) => (
+                      <div key={idx} style={{
+                        background: 'var(--bg)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 12,
+                        padding: 16,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 6
+                      }}>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>
+                          {item.label}
+                        </span>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
+                          {formatDate(item.value)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
