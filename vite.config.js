@@ -25,8 +25,9 @@ export default defineConfig({
         secure: false,
         rewrite: (path) => path.replace(/^\/hr-api/, ''),
         configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq) => {
-            proxyReq.setHeader('SP_Name', 'APIHRControlOperation')
+          proxy.on('proxyReq', (proxyReq, req) => {
+            const sp = req.headers['sp_name'] || 'APIHRControlOperation';
+            proxyReq.setHeader('SP_Name', sp)
             proxyReq.setHeader('Accept', 'application/json')
             proxyReq.setHeader('Content-Type', 'application/json')
           })

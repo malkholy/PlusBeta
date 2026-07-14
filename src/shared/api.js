@@ -15,21 +15,24 @@ const BASE_BODY = {
 };
 
 export async function apiCall(operation, lineData = null, extraParams = {}, apiType = 'default') {
-  const target = (apiType === true || apiType === 'express') 
-    ? 'express' 
-    : (apiType === 'hr' 
-      ? 'hr' 
-      : (apiType === 'plus' 
-        ? 'plus' 
-        : (apiType === 'query' 
-          ? 'query' 
-          : (apiType === 'purchasing' 
-            ? 'purchasing' 
-            : (apiType === 'logistics' 
-              ? 'logistics' 
-              : (apiType === 'express_codes' 
-                ? 'express_codes' 
-                : 'default'))))));
+  let target = 'default';
+  if (apiType === true || apiType === 'express') {
+    target = 'express';
+  } else if (apiType === 'hr') {
+    target = 'hr';
+  } else if (apiType === 'recruitment_requests' || apiType === 'recruitment') {
+    target = 'recruitment';
+  } else if (apiType === 'plus') {
+    target = 'plus';
+  } else if (apiType === 'query') {
+    target = 'query';
+  } else if (apiType === 'purchasing') {
+    target = 'purchasing';
+  } else if (apiType === 'logistics') {
+    target = 'logistics';
+  } else if (apiType === 'express_codes') {
+    target = 'express_codes';
+  }
 
   let url = '';
   let spName = '';
@@ -39,6 +42,9 @@ export async function apiCall(operation, lineData = null, extraParams = {}, apiT
   if (target === 'express') {
     url = IS_DEV ? '/express-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7790/General/GeneralAPI/';
     spName = 'APIExprssControlOperation';
+  } else if (target === 'recruitment') {
+    url = IS_DEV ? '/hr-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7001/General/GeneralAPI/';
+    spName = '[PLS].[APIPlusRecruitmentOperation]';
   } else if (target === 'hr') {
     url = IS_DEV ? '/hr-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7001/General/GeneralAPI/';
     spName = 'APIHRControlOperation';
