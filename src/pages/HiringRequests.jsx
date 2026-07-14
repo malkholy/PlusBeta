@@ -207,6 +207,208 @@ export default function HiringRequests(props) {
     return { total, pending, open, fulfilled };
   })();
 
+  const renderFormContent = () => {
+    return (
+      <>
+        {modalError && (
+          <div style={{ marginBottom: 16, background: 'var(--red-soft)', color: 'var(--red)', padding: 10, borderRadius: 8, fontSize: 12.5 }}>{modalError}</div>
+        )}
+
+        {formData.RequestID && rows.find(r => Number(r.RequestID) === Number(formData.RequestID))?.ReturnComments && (
+          <div style={{
+            marginBottom: 16,
+            background: 'var(--blue-soft)',
+            color: 'var(--blue)',
+            border: '1px solid rgba(59,130,246,0.2)',
+            padding: 12,
+            borderRadius: 10,
+            fontSize: 13,
+            fontWeight: 600
+          }}>
+            ↩️ Return Comments: {rows.find(r => Number(r.RequestID) === Number(formData.RequestID)).ReturnComments}
+          </div>
+        )}
+
+        <form onSubmit={handleSaveRequest}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Position Title</label>
+              <input type="text" value={formData.PositionTitle} onChange={e => setFormData({ ...formData, PositionTitle: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required />
+            </div>
+            <div style={{ position: 'relative' }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Department</label>
+              <div 
+                onClick={() => setShowDeptDropdown(!showDeptDropdown)}
+                style={{
+                  width: '100%', 
+                  height: 38, 
+                  padding: '0 12px', 
+                  border: '1.5px solid var(--border)', 
+                  borderRadius: 10, 
+                  background: 'var(--bg)', 
+                  color: formData.Department ? 'var(--text)' : 'var(--muted)', 
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 600
+                }}
+              >
+                <span>{formData.Department || 'Select Department'}</span>
+                <span>▾</span>
+              </div>
+
+              {showDeptDropdown && (
+                <>
+                  <div 
+                    onClick={() => {
+                      setShowDeptDropdown(false);
+                      setDeptSearch('');
+                    }}
+                    style={{ position: 'fixed', inset: 0, zIndex: 99998 }}
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    width: '100%',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 10,
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                    zIndex: 99999,
+                    marginTop: 4,
+                    padding: 8
+                  }}>
+                    <input 
+                      type="text" 
+                      placeholder="Search department..." 
+                      value={deptSearch}
+                      onChange={e => setDeptSearch(e.target.value)}
+                      autoFocus
+                      style={{
+                        width: '100%',
+                        height: 34,
+                        padding: '0 10px',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        background: 'var(--bg)',
+                        color: 'var(--text)',
+                        outline: 'none',
+                        marginBottom: 8,
+                        fontSize: 13
+                      }}
+                    />
+                    <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {departments
+                        .filter(d => d.DepartmentName.toLowerCase().includes(deptSearch.toLowerCase()))
+                        .map(d => (
+                          <button
+                            key={d.DepartmentID}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, Department: d.DepartmentName });
+                              setShowDeptDropdown(false);
+                              setDeptSearch('');
+                            }}
+                            style={{
+                              width: '100%',
+                              padding: '8px 10px',
+                              background: formData.Department === d.DepartmentName ? 'var(--primary-soft)' : 'transparent',
+                              border: 0,
+                              borderRadius: 6,
+                              textAlign: 'left',
+                              color: formData.Department === d.DepartmentName ? 'var(--primary)' : 'var(--text)',
+                              fontSize: 13,
+                              fontWeight: formData.Department === d.DepartmentName ? 700 : 500,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s'
+                            }}
+                            onMouseEnter={e => {
+                              if (formData.Department !== d.DepartmentName) {
+                                e.target.style.background = 'var(--soft)';
+                              }
+                            }}
+                            onMouseLeave={e => {
+                              if (formData.Department !== d.DepartmentName) {
+                                e.target.style.background = 'transparent';
+                              }
+                            }}
+                          >
+                            {d.DepartmentName}
+                          </button>
+                        ))
+                      }
+                      {departments.filter(d => d.DepartmentName.toLowerCase().includes(deptSearch.toLowerCase())).length === 0 && (
+                        <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', padding: 8 }}>No matching departments found</div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Headcount</label>
+              <input type="number" min="1" value={formData.Headcount} onChange={e => setFormData({ ...formData, Headcount: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Reason</label>
+              <select value={formData.Reason} onChange={e => setFormData({ ...formData, Reason: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}>
+                <option value="New">New Position</option>
+                <option value="Replacement">Replacement</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Urgency</label>
+              <select value={formData.Urgency} onChange={e => setFormData({ ...formData, Urgency: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Min Salary</label>
+              <input type="number" placeholder="Min" value={formData.SalaryMin} onChange={e => setFormData({ ...formData, SalaryMin: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Max Salary</label>
+              <input type="number" placeholder="Max" value={formData.SalaryMax} onChange={e => setFormData({ ...formData, SalaryMax: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
+            </div>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Target Start Date</label>
+            <input type="date" value={formData.TargetStartDate} onChange={e => setFormData({ ...formData, TargetStartDate: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Job Description</label>
+            <textarea rows="8" value={formData.JobDescription} onChange={e => setFormData({ ...formData, JobDescription: e.target.value })} style={{ width: '100%', padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none', resize: 'vertical' }} placeholder="Detail requirements..." />
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Required Skills</label>
+            <textarea rows="6" value={formData.RequiredSkills} onChange={e => setFormData({ ...formData, RequiredSkills: e.target.value })} style={{ width: '100%', padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none', resize: 'vertical' }} placeholder="List key technologies, certifications..." />
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={() => setShowAddModal(false)} style={{ height: 38, padding: '0 18px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+            <button type="submit" disabled={submitting} style={{ height: 38, padding: '0 20px', border: 0, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>
+              {submitting ? 'Saving...' : 'Save Requisition'}
+            </button>
+          </div>
+        </form>
+      </>
+    );
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       {error && (
@@ -301,214 +503,53 @@ export default function HiringRequests(props) {
         />
       </div>
 
-      {/* Add/Edit Modal */}
-      {showAddModal && (
+      {/* Add/Edit Modal (New Request Modal / Edit Request Drawer) */}
+      {showAddModal && !formData.RequestID && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' }}>
           <div style={{ width: 'min(580px, calc(100vw - 28px))', background: 'var(--surface)', borderRadius: 22, boxShadow: 'var(--shadow)', padding: 24, border: '1px solid var(--border)', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>
-                {formData.RequestID ? 'Edit Hiring Request' : 'Create Hiring Request'}
-              </h3>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>Create Hiring Request</h3>
               <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>&times;</button>
             </div>
-
-            {modalError && (
-              <div style={{ marginBottom: 16, background: 'var(--red-soft)', color: 'var(--red)', padding: 10, borderRadius: 8, fontSize: 12.5 }}>{modalError}</div>
-            )}
-
-            {formData.RequestID && rows.find(r => Number(r.RequestID) === Number(formData.RequestID))?.ReturnComments && (
-              <div style={{
-                marginBottom: 16,
-                background: 'var(--blue-soft)',
-                color: 'var(--blue)',
-                border: '1px solid rgba(59,130,246,0.2)',
-                padding: 12,
-                borderRadius: 10,
-                fontSize: 13,
-                fontWeight: 600
-              }}>
-                ↩️ Return Comments: {rows.find(r => Number(r.RequestID) === Number(formData.RequestID)).ReturnComments}
-              </div>
-            )}
-
-            <form onSubmit={handleSaveRequest}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Position Title</label>
-                  <input type="text" value={formData.PositionTitle} onChange={e => setFormData({ ...formData, PositionTitle: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required />
-                </div>
-                <div style={{ position: 'relative' }}>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Department</label>
-                  <div 
-                    onClick={() => setShowDeptDropdown(!showDeptDropdown)}
-                    style={{
-                      width: '100%', 
-                      height: 38, 
-                      padding: '0 12px', 
-                      border: '1.5px solid var(--border)', 
-                      borderRadius: 10, 
-                      background: 'var(--bg)', 
-                      color: formData.Department ? 'var(--text)' : 'var(--muted)', 
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      cursor: 'pointer',
-                      fontSize: 13,
-                      fontWeight: 600
-                    }}
-                  >
-                    <span>{formData.Department || 'Select Department'}</span>
-                    <span>▾</span>
-                  </div>
-
-                  {showDeptDropdown && (
-                    <>
-                      <div 
-                        onClick={() => {
-                          setShowDeptDropdown(false);
-                          setDeptSearch('');
-                        }}
-                        style={{ position: 'fixed', inset: 0, zIndex: 99998 }}
-                      />
-                      <div style={{
-                        position: 'absolute',
-                        top: '100%',
-                        left: 0,
-                        width: '100%',
-                        background: 'var(--surface)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 10,
-                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                        zIndex: 99999,
-                        marginTop: 4,
-                        padding: 8
-                      }}>
-                        <input 
-                          type="text" 
-                          placeholder="Search department..." 
-                          value={deptSearch}
-                          onChange={e => setDeptSearch(e.target.value)}
-                          autoFocus
-                          style={{
-                            width: '100%',
-                            height: 34,
-                            padding: '0 10px',
-                            border: '1px solid var(--border)',
-                            borderRadius: 8,
-                            background: 'var(--bg)',
-                            color: 'var(--text)',
-                            outline: 'none',
-                            marginBottom: 8,
-                            fontSize: 13
-                          }}
-                        />
-                        <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          {departments
-                            .filter(d => d.DepartmentName.toLowerCase().includes(deptSearch.toLowerCase()))
-                            .map(d => (
-                              <button
-                                key={d.DepartmentID}
-                                type="button"
-                                onClick={() => {
-                                  setFormData({ ...formData, Department: d.DepartmentName });
-                                  setShowDeptDropdown(false);
-                                  setDeptSearch('');
-                                }}
-                                style={{
-                                  width: '100%',
-                                  padding: '8px 10px',
-                                  background: formData.Department === d.DepartmentName ? 'var(--primary-soft)' : 'transparent',
-                                  border: 0,
-                                  borderRadius: 6,
-                                  textAlign: 'left',
-                                  color: formData.Department === d.DepartmentName ? 'var(--primary)' : 'var(--text)',
-                                  fontSize: 13,
-                                  fontWeight: formData.Department === d.DepartmentName ? 700 : 500,
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s'
-                                }}
-                                onMouseEnter={e => {
-                                  if (formData.Department !== d.DepartmentName) {
-                                    e.target.style.background = 'var(--soft)';
-                                  }
-                                }}
-                                onMouseLeave={e => {
-                                  if (formData.Department !== d.DepartmentName) {
-                                    e.target.style.background = 'transparent';
-                                  }
-                                }}
-                              >
-                                {d.DepartmentName}
-                              </button>
-                            ))
-                          }
-                          {departments.filter(d => d.DepartmentName.toLowerCase().includes(deptSearch.toLowerCase())).length === 0 && (
-                            <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', padding: 8 }}>No matching departments found</div>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Headcount</label>
-                  <input type="number" min="1" value={formData.Headcount} onChange={e => setFormData({ ...formData, Headcount: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Reason</label>
-                  <select value={formData.Reason} onChange={e => setFormData({ ...formData, Reason: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}>
-                    <option value="New">New Position</option>
-                    <option value="Replacement">Replacement</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Urgency</label>
-                  <select value={formData.Urgency} onChange={e => setFormData({ ...formData, Urgency: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}>
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Min Salary</label>
-                  <input type="number" placeholder="Min" value={formData.SalaryMin} onChange={e => setFormData({ ...formData, SalaryMin: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Max Salary</label>
-                  <input type="number" placeholder="Max" value={formData.SalaryMax} onChange={e => setFormData({ ...formData, SalaryMax: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Target Start Date</label>
-                <input type="date" value={formData.TargetStartDate} onChange={e => setFormData({ ...formData, TargetStartDate: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
-              </div>
-
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Job Description</label>
-                <textarea rows="8" value={formData.JobDescription} onChange={e => setFormData({ ...formData, JobDescription: e.target.value })} style={{ width: '100%', padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none', resize: 'vertical' }} placeholder="Detail requirements..." />
-              </div>
-
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Required Skills</label>
-                <textarea rows="6" value={formData.RequiredSkills} onChange={e => setFormData({ ...formData, RequiredSkills: e.target.value })} style={{ width: '100%', padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none', resize: 'vertical' }} placeholder="List key technologies, certifications..." />
-              </div>
-
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                <button type="button" onClick={() => setShowAddModal(false)} style={{ height: 38, padding: '0 18px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
-                <button type="submit" disabled={submitting} style={{ height: 38, padding: '0 20px', border: 0, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>
-                  {submitting ? 'Saving...' : 'Save Requisition'}
-                </button>
-              </div>
-            </form>
+            {renderFormContent()}
           </div>
         </div>
+      )}
+
+      {showAddModal && formData.RequestID && (
+        <>
+          <div 
+            onClick={() => setShowAddModal(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15,23,42,0.15)',
+              backdropFilter: 'blur(3px)',
+              zIndex: 9998
+            }}
+          />
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            width: 'min(580px, 100vw)',
+            height: '100vh',
+            background: 'var(--surface)',
+            boxShadow: '-10px 0 30px rgba(0,0,0,0.12)',
+            borderLeft: '1px solid var(--border)',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            padding: 24,
+            overflowY: 'auto'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>Edit Hiring Request</h3>
+              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>&times;</button>
+            </div>
+            {renderFormContent()}
+          </div>
+        </>
       )}
 
       {/* Approval Action Modal */}
