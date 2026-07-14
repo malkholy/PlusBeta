@@ -58,7 +58,7 @@ export default function JobOffers(props) {
                   );
                 }
                 if (k.toLowerCase().includes('salary') && val) {
-                  return '$' + Number(val).toLocaleString('en-US');
+                  return Number(val).toLocaleString('en-US');
                 }
                 if (k.toLowerCase().includes('date') && val) {
                   try {

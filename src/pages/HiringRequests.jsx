@@ -97,7 +97,7 @@ export default function HiringRequests(props) {
                   );
                 }
                 if (k.toLowerCase().includes('salary') && val) {
-                  return '$' + Number(val).toLocaleString('en-US');
+                  return Number(val).toLocaleString('en-US');
                 }
                 if (k.toLowerCase().includes('date') && val) {
                   try {
@@ -134,6 +134,11 @@ export default function HiringRequests(props) {
     e.preventDefault();
     setSubmitting(true);
     setModalError('');
+    if (!formData.Department) {
+      setModalError('Department is required.');
+      setSubmitting(false);
+      return;
+    }
     try {
       const payload = {
         ...formData,
