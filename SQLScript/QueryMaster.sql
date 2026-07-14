@@ -22,6 +22,7 @@ BEGIN
         [SchemaName] VARCHAR(100) NULL,
         [TableOrViewName] VARCHAR(150) NULL,
         [QueryType] VARCHAR(50) NOT NULL DEFAULT 'Grid',
+        [ApiUrl] VARCHAR(500) NULL,
         [CreatedBy] NVARCHAR(100) NULL,
         [CreatedDate] DATETIME NOT NULL DEFAULT GETDATE()
     );
@@ -57,6 +58,11 @@ BEGIN
         END
 
         EXEC('ALTER TABLE [PLS].[QueryMaster] DROP COLUMN PageGroupID;');
+    END
+
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('PLS.QueryMaster') AND name = 'ApiUrl')
+    BEGIN
+        ALTER TABLE [PLS].[QueryMaster] ADD [ApiUrl] VARCHAR(500) NULL;
     END
 END
 GO
@@ -744,6 +750,29 @@ BEGIN
 END
 IF NOT EXISTS (SELECT 1 FROM [PLS].[PageQueries] WHERE PageGroupID = 'express_code_serials' AND QueryID = @QID)
     INSERT INTO [PLS].[PageQueries] (PageGroupID, QueryID) VALUES ('express_code_serials', @QID);
+GO
+
+-- Update ApiUrl for all queries in QueryMaster
+UPDATE [PLS].[QueryMaster]
+SET [ApiUrl] = 'https://quick.glcpaints.com:7003/General/GeneralAPI/'
+WHERE [SPName] IN (
+    N'[dbo].[APIPlusOperation]', 
+    N'[dbo].[APIPlusPurchasingOperation]', 
+    N'[dbo].[APIPlusLogisticsOperation]', 
+    N'[dbo].[APIPlusQueryOperation]'
+) OR [ApiUrl] IS NULL;
+
+UPDATE [PLS].[QueryMaster]
+SET [ApiUrl] = 'https://quick.glcpaints.com:7001/General/GeneralAPI/'
+WHERE [SPName] = N'APIHRControlOperation' OR [Operation] = 'GetHREmployees';
+
+UPDATE [PLS].[QueryMaster]
+SET [ApiUrl] = 'https://quick.glcpaints.com:7790/General/GeneralAPI/'
+WHERE [SPName] = N'APIExprssControlOperation';
+
+UPDATE [PLS].[QueryMaster]
+SET [ApiUrl] = 'https://be.glcpaints.com:7788/api/General/GeneralAPI'
+WHERE [SPName] = N'[dbo].[APIPlusExpressGenerateCodeOperation]' OR [Operation] = 'Get Serials';
 GO
 
 
