@@ -134,49 +134,12 @@ export default function CodeSerials(props) {
               }
             };
           });
-          cols.push({
-            key: 'actions',
-            label: 'Actions',
-            render: (val, row) => {
-              if (row.SerialState === 0) {
-                return (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRequestSerial(row.ID);
-                    }}
-                    style={{
-                      border: 0,
-                      background: 'var(--primary-soft)',
-                      color: 'var(--primary-dark)',
-                      padding: '4px 10px',
-                      borderRadius: 6,
-                      fontSize: 11.5,
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      outline: 'none'
-                    }}
-                    onMouseOver={e => {
-                      e.currentTarget.style.background = 'var(--primary)';
-                      e.currentTarget.style.color = '#fff';
-                    }}
-                    onMouseOut={e => {
-                      e.currentTarget.style.background = 'var(--primary-soft)';
-                      e.currentTarget.style.color = 'var(--primary-dark)';
-                    }}
-                  >
-                    ⚡ Request
-                  </button>
-                );
-              }
-              return (
-                <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 700 }}>
-                  -
-                </span>
-              );
-            }
-          });
+          // Move SerialState to the first position
+          const stateColIndex = cols.findIndex(c => c.key.toLowerCase() === 'serialstate');
+          if (stateColIndex > -1) {
+            const [stateCol] = cols.splice(stateColIndex, 1);
+            cols.unshift(stateCol);
+          }
 
           setColumns(cols);
         }
@@ -323,6 +286,13 @@ export default function CodeSerials(props) {
           hideRefresh={false}
           onRefresh={loadData}
           onAdd={() => setShowAddModal(true)}
+          extraRowActions={[
+            {
+              label: '⚡ Request Serial',
+              show: (row) => row.SerialState === 0,
+              onClick: (row) => handleRequestSerial(row.ID)
+            }
+          ]}
         />
       </div>
 

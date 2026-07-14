@@ -119,6 +119,7 @@ export default function DataGrid({
   onRefresh,
   onPreview,
   extraButtons = [],
+  extraRowActions = [],
   hideHeader = false,
   controlPanel = null,
   viewDropdown = null,
@@ -557,6 +558,14 @@ export default function DataGrid({
         {onEdit      && <div className="dg-menu-item" onClick={() => { onEdit(rowMenu.row); setRowMenu(null); }}>✏ Edit</div>}
         {onDuplicate && <div className="dg-menu-item" onClick={() => { onDuplicate(rowMenu.row); setRowMenu(null); }}>📄 Duplicate</div>}
         {onDelete    && <div className="dg-menu-item dg-danger" onClick={() => { onDelete([rowMenu.row]); setRowMenu(null); }}>🗑 Delete</div>}
+        {rowMenu && extraRowActions.map((act, idx) => {
+          if (act.show && !act.show(rowMenu.row)) return null;
+          return (
+            <div key={idx} className="dg-menu-item" onClick={() => { act.onClick(rowMenu.row); setRowMenu(null); }}>
+              {act.label}
+            </div>
+          );
+        })}
         <div className="dg-menu-title">Export Data</div>
         <div className="dg-menu-item" onClick={() => { exportExcel(); setRowMenu(null); }}>📗 Excel</div>
         <div className="dg-menu-item" onClick={() => { exportPDF(); setRowMenu(null); }}>📕 PDF</div>
