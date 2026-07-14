@@ -152,8 +152,8 @@ BEGIN
         END
 
         -- Validation: check if current state is 3
-        DECLARE @CurrentState INT = NULL;
-        SELECT @CurrentState = [SerialState]
+       -- DECLARE @CurrentState INT = NULL;
+        SELECT @CurrentState = [SerialState] , @CardType = CardType 
         FROM [Express].[Code].[CardSerialSummary]
         WHERE [ID] = @MoveID;
 
@@ -170,7 +170,12 @@ BEGIN
             SET @Message = 'Only serials in Generated state can be moved.';
             RETURN;
         END
+		
+		exec CodeGenerationOperation 
+		@operation='Move' ,
 
+		@CardType=@CardType , 
+		@uSER='mhd'
         UPDATE [Express].[Code].[CardSerialSummary]
         SET [SerialState] = 4
             ,[LastMaintDate] = GETDATE()

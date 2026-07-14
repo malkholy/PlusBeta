@@ -20,7 +20,65 @@ export default function CodeSerials(props) {
     Note: ''
   });
 
+  const [quantity, setQuantity] = useState('');
   const [cardTypes, setCardTypes] = useState([]);
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setQuantity('');
+    setAddFormData({
+      CardType: '',
+      FromSerial: '',
+      ToSerial: '',
+      DeliverdDate: new Date().toISOString().split('T')[0],
+      Note: ''
+    });
+  };
+
+  const handleFromSerialChange = (val) => {
+    setAddFormData(prev => {
+      const next = { ...prev, FromSerial: val };
+      const qtyNum = Number(quantity);
+      const fromNum = Number(val);
+      if (val !== '' && !isNaN(fromNum) && qtyNum > 0) {
+        next.ToSerial = String(fromNum + qtyNum - 1);
+      } else if (val !== '' && !isNaN(fromNum) && prev.ToSerial !== '') {
+        const toNum = Number(prev.ToSerial);
+        if (!isNaN(toNum) && toNum >= fromNum) {
+          setQuantity(String(toNum - fromNum + 1));
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleQuantityChange = (val) => {
+    setQuantity(val);
+    const qtyNum = Number(val);
+    const fromNum = Number(addFormData.FromSerial);
+    if (val !== '' && qtyNum > 0 && !isNaN(fromNum) && addFormData.FromSerial !== '') {
+      setAddFormData(prev => ({
+        ...prev,
+        ToSerial: String(fromNum + qtyNum - 1)
+      }));
+    }
+  };
+
+  const handleToSerialChange = (val) => {
+    setAddFormData(prev => {
+      const next = { ...prev, ToSerial: val };
+      const fromNum = Number(prev.FromSerial);
+      const toNum = Number(val);
+      if (val !== '' && !isNaN(toNum) && !isNaN(fromNum) && prev.FromSerial !== '') {
+        if (toNum >= fromNum) {
+          setQuantity(String(toNum - fromNum + 1));
+        } else {
+          setQuantity('');
+        }
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     loadData();
@@ -205,15 +263,7 @@ export default function CodeSerials(props) {
 
       const res = await apiCall('New Serial', payload, {}, 'express_codes');
       if (res.State === 0) {
-        setShowAddModal(false);
-        // Reset Form
-        setAddFormData({
-          CardType: '',
-          FromSerial: '',
-          ToSerial: '',
-          DeliverdDate: new Date().toISOString().split('T')[0],
-          Note: ''
-        });
+        closeAddModal();
         loadData();
       } else {
         setModalError(res.Message || 'Failed to create card serial.');
@@ -312,7 +362,7 @@ export default function CodeSerials(props) {
           hideSearch={false}
           hideRefresh={false}
           onRefresh={loadData}
-          onAdd={() => setShowAddModal(true)}
+          onAdd={() => { setQuantity(''); setShowAddModal(true); }}
           extraRowActions={[
             {
               label: '⚡ Request Serial',
@@ -351,7 +401,7 @@ export default function CodeSerials(props) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>Create New Serial</h3>
               <button 
-                onClick={() => setShowAddModal(false)}
+                onClick={closeAddModal}
                 style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: 'var(--muted)', outline: 'none' }}
               >
                 &times;
@@ -394,7 +444,7 @@ export default function CodeSerials(props) {
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
                     From Serial
@@ -402,7 +452,7 @@ export default function CodeSerials(props) {
                   <input 
                     type="number"
                     value={addFormData.FromSerial}
-                    onChange={e => setAddFormData({ ...addFormData, FromSerial: e.target.value })}
+                    onChange={e => handleFromSerialChange(e.target.value)}
                     placeholder="e.g. 1"
                     style={{
                       width: '100%',
@@ -420,13 +470,35 @@ export default function CodeSerials(props) {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+                    Quantity
+                  </label>
+                  <input 
+                    type="number"
+                    value={quantity}
+                    onChange={e => handleQuantityChange(e.target.value)}
+                    placeholder="Helper Qty"
+                    style={{
+                      width: '100%',
+                      height: 38,
+                      padding: '0 12px',
+                      border: '1.5px solid var(--border)',
+                      borderRadius: 10,
+                      fontSize: 13,
+                      color: 'var(--text)',
+                      background: 'var(--bg)',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
                     To Serial
                   </label>
                   <input 
                     type="number"
                     value={addFormData.ToSerial}
-                    onChange={e => setAddFormData({ ...addFormData, ToSerial: e.target.value })}
-                    placeholder="e.g. 1000000"
+                    onChange={e => handleToSerialChange(e.target.value)}
+                    placeholder="e.g. 1000"
                     style={{
                       width: '100%',
                       height: 38,
@@ -510,7 +582,7 @@ export default function CodeSerials(props) {
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <button 
                   type="button" 
-                  onClick={() => setShowAddModal(false)}
+                  onClick={closeAddModal}
                   style={{
                     height: 38,
                     padding: '0 18px',
