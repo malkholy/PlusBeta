@@ -57,7 +57,7 @@ export async function apiCall(operation, lineData = null, extraParams = {}, apiT
     url = IS_DEV ? '/logistics-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
     spName = 'APIPlusLogisticsOperation';
   } else if (target === 'express_codes') {
-    url = IS_DEV ? '/express-codes-api/api/General/GeneralAPI' : 'https://be.glcpaints.com:7788/api/General/GeneralAPI';
+    url = IS_DEV ? '/express-codes-api/Express/GeneralAPI' : 'https://be.glcpaints.com:7788/Express/GeneralAPI';
     spName = 'APIPlusExpressGenerateCodeOperation';
   } else {
     url = IS_DEV ? '/api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
@@ -79,20 +79,24 @@ export async function apiCall(operation, lineData = null, extraParams = {}, apiT
   });
 
   if (target === 'express_codes') {
-    method = 'GET';
+    method = 'POST';
     headers = {
       'Accept': 'application/json',
-      'SP_Name': spName
+      'Content-Type': 'application/json',
+      'SP_Name': spName,
+      'Authorization': 'Bearer YMQs3vAyVUmtiZi-89cRxro4ZPloFJD8zdbnG5b0XpZtvhdT4yuH47HmOoPAWl8kZHl9mgGYG_vUFlTWIiJLZNRZqHgAAkmHuN7XPnqIGVSvlE7gsXuxwW5OMzDMC5Ffm3E-l5Phi9ZSZlwmzs2es6piK0Q-hjt1L7hvLyEgru-h97pLL8rCvmOpvjIYm0SRU-cOJkPCuKvpClR5uCyrOw'
     };
-    body = undefined;
-    const qParams = new URLSearchParams({
-      ...BASE_BODY,
+    body = JSON.stringify({
       Operation: operation,
       LineData: lineData ? JSON.stringify(lineData) : '',
-      User: sessionStorage.getItem('Username') || sessionStorage.getItem('FullName') || '',
-      ...extraParams
+      User: sessionStorage.getItem('Username') || sessionStorage.getItem('FullName') || 'System',
+      AppVersionWeb: 225,
+      AppVersionAndroid: 225,
+      AppVersionIos: 225,
+      AppVersionDesktop: 225,
+      PlatForm: 'web',
+      FireBaseToken: ''
     });
-    url = `${url}?${qParams.toString()}`;
   }
 
   const res = await fetch(url, {
