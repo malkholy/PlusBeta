@@ -355,12 +355,12 @@ export default function HiringRequests(props) {
 
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Job Description</label>
-                <textarea rows="3" value={formData.JobDescription} onChange={e => setFormData({ ...formData, JobDescription: e.target.value })} style={{ width: '100%', padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none', resize: 'none' }} placeholder="Detail requirements..." />
+                <textarea rows="8" value={formData.JobDescription} onChange={e => setFormData({ ...formData, JobDescription: e.target.value })} style={{ width: '100%', padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none', resize: 'vertical' }} placeholder="Detail requirements..." />
               </div>
 
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Required Skills</label>
-                <textarea rows="2" value={formData.RequiredSkills} onChange={e => setFormData({ ...formData, RequiredSkills: e.target.value })} style={{ width: '100%', padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none', resize: 'none' }} placeholder="List key technologies, certifications..." />
+                <textarea rows="6" value={formData.RequiredSkills} onChange={e => setFormData({ ...formData, RequiredSkills: e.target.value })} style={{ width: '100%', padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none', resize: 'vertical' }} placeholder="List key technologies, certifications..." />
               </div>
 
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
