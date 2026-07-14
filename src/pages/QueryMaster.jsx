@@ -28,7 +28,8 @@ export default function QueryMaster({ user }) {
     DatabaseName: 'ERPMega',
     SchemaName: 'dbo',
     TableOrViewName: '',
-    QueryType: 'Grid'
+    QueryType: 'Grid',
+    ApiUrl: ''
   });
   
   // Associated pages state (pageGroupID -> isLinked)
@@ -66,6 +67,7 @@ export default function QueryMaster({ user }) {
               SchemaName: row.SchemaName,
               TableOrViewName: row.TableOrViewName,
               QueryType: row.QueryType,
+              ApiUrl: row.ApiUrl || '',
               PageGroups: []
             };
           }
@@ -127,7 +129,8 @@ export default function QueryMaster({ user }) {
       DatabaseName: q.DatabaseName || '',
       SchemaName: q.SchemaName || '',
       TableOrViewName: q.TableOrViewName || '',
-      QueryType: q.QueryType
+      QueryType: q.QueryType,
+      ApiUrl: q.ApiUrl || ''
     });
     
     const pageMap = {};
@@ -154,7 +157,8 @@ export default function QueryMaster({ user }) {
       DatabaseName: 'ERPMega',
       SchemaName: 'dbo',
       TableOrViewName: '',
-      QueryType: 'Grid'
+      QueryType: 'Grid',
+      ApiUrl: ''
     });
     
     const pageMap = {};
@@ -214,6 +218,7 @@ export default function QueryMaster({ user }) {
                 SchemaName: row.SchemaName,
                 TableOrViewName: row.TableOrViewName,
                 QueryType: row.QueryType,
+                ApiUrl: row.ApiUrl || '',
                 PageGroups: []
               };
             }
@@ -456,6 +461,12 @@ export default function QueryMaster({ user }) {
                     <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 4, fontFamily: 'monospace' }}>
                       {q.SPName} • {q.Operation}
                     </div>
+
+                    {q.ApiUrl && (
+                      <div style={{ fontSize: 9.5, color: 'var(--muted)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span>🌐</span> <span style={{ fontFamily: 'monospace' }}>{q.ApiUrl}</span>
+                      </div>
+                    )}
 
                     {q.TableOrViewName && (
                       <div style={{ fontSize: 9.5, color: 'var(--hint)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -770,6 +781,29 @@ export default function QueryMaster({ user }) {
                       }}
                     />
                   </div>
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+                    Target API URL (For non-default ports/hosts)
+                  </label>
+                  <input 
+                    type="text"
+                    value={formData.ApiUrl}
+                    onChange={e => setFormData({ ...formData, ApiUrl: e.target.value })}
+                    placeholder="e.g. https://be.glcpaints.com:7788/api/General/GeneralAPI"
+                    style={{
+                      width: '100%',
+                      height: 38,
+                      padding: '0 12px',
+                      border: '1.5px solid var(--border)',
+                      borderRadius: 8,
+                      fontSize: 13,
+                      color: 'var(--text)',
+                      background: 'var(--bg)',
+                      outline: 'none'
+                    }}
+                  />
                 </div>
 
                 <div style={{ marginBottom: 20 }}>

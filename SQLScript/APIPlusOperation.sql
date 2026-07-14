@@ -1101,7 +1101,7 @@ BEGIN
             SET @State = 0;
             SET @Message = 'Success';
 
-            SELECT q.QueryID, pq.PageGroupID, q.QueryName, q.SPName, q.Operation, q.Description, q.QuerySQL, q.DatabaseName, q.SchemaName, q.TableOrViewName, q.QueryType 
+            SELECT q.QueryID, pq.PageGroupID, q.QueryName, q.SPName, q.Operation, q.Description, q.QuerySQL, q.DatabaseName, q.SchemaName, q.TableOrViewName, q.QueryType, q.ApiUrl 
             FROM [PLS].[QueryMaster] q
             INNER JOIN [PLS].[PageQueries] pq ON q.QueryID = pq.QueryID
             ORDER BY pq.PageGroupID, q.QueryID;
@@ -1297,6 +1297,7 @@ BEGIN
             DECLARE @QMSchemaName VARCHAR(100) = JSON_VALUE(@LineData, '$.SchemaName');
             DECLARE @QMTableOrViewName VARCHAR(150) = JSON_VALUE(@LineData, '$.TableOrViewName');
             DECLARE @QMQueryType VARCHAR(50) = JSON_VALUE(@LineData, '$.QueryType');
+            DECLARE @QMApiUrl VARCHAR(500) = JSON_VALUE(@LineData, '$.ApiUrl');
 
             IF @QMQueryID IS NOT NULL
             BEGIN
@@ -1309,13 +1310,14 @@ BEGIN
                     DatabaseName = @QMDatabaseName,
                     SchemaName = @QMSchemaName,
                     TableOrViewName = @QMTableOrViewName,
-                    QueryType = @QMQueryType
+                    QueryType = @QMQueryType,
+                    ApiUrl = @QMApiUrl
                 WHERE QueryID = @QMQueryID;
             END
             ELSE
             BEGIN
-                INSERT INTO [PLS].[QueryMaster] (QueryName, SPName, Operation, Description, QuerySQL, DatabaseName, SchemaName, TableOrViewName, QueryType, CreatedBy)
-                VALUES (@QMQueryName, @QMSPName, @QMQueryOperation, @QMDescription, @QMQuerySQL, @QMDatabaseName, @QMSchemaName, @QMTableOrViewName, @QMQueryType, @User);
+                INSERT INTO [PLS].[QueryMaster] (QueryName, SPName, Operation, Description, QuerySQL, DatabaseName, SchemaName, TableOrViewName, QueryType, ApiUrl, CreatedBy)
+                VALUES (@QMQueryName, @QMSPName, @QMQueryOperation, @QMDescription, @QMQuerySQL, @QMDatabaseName, @QMSchemaName, @QMTableOrViewName, @QMQueryType, @QMApiUrl, @User);
                 
                 SET @QMQueryID = SCOPE_IDENTITY();
             END
