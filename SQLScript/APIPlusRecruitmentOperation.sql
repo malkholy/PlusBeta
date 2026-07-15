@@ -37,6 +37,7 @@ BEGIN
     BEGIN
         SELECT 
             r.*,
+            COALESCE(u.Name, r.CreatedBy) AS CreatorName,
             (SELECT COUNT(*) FROM [PLS].[Candidate] c WHERE c.RequestID = r.RequestID) AS TotalCandidates,
             (SELECT COUNT(*) FROM [PLS].[Candidate] c WHERE c.RequestID = r.RequestID AND c.CandidateState = 6) AS HiredCount,
             (
@@ -46,6 +47,7 @@ BEGIN
                 ORDER BY ActionDate DESC
             ) AS ReturnComments
         FROM [PLS].[HiringRequest] r
+        LEFT OUTER JOIN ERPManagement.[System].[UserMaster] u ON r.CreatedBy = u.Username
         ORDER BY r.CreatedDate DESC;
         RETURN;
     END
@@ -186,11 +188,24 @@ BEGIN
             RETURN;
         END
 
+        -- Validate to prevent double approval actioning
+        IF EXISTS (SELECT 1 FROM [PLS].[HiringRequestApproval] WHERE [ApprovalID] = @AppID AND [ApprovalState] <> 0)
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'This approval step has already been actioned.';
+            RETURN;
+        END
+
+        -- Retrieve actual Full Name of the actioning user
+        DECLARE @UserFullName NVARCHAR(150) = NULL;
+        SELECT @UserFullName = [Name] FROM ERPManagement.[System].[UserMaster] WHERE [Username] = @User;
+        IF @UserFullName IS NULL SET @UserFullName = @User;
+
         UPDATE [PLS].[HiringRequestApproval]
         SET [ApprovalState] = @Decision,
             [Comments] = @Comments,
             [ActionDate] = GETDATE(),
-            [ActionedBy] = @User
+            [ActionedBy] = @UserFullName
         WHERE [ApprovalID] = @AppID;
 
         SET @ReqID = (SELECT RequestID FROM [PLS].[HiringRequestApproval] WHERE [ApprovalID] = @AppID);
