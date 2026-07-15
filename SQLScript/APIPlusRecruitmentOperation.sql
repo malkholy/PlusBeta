@@ -511,6 +511,7 @@ BEGIN
         WHERE ap.RequestID = @HistReqID
         ORDER BY ap.StepNumber ASC, ap.ActionDate ASC;
         RETURN;
+    END
     -- ---------------------------------------------------------------------
     -- Operation: Get Departments
     -- ---------------------------------------------------------------------
