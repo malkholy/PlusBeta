@@ -482,7 +482,7 @@ export default function HiringRequests(props) {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--primary)' }}>👤 {ap.ApproverUser}</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--primary)' }}>👤 {ap.ActionedBy ? `${ap.ActionedBy} (${ap.ApproverUser})` : ap.ApproverUser}</span>
               <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>
                 {ap.ActionDate ? new Date(ap.ActionDate).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
               </span>
@@ -534,7 +534,7 @@ export default function HiringRequests(props) {
       if (ap.ApprovalState !== 0) { // Actioned steps
         timelineItems.push({
           title: `Step ${ap.StepNumber}: ${ap.StateText}`,
-          user: ap.ApproverUser,
+          user: ap.ActionedBy ? `${ap.ActionedBy} (${ap.ApproverUser})` : ap.ApproverUser,
           date: ap.ActionDate,
           comments: ap.Comments,
           icon: ap.ApprovalState === 1 ? '✅' : ap.ApprovalState === 2 ? '❌' : '↩️',

@@ -189,7 +189,8 @@ BEGIN
         UPDATE [PLS].[HiringRequestApproval]
         SET [ApprovalState] = @Decision,
             [Comments] = @Comments,
-            [ActionDate] = GETDATE()
+            [ActionDate] = GETDATE(),
+            [ActionedBy] = @User
         WHERE [ApprovalID] = @AppID;
 
         SET @ReqID = (SELECT RequestID FROM [PLS].[HiringRequestApproval] WHERE [ApprovalID] = @AppID);
