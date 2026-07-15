@@ -85,6 +85,13 @@ export default function HiringRequests(props) {
     return departments;
   };
 
+  const isHRResponsible = () => {
+    const currentUsername = sessionStorage.getItem('Username');
+    const isAdmin = sessionStorage.getItem('IsAdmin') === '1';
+    if (isAdmin) return true;
+    return userRoles.some(r => r.Username === currentUsername && r.RoleName === 'HR Responsible');
+  };
+
   async function loadDepartments() {
     try {
       const res = await apiCall('Get Departments', null, {}, 'recruitment_requests');
@@ -718,7 +725,7 @@ export default function HiringRequests(props) {
             },
             {
               label: '✍️ Submit Approval Decision',
-              show: (row) => row.RequestState === 1,
+              show: (row) => row.RequestState === 1 && isHRResponsible(),
               onClick: (row) => {
                 setApprovalRow(row);
                 setApprovalDecision(1);
