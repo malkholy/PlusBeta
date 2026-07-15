@@ -106,7 +106,8 @@ BEGIN
                 [Urgency] = @Urgency,
                 [TargetStartDate] = @TargetStartDate,
                 [LastMaintBy] = @User,
-                [LastMaintDate] = GETDATE()
+                [LastMaintDate] = GETDATE(),
+                [CreatorName] = COALESCE([CreatorName], @CreatorName)
             WHERE [RequestID] = @RequestID;
             SET @Message = 'Hiring request updated successfully.';
         END
