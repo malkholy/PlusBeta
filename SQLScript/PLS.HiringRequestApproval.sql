@@ -13,7 +13,15 @@ BEGIN
         [StepNumber] INT NOT NULL,
         [ApprovalState] INT NOT NULL DEFAULT 0, -- 0: Pending, 1: Approved, 2: Rejected, 3: Returned
         [Comments] NVARCHAR(500) NULL,
-        [ActionDate] DATETIME NULL
+        [ActionDate] DATETIME NULL,
+        [IsActive] BIT NOT NULL DEFAULT 1
     );
+END
+ELSE
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('[PLS].[HiringRequestApproval]') AND name = 'IsActive')
+    BEGIN
+        ALTER TABLE [PLS].[HiringRequestApproval] ADD [IsActive] BIT NOT NULL DEFAULT 1;
+    END
 END
 GO

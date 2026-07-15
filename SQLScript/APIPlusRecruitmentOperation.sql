@@ -123,12 +123,15 @@ BEGIN
             RETURN;
         END
 
-        -- Initialize Approvals Chain (Step 1: Department Head, Step 2: HR Manager)
-        DELETE FROM [PLS].[HiringRequestApproval] WHERE [RequestID] = @SubmitID;
+        -- Archive previous Approvals cycle
+        UPDATE [PLS].[HiringRequestApproval] 
+        SET [IsActive] = 0 
+        WHERE [RequestID] = @SubmitID;
 
-        INSERT INTO [PLS].[HiringRequestApproval] ([RequestID], [ApproverUser], [StepNumber], [ApprovalState])
-        VALUES (@SubmitID, 'DeptHead', 1, 0),
-               (@SubmitID, 'HRManager', 2, 0);
+        -- Initialize new active Approvals Chain (Step 1: Department Head, Step 2: HR Manager)
+        INSERT INTO [PLS].[HiringRequestApproval] ([RequestID], [ApproverUser], [StepNumber], [ApprovalState], [IsActive])
+        VALUES (@SubmitID, 'DeptHead', 1, 0, 1),
+               (@SubmitID, 'HRManager', 2, 0, 1);
 
         UPDATE [PLS].[HiringRequest]
         SET [RequestState] = 1 -- Pending Approval
@@ -154,7 +157,8 @@ BEGIN
         FROM [PLS].[HiringRequestApproval] ap
         JOIN [PLS].[HiringRequest] r ON ap.RequestID = r.RequestID
         WHERE ap.ApprovalState = 0 -- Pending
-          AND ap.ApproverUser = @User;
+          AND ap.ApproverUser = @User
+          AND ap.IsActive = 1;
         RETURN;
     END
 
@@ -172,7 +176,7 @@ BEGIN
         BEGIN
             SELECT TOP 1 @AppID = ApprovalID 
             FROM [PLS].[HiringRequestApproval] 
-            WHERE RequestID = @ReqID AND ApprovalState = 0 
+            WHERE RequestID = @ReqID AND ApprovalState = 0 AND IsActive = 1
             ORDER BY StepNumber ASC;
         END
 
@@ -201,8 +205,8 @@ BEGIN
         END
         ELSE IF @Decision = 1 -- Approved
         BEGIN
-            -- Check if all steps approved
-            IF NOT EXISTS (SELECT 1 FROM [PLS].[HiringRequestApproval] WHERE [RequestID] = @ReqID AND [ApprovalState] <> 1)
+            -- Check if all steps in the current active cycle are approved
+            IF NOT EXISTS (SELECT 1 FROM [PLS].[HiringRequestApproval] WHERE [RequestID] = @ReqID AND [ApprovalState] <> 1 AND [IsActive] = 1)
             BEGIN
                 UPDATE [PLS].[HiringRequest] SET [RequestState] = 5 WHERE [RequestID] = @ReqID; -- Open for Sourcing
             END

@@ -506,7 +506,7 @@ export default function HiringRequests(props) {
           color: ap.ApprovalState === 1 ? 'var(--green)' : ap.ApprovalState === 2 ? 'var(--red)' : 'var(--blue)',
           bg: ap.ApprovalState === 1 ? 'var(--green-soft)' : ap.ApprovalState === 2 ? 'var(--red-soft)' : 'var(--blue-soft)'
         });
-      } else { // Pending steps
+      } else if (ap.IsActive) { // Pending steps
         timelineItems.push({
           title: `Step ${ap.StepNumber}: Pending Approval`,
           user: ap.ApproverUser,
