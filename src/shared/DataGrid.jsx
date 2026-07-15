@@ -124,6 +124,7 @@ export default function DataGrid({
   controlPanel = null,
   viewDropdown = null,
   onRowClick,
+  onRowDoubleClick,
   selectedRowKey,
   hideSearch = false,
   hideRefresh = false,
@@ -486,7 +487,7 @@ export default function DataGrid({
                 <tr key={i}
                   className={selected.has(i) ? "selected-row" : ""}
                   onClick={e => select(i, e)}
-                  onDoubleClick={() => onEdit && onEdit(row)}
+                  onDoubleClick={() => { if (onRowDoubleClick) onRowDoubleClick(row); else if (onEdit) onEdit(row); }}
                   onContextMenu={e => {
                     e.preventDefault();
                     lastSelRef.current = i;

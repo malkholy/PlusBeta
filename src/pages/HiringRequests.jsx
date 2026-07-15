@@ -227,6 +227,26 @@ export default function HiringRequests(props) {
     setLoading(false);
   }
 
+  const handleViewDetails = (row) => {
+    setFormData({
+      RequestID: row.RequestID,
+      PositionTitle: row.PositionTitle,
+      Department: row.Department,
+      Headcount: String(row.Headcount),
+      Reason: row.Reason,
+      JobDescription: row.JobDescription || '',
+      RequiredSkills: row.RequiredSkills || '',
+      SalaryMin: row.SalaryMin ? String(row.SalaryMin) : '',
+      SalaryMax: row.SalaryMax ? String(row.SalaryMax) : '',
+      Urgency: row.Urgency,
+      TargetStartDate: row.TargetStartDate ? row.TargetStartDate.split('T')[0] : ''
+    });
+    setActiveTab('form');
+    loadApprovalHistory(row.RequestID);
+    setModalError('');
+    setShowAddModal(true);
+  };
+
   async function handleApprovalSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
@@ -654,6 +674,7 @@ export default function HiringRequests(props) {
           rows={rows}
           loading={loading}
           onRefresh={loadData}
+          onRowDoubleClick={handleViewDetails}
           onAdd={() => {
             const currentUsername = sessionStorage.getItem('Username');
             const userDeptRoles = userRoles.filter(r => r.Username === currentUsername && r.RoleName === 'Department Manager' && r.Department);
@@ -679,25 +700,7 @@ export default function HiringRequests(props) {
             {
               label: '👁️ View Details',
               show: (row) => true,
-              onClick: (row) => {
-                setFormData({
-                  RequestID: row.RequestID,
-                  PositionTitle: row.PositionTitle,
-                  Department: row.Department,
-                  Headcount: String(row.Headcount),
-                  Reason: row.Reason,
-                  JobDescription: row.JobDescription || '',
-                  RequiredSkills: row.RequiredSkills || '',
-                  SalaryMin: row.SalaryMin ? String(row.SalaryMin) : '',
-                  SalaryMax: row.SalaryMax ? String(row.SalaryMax) : '',
-                  Urgency: row.Urgency,
-                  TargetStartDate: row.TargetStartDate ? row.TargetStartDate.split('T')[0] : ''
-                });
-                setActiveTab('form');
-                loadApprovalHistory(row.RequestID);
-                setModalError('');
-                setShowAddModal(true);
-              }
+              onClick: handleViewDetails
             },
             {
               label: '🚀 Submit Request',
@@ -707,25 +710,7 @@ export default function HiringRequests(props) {
             {
               label: '📝 Edit Draft',
               show: (row) => row.RequestState === 0 || row.RequestState === 4,
-              onClick: (row) => {
-                setFormData({
-                  RequestID: row.RequestID,
-                  PositionTitle: row.PositionTitle,
-                  Department: row.Department,
-                  Headcount: String(row.Headcount),
-                  Reason: row.Reason,
-                  JobDescription: row.JobDescription || '',
-                  RequiredSkills: row.RequiredSkills || '',
-                  SalaryMin: row.SalaryMin ? String(row.SalaryMin) : '',
-                  SalaryMax: row.SalaryMax ? String(row.SalaryMax) : '',
-                  Urgency: row.Urgency,
-                  TargetStartDate: row.TargetStartDate ? row.TargetStartDate.split('T')[0] : ''
-                });
-                setActiveTab('form');
-                loadApprovalHistory(row.RequestID);
-                setModalError('');
-                setShowAddModal(true);
-              }
+              onClick: handleViewDetails
             },
             {
               label: '✍️ Submit Approval Decision',
