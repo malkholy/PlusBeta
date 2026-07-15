@@ -128,10 +128,9 @@ BEGIN
         SET [IsActive] = 0 
         WHERE [RequestID] = @SubmitID;
 
-        -- Initialize new active Approvals Chain (Step 1: Department Head, Step 2: HR Manager)
+        -- Initialize new active Approvals Chain (Step 1: HR Manager)
         INSERT INTO [PLS].[HiringRequestApproval] ([RequestID], [ApproverUser], [StepNumber], [ApprovalState], [IsActive])
-        VALUES (@SubmitID, 'DeptHead', 1, 0, 1),
-               (@SubmitID, 'HRManager', 2, 0, 1);
+        VALUES (@SubmitID, 'HRManager', 1, 0, 1);
 
         UPDATE [PLS].[HiringRequest]
         SET [RequestState] = 1 -- Pending Approval
