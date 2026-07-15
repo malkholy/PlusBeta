@@ -22,7 +22,15 @@ BEGIN
         [CreatedBy] NVARCHAR(100) NOT NULL,
         [CreatedDate] DATETIME NOT NULL DEFAULT GETDATE(),
         [LastMaintBy] NVARCHAR(100) NULL,
-        [LastMaintDate] DATETIME NULL
+        [LastMaintDate] DATETIME NULL,
+        [CreatorName] NVARCHAR(150) NULL
     );
+END
+ELSE
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('[PLS].[HiringRequest]') AND name = 'CreatorName')
+    BEGIN
+        ALTER TABLE [PLS].[HiringRequest] ADD [CreatorName] NVARCHAR(150) NULL;
+    END
 END
 GO

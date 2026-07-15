@@ -37,7 +37,7 @@ BEGIN
     BEGIN
         SELECT 
             r.*,
-            COALESCE(u.Name, r.CreatedBy) AS CreatorName,
+            COALESCE(r.CreatorName, r.CreatedBy) AS CreatorName,
             (SELECT COUNT(*) FROM [PLS].[Candidate] c WHERE c.RequestID = r.RequestID) AS TotalCandidates,
             (SELECT COUNT(*) FROM [PLS].[Candidate] c WHERE c.RequestID = r.RequestID AND c.CandidateState = 6) AS HiredCount,
             (
@@ -47,7 +47,6 @@ BEGIN
                 ORDER BY ActionDate DESC
             ) AS ReturnComments
         FROM [PLS].[HiringRequest] r
-        LEFT OUTER JOIN ERPManagement.[System].[UserMaster] u ON r.CreatedBy = u.Username
         ORDER BY r.CreatedDate DESC;
         RETURN;
     END
@@ -68,6 +67,7 @@ BEGIN
         DECLARE @SalaryMax DECIMAL(18,2) = NULLIF(JSON_VALUE(@LineData, '$.SalaryMax'), '');
         DECLARE @Urgency NVARCHAR(50) = JSON_VALUE(@LineData, '$.Urgency');
         DECLARE @TargetStartDate DATE = NULLIF(JSON_VALUE(@LineData, '$.TargetStartDate'), '');
+        DECLARE @CreatorName NVARCHAR(150) = NULLIF(JSON_VALUE(@LineData, '$.CreatorName'), '');
 
         IF @PositionTitle IS NULL OR @Department IS NULL OR @Reason IS NULL OR @Urgency IS NULL
         BEGIN
@@ -76,17 +76,19 @@ BEGIN
             RETURN;
         END
 
+        IF @CreatorName IS NULL SET @CreatorName = @User;
+
         IF @RequestID IS NULL
         BEGIN
             INSERT INTO [PLS].[HiringRequest] (
                 [PositionTitle], [Department], [Headcount], [Reason], [JobDescription], 
                 [RequiredSkills], [SalaryMin], [SalaryMax], [Urgency], [TargetStartDate], 
-                [RequestState], [CreatedBy], [CreatedDate]
+                [RequestState], [CreatedBy], [CreatedDate], [CreatorName]
             )
             VALUES (
                 @PositionTitle, @Department, @Headcount, @Reason, @JobDescription, 
                 @RequiredSkills, @SalaryMin, @SalaryMax, @Urgency, @TargetStartDate, 
-                0, @User, GETDATE()
+                0, @User, GETDATE(), @CreatorName
             );
             SET @Message = 'Hiring request drafted successfully.';
         END
@@ -196,9 +198,8 @@ BEGIN
             RETURN;
         END
 
-        -- Retrieve actual Full Name of the actioning user
-        DECLARE @UserFullName NVARCHAR(150) = NULL;
-        SELECT @UserFullName = [Name] FROM ERPManagement.[System].[UserMaster] WHERE [Username] = @User;
+        -- Retrieve actual Full Name of the actioning user passed from frontend
+        DECLARE @UserFullName NVARCHAR(150) = NULLIF(JSON_VALUE(@LineData, '$.UserFullName'), '');
         IF @UserFullName IS NULL SET @UserFullName = @User;
 
         UPDATE [PLS].[HiringRequestApproval]

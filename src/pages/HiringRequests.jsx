@@ -194,7 +194,8 @@ export default function HiringRequests(props) {
         ...formData,
         Headcount: Number(formData.Headcount),
         SalaryMin: formData.SalaryMin ? Number(formData.SalaryMin) : null,
-        SalaryMax: formData.SalaryMax ? Number(formData.SalaryMax) : null
+        SalaryMax: formData.SalaryMax ? Number(formData.SalaryMax) : null,
+        CreatorName: sessionStorage.getItem('FullName') || sessionStorage.getItem('Username')
       };
 
       const res = await apiCall('Save Hiring Request', payload, {}, 'recruitment_requests');
@@ -233,7 +234,8 @@ export default function HiringRequests(props) {
       const res = await apiCall('Approve Reject Request', {
         RequestID: approvalRow.RequestID,
         Decision: Number(approvalDecision),
-        Comments: approvalComments
+        Comments: approvalComments,
+        UserFullName: sessionStorage.getItem('FullName') || sessionStorage.getItem('Username')
       }, {}, 'recruitment_requests');
 
       if (res.State === 0) {
