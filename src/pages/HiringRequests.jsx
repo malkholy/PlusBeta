@@ -87,8 +87,10 @@ export default function HiringRequests(props) {
 
   const isHRResponsible = () => {
     const currentUsername = sessionStorage.getItem('Username');
-    const isAdmin = sessionStorage.getItem('IsAdmin') === '1';
-    if (isAdmin) return true;
+    const hasRoleMapped = userRoles.some(r => r.Username === currentUsername);
+    if (!hasRoleMapped) {
+      return sessionStorage.getItem('IsAdmin') === '1';
+    }
     return userRoles.some(r => r.Username === currentUsername && r.RoleName === 'HR Responsible');
   };
 
