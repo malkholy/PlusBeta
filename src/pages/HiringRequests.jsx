@@ -43,6 +43,9 @@ export default function HiringRequests(props) {
   const [activeTab, setActiveTab] = useState('form');
   const [approvalHistory, setApprovalHistory] = useState([]);
 
+  // Recruitment User Roles state for access control
+  const [userRoles, setUserRoles] = useState([]);
+
   async function loadApprovalHistory(reqId) {
     try {
       const res = await apiCall('Get Request Approval History', { RequestID: reqId }, {}, 'recruitment_requests');
@@ -57,7 +60,30 @@ export default function HiringRequests(props) {
   useEffect(() => {
     loadData();
     loadDepartments();
+    loadUserRoles();
   }, []);
+
+  async function loadUserRoles() {
+    try {
+      const res = await apiCall('Get Recruitment User Roles', null, {}, 'recruitment_requests');
+      if (res.State === 0) {
+        setUserRoles(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Failed to load user roles:', e);
+    }
+  }
+
+  const getSelectableDepartments = () => {
+    const currentUsername = sessionStorage.getItem('Username');
+    const userDeptRoles = userRoles.filter(r => r.Username === currentUsername && r.RoleName === 'Department Manager' && r.Department);
+    
+    if (userDeptRoles.length > 0) {
+      const allowedNames = userDeptRoles.map(r => r.Department);
+      return departments.filter(d => allowedNames.includes(d.DepartmentName));
+    }
+    return departments;
+  };
 
   async function loadDepartments() {
     try {
@@ -321,7 +347,7 @@ export default function HiringRequests(props) {
                       }}
                     />
                     <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      {departments
+                      {getSelectableDepartments()
                         .filter(d => d.DepartmentName.toLowerCase().includes(deptSearch.toLowerCase()))
                         .map(d => (
                           <button
@@ -360,7 +386,7 @@ export default function HiringRequests(props) {
                           </button>
                         ))
                       }
-                      {departments.filter(d => d.DepartmentName.toLowerCase().includes(deptSearch.toLowerCase())).length === 0 && (
+                      {getSelectableDepartments().filter(d => d.DepartmentName.toLowerCase().includes(deptSearch.toLowerCase())).length === 0 && (
                         <div style={{ fontSize: 12, color: 'var(--muted)', textTransform: 'none', textAlign: 'center', padding: 8 }}>No matching departments found</div>
                       )}
                     </div>
@@ -618,10 +644,14 @@ export default function HiringRequests(props) {
           loading={loading}
           onRefresh={loadData}
           onAdd={() => {
+            const currentUsername = sessionStorage.getItem('Username');
+            const userDeptRoles = userRoles.filter(r => r.Username === currentUsername && r.RoleName === 'Department Manager' && r.Department);
+            const defaultDept = userDeptRoles.length === 1 ? userDeptRoles[0].Department : '';
+
             setFormData({
               RequestID: '',
               PositionTitle: '',
-              Department: '',
+              Department: defaultDept,
               Headcount: '1',
               Reason: 'New',
               JobDescription: '',

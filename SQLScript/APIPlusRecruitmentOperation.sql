@@ -542,6 +542,7 @@ BEGIN
         DECLARE @LinkID INT = NULLIF(JSON_VALUE(@LineData, '$.UserRoleID'), '');
         DECLARE @LinkUn NVARCHAR(100) = JSON_VALUE(@LineData, '$.Username');
         DECLARE @LinkRole NVARCHAR(100) = JSON_VALUE(@LineData, '$.RoleName');
+        DECLARE @LinkDept NVARCHAR(100) = NULLIF(JSON_VALUE(@LineData, '$.Department'), '');
 
         IF @LinkUn IS NULL OR @LinkRole IS NULL
         BEGIN
@@ -553,22 +554,23 @@ BEGIN
         IF @LinkID IS NULL
         BEGIN
             -- Check duplicates
-            IF EXISTS (SELECT 1 FROM [PLS].[RecruitmentUserRole] WHERE [Username] = @LinkUn AND [RoleName] = @LinkRole)
+            IF EXISTS (SELECT 1 FROM [PLS].[RecruitmentUserRole] WHERE [Username] = @LinkUn AND [RoleName] = @LinkRole AND ISNULL([Department], '') = ISNULL(@LinkDept, ''))
             BEGIN
                 SET @State = 1;
-                SET @Message = 'This user is already linked to this role.';
+                SET @Message = 'This user is already linked to this role and department.';
                 RETURN;
             END
 
-            INSERT INTO [PLS].[RecruitmentUserRole] ([Username], [RoleName], [CreatedBy], [CreatedDate])
-            VALUES (@LinkUn, @LinkRole, @User, GETDATE());
+            INSERT INTO [PLS].[RecruitmentUserRole] ([Username], [RoleName], [Department], [CreatedBy], [CreatedDate])
+            VALUES (@LinkUn, @LinkRole, @LinkDept, @User, GETDATE());
             SET @Message = 'User role linked successfully.';
         END
         ELSE
         BEGIN
             UPDATE [PLS].[RecruitmentUserRole]
             SET [Username] = @LinkUn,
-                [RoleName] = @LinkRole
+                [RoleName] = @LinkRole,
+                [Department] = @LinkDept
             WHERE [UserRoleID] = @LinkID;
             SET @Message = 'User role linkage updated successfully.';
         END

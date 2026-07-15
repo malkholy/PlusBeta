@@ -12,7 +12,8 @@ export default function RecruitmentRoles() {
   const [formData, setFormData] = useState({
     UserRoleID: '',
     Username: '',
-    RoleName: 'Department Manager'
+    RoleName: 'Department Manager',
+    Department: ''
   });
   const [modalError, setModalError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -22,9 +23,15 @@ export default function RecruitmentRoles() {
   const [userSearch, setUserSearch] = useState('');
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
+  // Departments for dropdown
+  const [departments, setDepartments] = useState([]);
+  const [deptSearch, setDeptSearch] = useState('');
+  const [showDeptDropdown, setShowDeptDropdown] = useState(false);
+
   useEffect(() => {
     loadData();
     loadSystemUsers();
+    loadDepartments();
   }, []);
 
   async function loadData() {
@@ -54,16 +61,38 @@ export default function RecruitmentRoles() {
     }
   }
 
+  async function loadDepartments() {
+    try {
+      const res = await apiCall('Get Departments', null, {}, 'recruitment_requests');
+      if (res.State === 0) {
+        setDepartments(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Failed to load departments:', e);
+    }
+  }
+
   async function handleSave(e) {
     e.preventDefault();
     if (!formData.Username) {
       setModalError('Please select a system user.');
       return;
     }
+    if (formData.RoleName === 'Department Manager' && !formData.Department) {
+      setModalError('Please select a department for Department Manager.');
+      return;
+    }
+
+    const submitData = {
+      ...formData,
+      // Clear department if HR Responsible
+      Department: formData.RoleName === 'Department Manager' ? formData.Department : ''
+    };
+
     setSubmitting(true);
     setModalError('');
     try {
-      const res = await apiCall('Save Recruitment User Role', formData, {}, 'recruitment_requests');
+      const res = await apiCall('Save Recruitment User Role', submitData, {}, 'recruitment_requests');
       if (res.State === 0) {
         setShowModal(false);
         loadData();
@@ -108,6 +137,11 @@ export default function RecruitmentRoles() {
         </span>
       )
     },
+    { 
+      key: 'Department', 
+      label: 'Linked Department',
+      render: (val) => val || 'All / NA'
+    },
     { key: 'CreatedBy', label: 'Linked By' },
     { 
       key: 'CreatedDate', 
@@ -127,7 +161,7 @@ export default function RecruitmentRoles() {
       <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <DataGrid
           title="User Roles Setup"
-          subtitle="Map active system users to Recruitment module roles"
+          subtitle="Map active system users to Recruitment module roles & departments"
           columns={columns}
           rows={rows}
           loading={loading}
@@ -136,9 +170,11 @@ export default function RecruitmentRoles() {
             setFormData({
               UserRoleID: '',
               Username: '',
-              RoleName: 'Department Manager'
+              RoleName: 'Department Manager',
+              Department: ''
             });
             setUserSearch('');
+            setDeptSearch('');
             setModalError('');
             setShowModal(true);
           }}
@@ -289,7 +325,7 @@ export default function RecruitmentRoles() {
                 )}
               </div>
 
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Recruitment Role</label>
                 <select 
                   value={formData.RoleName} 
@@ -300,6 +336,122 @@ export default function RecruitmentRoles() {
                   <option value="HR Responsible">HR Responsible</option>
                 </select>
               </div>
+
+              {formData.RoleName === 'Department Manager' && (
+                <div style={{ position: 'relative', marginBottom: 20 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Linked Department</label>
+                  <div 
+                    onClick={() => setShowDeptDropdown(!showDeptDropdown)}
+                    style={{
+                      width: '100%', 
+                      height: 38, 
+                      padding: '0 12px', 
+                      border: '1.5px solid var(--border)', 
+                      borderRadius: 10, 
+                      background: 'var(--bg)', 
+                      color: formData.Department ? 'var(--text)' : 'var(--muted)', 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      fontSize: 13,
+                      fontWeight: 600
+                    }}
+                  >
+                    <span>{formData.Department || 'Select Department'}</span>
+                    <span>▾</span>
+                  </div>
+
+                  {showDeptDropdown && (
+                    <>
+                      <div 
+                        onClick={() => {
+                          setShowDeptDropdown(false);
+                          setDeptSearch('');
+                        }}
+                        style={{ position: 'fixed', inset: 0, zIndex: 99998 }}
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        width: '100%',
+                        background: 'var(--surface)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 10,
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                        zIndex: 99999,
+                        marginTop: 4,
+                        padding: 8
+                      }}>
+                        <input 
+                          type="text" 
+                          placeholder="Search department..." 
+                          value={deptSearch}
+                          onChange={e => setDeptSearch(e.target.value)}
+                          autoFocus
+                          style={{
+                            width: '100%',
+                            height: 34,
+                            padding: '0 10px',
+                            border: '1px solid var(--border)',
+                            borderRadius: 8,
+                            background: 'var(--bg)',
+                            color: 'var(--text)',
+                            outline: 'none',
+                            marginBottom: 8,
+                            fontSize: 13
+                          }}
+                        />
+                        <div style={{ maxHeight: 180, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {departments
+                            .filter(d => d.DepartmentName.toLowerCase().includes(deptSearch.toLowerCase()))
+                            .map(d => (
+                              <button
+                                key={d.DepartmentID}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, Department: d.DepartmentName });
+                                  setShowDeptDropdown(false);
+                                  setDeptSearch('');
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 10px',
+                                  background: formData.Department === d.DepartmentName ? 'var(--primary-soft)' : 'transparent',
+                                  border: 0,
+                                  borderRadius: 6,
+                                  textAlign: 'left',
+                                  color: formData.Department === d.DepartmentName ? 'var(--primary)' : 'var(--text)',
+                                  fontSize: 13,
+                                  fontWeight: formData.Department === d.DepartmentName ? 700 : 500,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s'
+                                }}
+                                onMouseEnter={e => {
+                                  if (formData.Department !== d.DepartmentName) {
+                                    e.target.style.background = 'var(--soft)';
+                                  }
+                                }}
+                                onMouseLeave={e => {
+                                  if (formData.Department !== d.DepartmentName) {
+                                    e.target.style.background = 'transparent';
+                                  }
+                                }}
+                              >
+                                {d.DepartmentName}
+                              </button>
+                            ))
+                          }
+                          {departments.filter(d => d.DepartmentName.toLowerCase().includes(deptSearch.toLowerCase())).length === 0 && (
+                            <div style={{ fontSize: 12, color: 'var(--muted)', textAlign: 'center', padding: 8 }}>No matching departments found</div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setShowModal(false)} style={{ height: 38, padding: '0 18px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
