@@ -166,6 +166,14 @@ BEGIN
 END
 GO
 
+-- 21. User Roles Setup (Page)
+IF NOT EXISTS (SELECT 1 FROM [PLS].[PagesAndGroups] WHERE [PageGroupID] = 'recruitment_roles')
+BEGIN
+    INSERT INTO [PLS].[PagesAndGroups] ([PageGroupID], [Label], [Icon], [Description], [IsGroup], [ParentID], [SortOrder])
+    VALUES ('recruitment_roles', N'User Roles Setup', '👥', N'Configure recruitment access permissions by linking users to module roles', 0, 'recruitment_group', 540);
+END
+GO
+
 
 
 

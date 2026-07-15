@@ -523,5 +523,67 @@ BEGIN
         SELECT DepartmentID, DepartmentName FROM Department;
         RETURN;
     END
+
+    -- ---------------------------------------------------------------------
+    -- Operation: Get Recruitment User Roles
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Get Recruitment User Roles'
+    BEGIN
+        SELECT * FROM [PLS].[RecruitmentUserRole]
+        ORDER BY [RoleName], [Username];
+        RETURN;
+    END
+
+    -- ---------------------------------------------------------------------
+    -- Operation: Save Recruitment User Role
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Save Recruitment User Role'
+    BEGIN
+        DECLARE @LinkID INT = NULLIF(JSON_VALUE(@LineData, '$.UserRoleID'), '');
+        DECLARE @LinkUn NVARCHAR(100) = JSON_VALUE(@LineData, '$.Username');
+        DECLARE @LinkRole NVARCHAR(100) = JSON_VALUE(@LineData, '$.RoleName');
+
+        IF @LinkUn IS NULL OR @LinkRole IS NULL
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Username and RoleName are required.';
+            RETURN;
+        END
+
+        IF @LinkID IS NULL
+        BEGIN
+            -- Check duplicates
+            IF EXISTS (SELECT 1 FROM [PLS].[RecruitmentUserRole] WHERE [Username] = @LinkUn AND [RoleName] = @LinkRole)
+            BEGIN
+                SET @State = 1;
+                SET @Message = 'This user is already linked to this role.';
+                RETURN;
+            END
+
+            INSERT INTO [PLS].[RecruitmentUserRole] ([Username], [RoleName], [CreatedBy], [CreatedDate])
+            VALUES (@LinkUn, @LinkRole, @User, GETDATE());
+            SET @Message = 'User role linked successfully.';
+        END
+        ELSE
+        BEGIN
+            UPDATE [PLS].[RecruitmentUserRole]
+            SET [Username] = @LinkUn,
+                [RoleName] = @LinkRole
+            WHERE [UserRoleID] = @LinkID;
+            SET @Message = 'User role linkage updated successfully.';
+        END
+        RETURN;
+    END
+
+    -- ---------------------------------------------------------------------
+    -- Operation: Delete Recruitment User Role
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Delete Recruitment User Role'
+    BEGIN
+        DECLARE @DelLinkID INT = JSON_VALUE(@LineData, '$.UserRoleID');
+        DELETE FROM [PLS].[RecruitmentUserRole] WHERE [UserRoleID] = @DelLinkID;
+        SET @Message = 'User role linkage removed successfully.';
+        RETURN;
+    END
 END
 GO

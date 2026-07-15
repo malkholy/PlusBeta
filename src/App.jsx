@@ -20,6 +20,7 @@ import CodeSerials from './pages/CodeSerials.jsx';
 import HiringRequests from './pages/HiringRequests.jsx';
 import CandidatesPool from './pages/CandidatesPool.jsx';
 import JobOffers from './pages/JobOffers.jsx';
+import RecruitmentRoles from './pages/RecruitmentRoles.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -198,6 +199,7 @@ const PAGE_COMPONENTS = {
   recruitment_requests: HiringRequests,
   recruitment_candidates: CandidatesPool,
   recruitment_offers: JobOffers,
+  recruitment_roles: RecruitmentRoles,
 };
 
 function checkIsAdmin(u, fallbackUsername) {

@@ -96,6 +96,12 @@ const NAV = [
         label: 'Job Offers',
         icon: '💼',
         desc: 'Draft contracts and track employee onboarding handoff'
+      },
+      {
+        id: 'recruitment_roles',
+        label: 'User Roles Setup',
+        icon: '👥',
+        desc: 'Configure recruitment access permissions by linking users to module roles'
       }
     ]
   }
