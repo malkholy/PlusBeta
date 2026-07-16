@@ -15,7 +15,9 @@ BEGIN
         [FeedbackComments] NVARCHAR(MAX) NULL,
         [Rating] INT NULL, -- 1 to 5
         [Recommendation] INT NULL, -- 0: Proceed, 1: Reject, 2: Hold
-        [InterviewState] INT NOT NULL DEFAULT 0 -- 0: Scheduled, 1: Completed, 2: Passed, 3: Rejected
+        [InterviewState] INT NOT NULL DEFAULT 0, -- 0: Scheduled, 1: Completed, 2: Passed, 3: Delayed, 4: Canceled
+        [DelayCancelReason] NVARCHAR(MAX) NULL,
+        [RequestID] INT NULL FOREIGN KEY REFERENCES [PLS].[HiringRequest]([RequestID])
     );
 END
 GO

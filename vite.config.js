@@ -110,6 +110,20 @@ export default defineConfig({
             proxyReq.setHeader('Authorization', 'Bearer YMQs3vAyVUmtiZi-89cRxro4ZPloFJD8zdbnG5b0XpZtvhdT4yuH47HmOoPAWl8kZHl9mgGYG_vUFlTWIiJLZNRZqHgAAkmHuN7XPnqIGVSvlE7gsXuxwW5OMzDMC5Ffm3E-l5Phi9ZSZlwmzs2es6piK0Q-hjt1L7hvLyEgru-h97pLL8rCvmOpvjIYm0SRU-cOJkPCuKvpClR5uCyrOw')
           })
         }
+      },
+      '/anthropic-api': {
+        target: 'https://api.anthropic.com',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/anthropic-api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.removeHeader('origin');
+            proxyReq.removeHeader('referer');
+            proxyReq.removeHeader('Origin');
+            proxyReq.removeHeader('Referer');
+          });
+        }
       }
     }
   }

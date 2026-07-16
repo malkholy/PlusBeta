@@ -1,6 +1,37 @@
 import { useState, useEffect } from 'react';
-import { apiCall } from '../shared/api.js';
+import { apiCall, uploadToCloudinary } from '../shared/api.js';
 import DataGrid from '../shared/DataGrid.jsx';
+
+const EGYPT_LOCATIONS = {
+  'Cairo': ['New Cairo', 'Maadi', 'Nasr City', 'Heliopolis', 'Shoubra', 'Zamalek', 'Sheraton', 'El Rehab', 'Madinaty', 'Hadayek El-Kobba', 'Cairo City'],
+  'Giza': ['6th of October', 'Sheikh Zayed', 'Haram', 'Faisal', 'Dokki', 'Mohandessin', 'Imbaba', 'Giza City'],
+  'Alexandria': ['Sidi Bishr', 'Smouha', 'Miami', 'Montaza', 'Maamoura', 'Roushdy', 'Glim', 'Alexandria City'],
+  'Qalyubia': ['Banha', 'Shubra El-Kheima', 'Qalyub', 'Khanka', 'Qaha'],
+  'Gharbia': ['Tanta', 'Kafr El-Zayat', 'El Mahalla El-Kubra', 'Zifta'],
+  'Monufia': ['Shibin El Kom', 'Sadat City', 'Ashmoun', 'Menouf'],
+  'Sharqia': ['Zagazig', '10th of Ramadan', 'Belbeis', 'Minya El-Qamh'],
+  'Dakahlia': ['Mansoura', 'Talkha', 'Mit Ghamr', 'Senbellawein'],
+  'Damietta': ['Damietta City', 'New Damietta', 'Ras El Bar'],
+  'Beheira': ['Damanhour', 'Kafr El Dawar', 'Kom Hamada', 'Rashid'],
+  'Kafr El Sheikh': ['Kafr El Sheikh City', 'Desouk', 'Metoubes', 'Baltim'],
+  'Matrouh': ['Marsa Matrouh', 'Siwa', 'El Alamein'],
+  'Port Said': ['Port Said City', 'Port Fouad'],
+  'Ismailia': ['Ismailia City', 'Fayed', 'El Qantara'],
+  'Suez': ['Suez City', 'Ain Sokhna'],
+  'North Sinai': ['Arish', 'Sheikh Zuweid'],
+  'South Sinai': ['Sharm El Sheikh', 'Dahab', 'Nuweiba', 'Tor'],
+  'Faiyum': ['Faiyum City', 'Sinnuris', 'Ibshaway'],
+  'Beni Suef': ['Beni Suef City', 'New Beni Suef', 'Beba'],
+  'Minya': ['Minya City', 'Mallawi', 'Samalut'],
+  'Asyut': ['Asyut City', 'Dairut', 'Manfalut'],
+  'Sohag': ['Sohag City', 'Akhmim', 'Girga'],
+  'Qena': ['Qena City', 'Nag Hammadi', 'Deshna'],
+  'Luxor': ['Luxor City', 'Esna', 'Armant'],
+  'Aswan': ['Aswan City', 'Kom Ombo', 'Edfu'],
+  'Red Sea': ['Hurghada', 'El Gouna', 'Safaga', 'Marsa Alam'],
+  'New Valley': ['Kharga', 'Dakhla', 'Farafra']
+};
+
 
 export default function CandidatesPool(props) {
   const [rows, setRows] = useState([]);
@@ -10,6 +41,8 @@ export default function CandidatesPool(props) {
 
   // Requisitions list (for dropdowns)
   const [hiringRequests, setHiringRequests] = useState([]);
+  const [recruitmentRoles, setRecruitmentRoles] = useState([]);
+  const [systemUsers, setSystemUsers] = useState([]);
 
   // Candidate Form Modal State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -23,13 +56,30 @@ export default function CandidatesPool(props) {
     Phone: '',
     CVFileName: '',
     CVFileContent: '',
-    Source: 'Job Board'
+    Source: 'Job Board',
+    Government: '',
+    City: '',
+    Address: ''
   });
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [showDetailDrawer, setShowDetailDrawer] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [interviews, setInterviews] = useState([]);
+  const [assignmentHistory, setAssignmentHistory] = useState([]);
+  const [activeDrawerTab, setActiveDrawerTab] = useState('details'); // 'details', 'attachments', 'interviews', or 'history'
 
   // Rejection Modal State
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectCandidateID, setRejectCandidateID] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
+
+  // Delay/Cancel Status Modal State
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusFormData, setStatusFormData] = useState({
+    InterviewID: '',
+    InterviewState: 3, // 3: Delayed, 4: Canceled
+    DelayCancelReason: ''
+  });
 
   // Interview Schedule Modal State
   const [showInterviewModal, setShowInterviewModal] = useState(false);
@@ -49,6 +99,13 @@ export default function CandidatesPool(props) {
     Recommendation: '0' // 0: Proceed, 1: Reject, 2: Hold
   });
 
+  // Reassign Requisition Modal State
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [reassignFormData, setReassignFormData] = useState({
+    CandidateID: '',
+    RequestID: ''
+  });
+
   // Job Offer Modal State
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [offerFormData, setOfferFormData] = useState({
@@ -61,7 +118,76 @@ export default function CandidatesPool(props) {
   useEffect(() => {
     loadData();
     loadHiringRequests();
+    loadRecruitmentRoles();
+    loadSystemUsers();
   }, []);
+
+  async function loadSystemUsers() {
+    try {
+      const res = await apiCall('GetSystemUsers', {}, {}, 'plus');
+      if (res.State === 0 || res.List0) {
+        setSystemUsers(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Failed to load system users:', e);
+    }
+  }
+
+  async function loadInterviewsAndHistory(candidateId) {
+    if (!candidateId) return;
+    try {
+      const res = await apiCall('Get Interviews', { CandidateID: candidateId }, {}, 'recruitment_requests');
+      if (res.State === 0) {
+        setInterviews(res.List0 || []);
+      }
+    } catch (err) {
+      console.error('Failed to load interviews:', err);
+    }
+    try {
+      const res = await apiCall('Get Candidate Assignment History', { CandidateID: candidateId }, {}, 'recruitment_requests');
+      if (res.State === 0) {
+        setAssignmentHistory(res.List0 || []);
+      }
+    } catch (err) {
+      console.error('Failed to load assignment history:', err);
+    }
+  }
+
+  async function handleStatusSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const res = await apiCall('Update Interview State', {
+        InterviewID: Number(statusFormData.InterviewID),
+        InterviewState: Number(statusFormData.InterviewState),
+        DelayCancelReason: statusFormData.DelayCancelReason
+      }, {}, 'recruitment_requests');
+      
+      if (res.State === 0) {
+        setShowStatusModal(false);
+        if (selectedCandidate) {
+          loadInterviewsAndHistory(selectedCandidate.CandidateID);
+        }
+        loadData();
+      } else {
+        alert(res.Message || 'Failed to update interview status.');
+      }
+    } catch (err) {
+      alert('Error updating interview: ' + err.message);
+    }
+    setSubmitting(false);
+  }
+
+  async function loadRecruitmentRoles() {
+    try {
+      const res = await apiCall('Get Recruitment User Roles', null, {}, 'recruitment_requests');
+      if (res.State === 0) {
+        setRecruitmentRoles(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Failed to load recruitment roles:', e);
+    }
+  }
 
   async function loadHiringRequests() {
     try {
@@ -86,12 +212,29 @@ export default function CandidatesPool(props) {
         setRows(list);
 
         if (list.length > 0) {
-          const keys = Object.keys(list[0]).filter(k => k !== 'CVFileContent');
+          const excludedKeys = [
+            'CVFileContent',
+            'CVFileName',
+            'CandidateID',
+            'RequestID',
+            'RejectionReason',
+            'CreatedBy',
+            'Government',
+            'City',
+            'Address',
+            'Department',
+            'Summary'
+          ];
+          const keys = Object.keys(list[0]).filter(k => !excludedKeys.includes(k));
           const cols = keys.map(k => {
-            const label = k.replace(/([A-Z])/g, ' $1').trim();
+            let label = k.replace(/([A-Z])/g, ' $1').trim();
+            label = label.charAt(0).toUpperCase() + label.slice(1);
+            if (k === 'PositionTitle') {
+              label = 'Requested Position';
+            }
             return {
               key: k,
-              label: label.charAt(0).toUpperCase() + label.slice(1),
+              label,
               render: (val, row, search, highlight) => {
                 if (k === 'CandidateState') {
                   const states = {
@@ -118,13 +261,35 @@ export default function CandidatesPool(props) {
                   );
                 }
                 if (k === 'CVFileName' && val) {
+                  const cvUrl = row.CVFileContent;
+                  if (cvUrl && cvUrl.trim().startsWith('[')) {
+                    try {
+                      const files = JSON.parse(cvUrl);
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }} onClick={e => e.stopPropagation()}>
+                          {files.map((file, idx) => (
+                            <a key={idx} href={file.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }}>
+                              📄 Attachment {idx + 1}
+                            </a>
+                          ))}
+                        </div>
+                      );
+                    } catch (err) {}
+                  }
+                  if (cvUrl && cvUrl.startsWith('http')) {
+                    return (
+                      <a href={cvUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', textDecoration: 'none' }} onClick={(e) => e.stopPropagation()}>
+                        📄 View CV
+                      </a>
+                    );
+                  }
                   return (
                     <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)' }}>
-                      📄 {val}
+                      📄 View CV
                     </span>
                   );
                 }
-                if (k.toLowerCase().includes('date') && val) {
+                if (k.toLowerCase().endsWith('date') && val) {
                   try {
                     const d = new Date(val);
                     if (!isNaN(d.getTime())) {
@@ -144,8 +309,22 @@ export default function CandidatesPool(props) {
             cols.unshift(stateCol);
           }
 
+          // Move PositionTitle (Requested Position) right after FullName
+          const posColIndex = cols.findIndex(c => c.key === 'PositionTitle');
+          if (posColIndex > -1) {
+            const [posCol] = cols.splice(posColIndex, 1);
+            const fullNameIndex = cols.findIndex(c => c.key === 'FullName');
+            if (fullNameIndex > -1) {
+              cols.splice(fullNameIndex + 1, 0, posCol);
+            } else {
+              cols.splice(2, 0, posCol);
+            }
+          }
+
           setColumns(cols);
         }
+        setLoading(false);
+        return list;
       } else {
         setError(res.Message || 'Failed to retrieve candidates.');
       }
@@ -159,15 +338,50 @@ export default function CandidatesPool(props) {
     e.preventDefault();
     setSubmitting(true);
     setModalError('');
+    if (!formData.Government) {
+      setModalError('Government (Governorate) is required.');
+      setSubmitting(false);
+      return;
+    }
+    if (!formData.City) {
+      setModalError('City is required.');
+      setSubmitting(false);
+      return;
+    }
     try {
+      let finalCVFileContent = formData.CVFileContent;
+      let finalCVFileName = formData.CVFileName;
+      
+      if (selectedFiles.length > 0) {
+        setModalError(`Uploading ${selectedFiles.length} file(s) to Cloudinary...`);
+        try {
+          const uploadedList = [];
+          for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            setModalError(`Uploading file ${i + 1} of ${selectedFiles.length}: ${file.name}...`);
+            const secureUrl = await uploadToCloudinary(file);
+            uploadedList.push({ name: file.name, url: secureUrl });
+          }
+          finalCVFileContent = JSON.stringify(uploadedList);
+          finalCVFileName = selectedFiles.map(f => f.name).join(', ');
+        } catch (uploadErr) {
+          setModalError('Failed to upload files: ' + uploadErr.message);
+          setSubmitting(false);
+          return;
+        }
+      }
+
       const payload = {
         ...formData,
+        CVFileName: finalCVFileName,
+        CVFileContent: finalCVFileContent,
         RequestID: Number(formData.RequestID)
       };
 
       const res = await apiCall('Save Candidate', payload, {}, 'recruitment_requests');
       if (res.State === 0) {
         setShowAddModal(false);
+        setSelectedFiles([]);
         loadData();
       } else {
         setModalError(res.Message || 'Failed to save candidate.');
@@ -220,10 +434,41 @@ export default function CandidatesPool(props) {
     setSubmitting(false);
   }
 
+  const getInterviewerOptions = () => {
+    const cand = rows.find(r => String(r.CandidateID) === String(interviewFormData.CandidateID));
+    const dept = cand?.Department;
+    
+    if (interviewFormData.RoundNumber === '1') {
+      return recruitmentRoles.filter(r => r.RoleName === 'HR Responsible');
+    }
+    
+    // Non-HR interview -> Department Managers matching candidate department
+    const deptManagers = recruitmentRoles.filter(r => r.RoleName === 'Department Manager' && r.Department === dept);
+    if (deptManagers.length > 0) {
+      return deptManagers;
+    }
+    
+    // Fallback: all Department Managers
+    const allManagers = recruitmentRoles.filter(r => r.RoleName === 'Department Manager');
+    if (allManagers.length > 0) {
+      return allManagers;
+    }
+
+    // Fallback: all recruitment roles
+    return recruitmentRoles;
+  };
+
   async function handleInterviewSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
     try {
+      const minutes = new Date(interviewFormData.ScheduledDate).getMinutes();
+      if (minutes !== 0 && minutes !== 30) {
+        alert('Please select an interview time that falls on the hour (e.g., 10:00) or half-hour (e.g., 10:30). Minutes must be 00 or 30.');
+        setSubmitting(false);
+        return;
+      }
+
       const res = await apiCall('Schedule Interview', {
         CandidateID: Number(interviewFormData.CandidateID),
         RoundNumber: Number(interviewFormData.RoundNumber),
@@ -290,20 +535,1137 @@ export default function CandidatesPool(props) {
     setSubmitting(false);
   }
 
-  // Handle local file uploads converting to base64
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({
-          ...prev,
-          CVFileName: file.name,
-          CVFileContent: reader.result.split(',')[1] // Get base64 payload
-        }));
-      };
-      reader.readAsDataURL(file);
+  async function handleReassignSubmit(e) {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const res = await apiCall('Reassign Candidate', {
+        CandidateID: Number(reassignFormData.CandidateID),
+        RequestID: Number(reassignFormData.RequestID)
+      }, {}, 'recruitment_requests');
+
+      if (res.State === 0) {
+        setShowReassignModal(false);
+        loadData();
+        loadInterviewsAndHistory(Number(reassignFormData.CandidateID));
+        // Update selectedCandidate context if the drawer is open
+        if (selectedCandidate && selectedCandidate.CandidateID === Number(reassignFormData.CandidateID)) {
+          const updatedReq = hiringRequests.find(h => h.RequestID === Number(reassignFormData.RequestID));
+          setSelectedCandidate(prev => ({
+            ...prev,
+            RequestID: Number(reassignFormData.RequestID),
+            PositionTitle: updatedReq ? updatedReq.PositionTitle : prev.PositionTitle,
+            Department: updatedReq ? updatedReq.Department : prev.Department,
+            CandidateState: 1, // reset to Shortlisted
+            RejectionReason: null
+          }));
+        }
+        alert('Candidate reassigned successfully!');
+      } else {
+        alert(res.Message || 'Failed to reassign candidate.');
+      }
+    } catch (err) {
+      alert('Error: ' + err.message);
     }
+    setSubmitting(false);
+  }
+
+  // Handle local file selection
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      setSelectedFiles(prev => [...prev, ...files]);
+    }
+  };
+
+  const handleRemoveFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, idx) => idx !== index));
+  };
+
+  const parseAISummary = (text) => {
+    if (!text) return [];
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    return lines.map(line => {
+      let cleanLine = line.replace(/^[-*]\s*(✨)?\s*/, '').trim();
+      const boldRegex = /^\*\*(.*?)\*\*[:\s]*/;
+      const match = cleanLine.match(boldRegex);
+      if (match) {
+        const fullLabel = match[1].trim();
+        let rest = cleanLine.substring(match[0].length).trim();
+        rest = rest.replace(/^[—\-\s:]+/, '').trim();
+        const scoreRegex = /(\d+(?:\.\d+)?\s*\/\s*10)/;
+        const scoreMatch = fullLabel.match(scoreRegex);
+        if (scoreMatch) {
+          const scoreVal = scoreMatch[1];
+          const cleanLabel = fullLabel.replace(scoreRegex, '').replace(/[:\s]+$/, '').trim();
+          return { label: cleanLabel || 'Suitability Score', score: scoreVal, text: rest };
+        }
+        return { label: fullLabel, text: rest };
+      }
+      return { label: '', text: cleanLine };
+    });
+  };
+
+  const handleCopySummary = (summary) => {
+    if (!summary) return;
+    navigator.clipboard.writeText(summary);
+    alert('AI Summary copied to clipboard!');
+  };
+
+  const [summarizing, setSummarizing] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [activeLanguage, setActiveLanguage] = useState('en');
+  const [translatedSummaries, setTranslatedSummaries] = useState({});
+
+  async function handleAISummarize(candidateID) {
+    let apiKey = localStorage.getItem('Anthropic_API_Key');
+    if (!apiKey) {
+      apiKey = window.prompt("Please enter your Anthropic API Key to call Claude AI:");
+      if (!apiKey || !apiKey.trim()) return;
+      localStorage.setItem('Anthropic_API_Key', apiKey.trim());
+    }
+
+    setSummarizing(true);
+    try {
+      // Find candidate details
+      const cand = rows.find(c => c.CandidateID === candidateID) || selectedCandidate;
+      if (!cand) {
+        throw new Error("Candidate data not found.");
+      }
+
+      let attachments = [];
+      if (cand.CVFileContent && cand.CVFileContent.trim().startsWith('[')) {
+        try {
+          attachments = JSON.parse(cand.CVFileContent);
+        } catch (e) {}
+      } else if (cand.CVFileContent && cand.CVFileName) {
+        attachments = [{ name: cand.CVFileName, url: cand.CVFileContent }];
+      }
+
+      let fileBase64 = null;
+      let fileType = "application/pdf";
+
+      if (attachments.length > 0) {
+        const cvFile = attachments[0];
+        try {
+          const resFile = await fetch(cvFile.url);
+          const blob = await resFile.blob();
+          fileType = blob.type || "application/pdf";
+
+          const base64Promise = new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          fileBase64 = await base64Promise;
+        } catch (fileErr) {
+          console.warn("Failed to download CV file contents for direct AI extraction:", fileErr);
+        }
+      }
+
+      const contentBlocks = [];
+
+      if (fileBase64 && fileType === 'application/pdf') {
+        contentBlocks.push({
+          type: 'document',
+          source: {
+            type: 'base64',
+            media_type: 'application/pdf',
+            data: fileBase64
+          }
+        });
+      }
+
+      contentBlocks.push({
+        type: 'text',
+        text: `Job Requisition Details:
+Position Title: ${cand.PositionTitle}
+Department: ${cand.Department}
+Job Description: ${cand.JobDescription || '—'}
+Required Skills: ${cand.RequiredSkills || '—'}
+
+Please summarize this candidate's profile based on their CV and evaluate their fit for this job requisition.`
+      });
+
+      const url = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? '/anthropic-api/v1/messages'
+        : 'https://api.anthropic.com/v1/messages';
+
+      let modelsToTry = [
+        'claude-3-5-sonnet-20241022',
+        'claude-3-5-sonnet-20240620',
+        'claude-3-5-haiku-20241022',
+        'claude-3-haiku-20240307'
+      ];
+
+      try {
+        console.log("Fetching available models from Anthropic API...");
+        const modelsRes = await fetch((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+          ? '/anthropic-api/v1/models'
+          : 'https://api.anthropic.com/v1/models', {
+          method: 'GET',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
+          }
+        });
+        if (modelsRes.ok) {
+          const modelsJson = await modelsRes.json();
+          if (modelsJson.data && modelsJson.data.length > 0) {
+            const apiModelIds = modelsJson.data.map(m => m.id);
+            console.log("API returned models:", apiModelIds);
+            const sonnetModels = apiModelIds.filter(id => id.toLowerCase().includes('sonnet'));
+            const haikuModels = apiModelIds.filter(id => id.toLowerCase().includes('haiku'));
+            const otherModels = apiModelIds.filter(id => !id.toLowerCase().includes('sonnet') && !id.toLowerCase().includes('haiku'));
+            modelsToTry = [...sonnetModels, ...haikuModels, ...otherModels];
+            console.log("Will attempt models in this order:", modelsToTry);
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to fetch model list, using hardcoded fallback list:", e);
+      }
+
+      let lastError = null;
+      let summaryText = '';
+
+      for (const currentModel of modelsToTry) {
+        try {
+          console.log(`Attempting to summarize candidate profile using Claude model: ${currentModel}`);
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'content-type': 'application/json',
+              'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+              model: currentModel,
+              max_tokens: 600,
+              system: "You are a professional HR recruiter assistant. Analyze the candidate's CV/Resume and the target Job Description. Generate a brief, concise candidate profile summary. You MUST extract and include the candidate's Age (or birth year, if specified), Governorate/State, City, and University/Education name from their CV (state 'Not specified' for any missing value), alongside their main tech stack, experience level, key achievements, and suitability score (0-10) for this specific role. Format the output with clean markdown bullet points starting with ✨. Keep the total length under 150 words.",
+              messages: [
+                {
+                  role: 'user',
+                  content: contentBlocks
+                }
+              ]
+            })
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            let parsedErr;
+            try {
+              parsedErr = JSON.parse(errText);
+            } catch (e) {}
+
+            if (response.status === 404 && parsedErr?.error?.type === 'not_found_error') {
+              console.warn(`Model ${currentModel} not found or not available. Trying fallback...`);
+              lastError = new Error(`Claude API error (${response.status}): ${errText}`);
+              continue;
+            }
+            throw new Error(`Claude API error (${response.status}): ${errText}`);
+          }
+
+          const json = await response.json();
+          summaryText = json.content
+            ?.filter(block => block.type === 'text')
+            ?.map(block => block.text)
+            ?.join('') || '';
+          break;
+        } catch (loopErr) {
+          lastError = loopErr;
+          if (!loopErr.message.includes('not_found_error') && !loopErr.message.includes('404')) {
+            throw loopErr;
+          }
+        }
+      }
+
+      if (!summaryText.trim()) {
+        try {
+          console.log("Failed to find a working model. Fetching available models for this API key...");
+          const modelsRes = await fetch((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? '/anthropic-api/v1/models'
+            : 'https://api.anthropic.com/v1/models', {
+            method: 'GET',
+            headers: {
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01'
+            }
+          });
+          if (modelsRes.ok) {
+            const modelsJson = await modelsRes.json();
+            console.log("Available models for this API key:", modelsJson.data);
+            const modelIds = modelsJson.data?.map(m => m.id).join(', ');
+            lastError = new Error(`${lastError.message}\n\nAvailable models for your API key: ${modelIds || 'None'}`);
+          }
+        } catch (diagErr) {
+          console.error("Failed to fetch available models list:", diagErr);
+        }
+        throw lastError || new Error("No summary returned from Claude AI.");
+      }
+
+      // Save summary in database
+      const saveRes = await apiCall('Save Candidate Summary', {
+        CandidateID: Number(candidateID),
+        Summary: summaryText
+      }, {}, 'recruitment_requests');
+
+      if (saveRes.State === 0) {
+        const freshList = await loadData();
+        const updatedCand = freshList?.find(c => c.CandidateID === candidateID);
+        if (updatedCand) {
+          setSelectedCandidate(updatedCand);
+        } else {
+          setSelectedCandidate(prev => ({ ...prev, Summary: summaryText }));
+        }
+        alert('Candidate profile summarized successfully by Claude!');
+      } else {
+        throw new Error(saveRes.Message || 'Failed to save summary to database.');
+      }
+    } catch (err) {
+      console.error("Claude Summary failure:", err);
+      alert("Failed to summarize profile with Claude: " + err.message);
+    } finally {
+      setSummarizing(false);
+    }
+  }
+
+  async function handleTranslateSummary() {
+    if (!selectedCandidate || !selectedCandidate.Summary) return;
+    
+    if (activeLanguage === 'ar') {
+      setActiveLanguage('en');
+      return;
+    }
+
+    const candidateID = selectedCandidate.CandidateID;
+
+    if (translatedSummaries[candidateID]) {
+      setActiveLanguage('ar');
+      return;
+    }
+
+    let apiKey = localStorage.getItem('Anthropic_API_Key');
+    if (!apiKey) {
+      apiKey = window.prompt("Please enter your Anthropic API Key to call Claude AI:");
+      if (!apiKey || !apiKey.trim()) return;
+      localStorage.setItem('Anthropic_API_Key', apiKey.trim());
+    }
+
+    setTranslating(true);
+
+    try {
+      const promptText = `Please translate the following candidate profile summary into professional, clear business Arabic. Retain all markdown formatting (bold text and bullet points starting with ✨) exactly as they are. Keep the translated lines aligned to the original structure.
+
+English Summary:
+${selectedCandidate.Summary}`;
+
+      const url = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? '/anthropic-api/v1/messages'
+        : 'https://api.anthropic.com/v1/messages';
+
+      let modelsToTry = [
+        'claude-3-5-sonnet-20241022',
+        'claude-3-5-sonnet-20240620',
+        'claude-3-5-haiku-20241022',
+        'claude-3-haiku-20240307'
+      ];
+
+      try {
+        const modelsRes = await fetch((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+          ? '/anthropic-api/v1/models'
+          : 'https://api.anthropic.com/v1/models', {
+          method: 'GET',
+          headers: {
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
+          }
+        });
+        if (modelsRes.ok) {
+          const modelsJson = await modelsRes.json();
+          if (modelsJson.data && modelsJson.data.length > 0) {
+            const apiModelIds = modelsJson.data.map(m => m.id);
+            const sonnetModels = apiModelIds.filter(id => id.toLowerCase().includes('sonnet'));
+            const haikuModels = apiModelIds.filter(id => id.toLowerCase().includes('haiku'));
+            const otherModels = apiModelIds.filter(id => !id.toLowerCase().includes('sonnet') && !id.toLowerCase().includes('haiku'));
+            modelsToTry = [...sonnetModels, ...haikuModels, ...otherModels];
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to fetch model list, using hardcoded fallback list:", e);
+      }
+
+      let lastError = null;
+      let translatedText = '';
+
+      for (const currentModel of modelsToTry) {
+        try {
+          console.log(`Attempting translation using Claude model: ${currentModel}`);
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'content-type': 'application/json',
+              'anthropic-dangerous-direct-browser-access': 'true'
+            },
+            body: JSON.stringify({
+              model: currentModel,
+              max_tokens: 600,
+              system: "You are a professional translator. Translate the provided text into clear business Arabic. Make sure to keep all markdown bullet points starting with ✨ and bold phrases exactly intact. Do not add any introductory or concluding conversational filler text, just return the translated text.",
+              messages: [
+                {
+                  role: 'user',
+                  content: promptText
+                }
+              ]
+            })
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            let parsedErr;
+            try {
+              parsedErr = JSON.parse(errText);
+            } catch (e) {}
+
+            if (response.status === 404 && parsedErr?.error?.type === 'not_found_error') {
+              console.warn(`Model ${currentModel} not found or not available. Trying fallback...`);
+              lastError = new Error(`Claude API error (${response.status}): ${errText}`);
+              continue;
+            }
+            throw new Error(`Claude API error (${response.status}): ${errText}`);
+          }
+
+          const json = await response.json();
+          translatedText = json.content
+            ?.filter(block => block.type === 'text')
+            ?.map(block => block.text)
+            ?.join('') || '';
+          break;
+        } catch (loopErr) {
+          lastError = loopErr;
+          if (!loopErr.message.includes('not_found_error') && !loopErr.message.includes('404')) {
+            throw loopErr;
+          }
+        }
+      }
+
+      if (!translatedText.trim()) {
+        throw lastError || new Error("No translation returned from Claude AI.");
+      }
+
+      setTranslatedSummaries(prev => ({ ...prev, [candidateID]: translatedText }));
+      setActiveLanguage('ar');
+    } catch (err) {
+      console.error("Claude Translation failure:", err);
+      alert("Failed to translate summary with Claude: " + err.message);
+    } finally {
+      setTranslating(false);
+    }
+  }
+
+  const renderDetailDrawer = () => {
+    if (!selectedCandidate) return null;
+
+    const states = {
+      0: { text: 'New', color: 'var(--blue)', bg: 'var(--blue-soft)' },
+      1: { text: 'Shortlisted', color: 'var(--orange)', bg: 'var(--orange-soft)' },
+      2: { text: 'Rejected', color: 'var(--red)', bg: 'var(--red-soft)' },
+      3: { text: 'Interviewing', color: '#6366f1', bg: '#e0e7ff' },
+      4: { text: 'Selected', color: 'var(--green)', bg: 'var(--green-soft)' },
+      5: { text: 'On Hold', color: 'var(--muted)', bg: 'var(--soft)' },
+      6: { text: 'Hired', color: 'var(--green)', bg: 'var(--green-soft)' }
+    };
+
+    const state = states[selectedCandidate.CandidateState] || { text: 'Unknown', color: 'var(--muted)', bg: 'var(--soft)' };
+    const initials = selectedCandidate.FullName ? selectedCandidate.FullName.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() : '?';
+
+    let attachments = [];
+    if (selectedCandidate.CVFileContent && selectedCandidate.CVFileContent.trim().startsWith('[')) {
+      try {
+        attachments = JSON.parse(selectedCandidate.CVFileContent);
+      } catch (e) {}
+    } else if (selectedCandidate.CVFileContent && selectedCandidate.CVFileName) {
+      attachments = [{ name: selectedCandidate.CVFileName, url: selectedCandidate.CVFileContent }];
+    }
+
+    const handleDownloadCV = (file) => {
+      if (file.url.startsWith('http')) {
+        window.open(file.url, '_blank');
+        return;
+      }
+      try {
+        const byteCharacters = atob(file.url);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error(e);
+        alert('Failed to download CV.');
+      }
+    };
+
+    return (
+      <>
+        <div
+          onClick={() => setShowDetailDrawer(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15,23,42,0.15)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 9998
+          }}
+        />
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          width: 'min(680px, 100vw)',
+          height: '100vh',
+          background: 'var(--surface)',
+          boxShadow: '-10px 0 30px rgba(0,0,0,0.12)',
+          borderLeft: '1px solid var(--border)',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '24px 24px 24px 24px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>Candidate Details</h3>
+            <button onClick={() => setShowDetailDrawer(false)} style={{ background: 'none', border: 0, fontSize: 24, cursor: 'pointer', color: 'var(--muted)', fontWeight: 'bold' }}>&times;</button>
+          </div>
+
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center', background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 18, padding: 16 }}>
+              <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, flexShrink: 0 }}>
+                {initials}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>
+                  {selectedCandidate.FullName}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: state.color, background: state.bg, padding: '3px 8px', borderRadius: 6 }}>
+                    {state.text}
+                  </span>
+                  <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>ID: #{selectedCandidate.CandidateID}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Custom Tabs Bar */}
+            <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', gap: 16 }}>
+              <button
+                type="button"
+                onClick={() => setActiveDrawerTab('details')}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  borderBottom: activeDrawerTab === 'details' ? '2.5px solid var(--primary)' : '2.5px solid transparent',
+                  color: activeDrawerTab === 'details' ? 'var(--primary)' : 'var(--muted)',
+                  padding: '8px 4px',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                👤 Details
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveDrawerTab('attachments')}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  borderBottom: activeDrawerTab === 'attachments' ? '2.5px solid var(--primary)' : '2.5px solid transparent',
+                  color: activeDrawerTab === 'attachments' ? 'var(--primary)' : 'var(--muted)',
+                  padding: '8px 4px',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                📎 Attachments
+                <span style={{
+                  fontSize: 10,
+                  background: activeDrawerTab === 'attachments' ? 'var(--primary)' : 'var(--border2)',
+                  color: activeDrawerTab === 'attachments' ? '#fff' : 'var(--muted)',
+                  padding: '2px 6px',
+                  borderRadius: 10,
+                  fontWeight: 800,
+                  marginLeft: 2
+                }}>
+                  {attachments.length}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveDrawerTab('interviews')}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  borderBottom: activeDrawerTab === 'interviews' ? '2.5px solid var(--primary)' : '2.5px solid transparent',
+                  color: activeDrawerTab === 'interviews' ? 'var(--primary)' : 'var(--muted)',
+                  padding: '8px 4px',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                📅 Interviews
+                <span style={{
+                  fontSize: 10,
+                  background: activeDrawerTab === 'interviews' ? 'var(--primary)' : 'var(--border2)',
+                  color: activeDrawerTab === 'interviews' ? '#fff' : 'var(--muted)',
+                  padding: '2px 6px',
+                  borderRadius: 10,
+                  fontWeight: 800,
+                  marginLeft: 2
+                }}>
+                  {interviews.length}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveDrawerTab('history')}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  borderBottom: activeDrawerTab === 'history' ? '2.5px solid var(--primary)' : '2.5px solid transparent',
+                  color: activeDrawerTab === 'history' ? 'var(--primary)' : 'var(--muted)',
+                  padding: '8px 4px',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                🔄 Reassignment History
+                <span style={{
+                  fontSize: 10,
+                  background: activeDrawerTab === 'history' ? 'var(--primary)' : 'var(--border2)',
+                  color: activeDrawerTab === 'history' ? '#fff' : 'var(--muted)',
+                  padding: '2px 6px',
+                  borderRadius: 10,
+                  fontWeight: 800,
+                  marginLeft: 2
+                }}>
+                  {assignmentHistory.length}
+                </span>
+              </button>
+            </div>
+
+            {/* Tab Contents */}
+            {activeDrawerTab === 'details' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {/* AI Summary Card Section */}
+                {selectedCandidate.Summary ? (() => {
+                  const displayText = activeLanguage === 'ar' 
+                    ? (translatedSummaries[selectedCandidate.CandidateID] || selectedCandidate.Summary) 
+                    : selectedCandidate.Summary;
+                  const items = parseAISummary(displayText);
+                  return (
+                    <div className="ai-summary-card">
+                      <div className="ai-summary-header">
+                        <div className="ai-summary-title">
+                          <span>✨ AI Candidate Summary</span>
+                        </div>
+                        <div className="ai-summary-actions">
+                          <button 
+                            type="button" 
+                            disabled={translating}
+                            onClick={handleTranslateSummary}
+                            className="ai-summary-action-btn"
+                            title={activeLanguage === 'ar' ? "Show English summary" : "Translate summary to Arabic"}
+                          >
+                            {translating ? '⏳ Translating...' : activeLanguage === 'ar' ? '🌐 English' : '🌐 Translate to Arabic'}
+                          </button>
+                          <button 
+                            type="button" 
+                            disabled={summarizing}
+                            onClick={() => handleAISummarize(selectedCandidate.CandidateID)}
+                            className="ai-summary-action-btn"
+                            title="Summarize candidate profile again"
+                          >
+                            {summarizing ? '⏳ Summarizing...' : '🔄 Summarize Again'}
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={() => handleCopySummary(displayText)}
+                            className="ai-summary-action-btn"
+                            title="Copy Summary to Clipboard"
+                          >
+                            📋 Copy
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={() => {
+                              localStorage.removeItem('Anthropic_API_Key');
+                              alert('Anthropic API Key has been reset.');
+                            }}
+                            className="ai-summary-action-btn"
+                          >
+                            🔑 Reset Key
+                          </button>
+                        </div>
+                      </div>
+                      <div className="ai-summary-content" style={{ direction: activeLanguage === 'ar' ? 'rtl' : 'ltr', textAlign: activeLanguage === 'ar' ? 'right' : 'left' }}>
+                        {items.map((item, idx) => {
+                          const isScore = item.label.toLowerCase().includes('score') || !!item.score;
+                          return (
+                            <div 
+                              key={idx} 
+                              className={`ai-summary-row ${isScore ? 'ai-summary-badge-row' : ''}`}
+                            >
+                              <div className="ai-summary-bullet">✨</div>
+                              <div style={{ flex: 1 }}>
+                                {item.label && (
+                                  <span className="ai-summary-row-label">
+                                    {item.label}
+                                    {item.score ? (
+                                      <span className="ai-summary-score-badge">
+                                        {item.score}
+                                      </span>
+                                    ) : ':'}
+                                  </span>
+                                )}
+                                <span className="ai-summary-row-text">
+                                  {item.text}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <button 
+                      type="button"
+                      disabled={summarizing}
+                      onClick={() => handleAISummarize(selectedCandidate.CandidateID)}
+                      style={{ 
+                        width: '100%', 
+                        height: 40, 
+                        background: 'linear-gradient(135deg, #7c3aed, #6d28d9)', 
+                        color: '#fff', 
+                        border: 0, 
+                        borderRadius: 12, 
+                        fontWeight: 800, 
+                        cursor: 'pointer', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        gap: 8, 
+                        fontSize: 13, 
+                        boxShadow: '0 4px 12px rgba(124,58,237,0.15)',
+                        transition: 'opacity 0.15s'
+                      }}
+                    >
+                      {summarizing ? (
+                        <>
+                          <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'dg-spin 0.8s linear infinite' }} />
+                          Generating Summary...
+                        </>
+                      ) : (
+                        <>✨ Summarize Profile with Claude AI</>
+                      )}
+                    </button>
+                    {localStorage.getItem('Anthropic_API_Key') && (
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          localStorage.removeItem('Anthropic_API_Key');
+                          alert('Anthropic API Key has been reset.');
+                        }}
+                        style={{ alignSelf: 'flex-end', background: 'none', border: 0, color: 'var(--muted)', fontSize: 10.5, fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', padding: '2px 0' }}
+                      >
+                        Reset saved Anthropic API Key
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>General Info</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                      <span style={{ color: 'var(--muted)' }}>Email Address</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedCandidate.Email}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                      <span style={{ color: 'var(--muted)' }}>Phone Number</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedCandidate.Phone || '—'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600, alignItems: 'center' }}>
+                      <span style={{ color: 'var(--muted)' }}>Requisition</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: 'var(--text)' }}>{selectedCandidate.PositionTitle}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReassignFormData({
+                              CandidateID: String(selectedCandidate.CandidateID),
+                              RequestID: String(selectedCandidate.RequestID)
+                            });
+                            setShowReassignModal(true);
+                          }}
+                          style={{
+                            background: 'var(--primary-soft)',
+                            color: 'var(--primary)',
+                            border: 0,
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            fontSize: 10.5,
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3
+                          }}
+                        >
+                          🔄 Reassign
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                      <span style={{ color: 'var(--muted)' }}>Department</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedCandidate.Department || '—'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                      <span style={{ color: 'var(--muted)' }}>Source</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedCandidate.Source}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                      <span style={{ color: 'var(--muted)' }}>Government</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedCandidate.Government || '—'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                      <span style={{ color: 'var(--muted)' }}>City</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedCandidate.City || '—'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                      <span style={{ color: 'var(--muted)' }}>Address</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedCandidate.Address || '—'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                      <span style={{ color: 'var(--muted)' }}>Registered By</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedCandidate.CreatedBy}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                      <span style={{ color: 'var(--muted)' }}>Created Date</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedCandidate.CreatedDate ? new Date(selectedCandidate.CreatedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedCandidate.RejectionReason && (
+                  <div style={{ background: 'var(--red-soft)', border: '1px solid rgba(220,38,38,0.15)', borderRadius: 14, padding: 14 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--red)', marginBottom: 4, textTransform: 'uppercase' }}>Disqualification Details</div>
+                    <p style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, lineHeight: 1.4, margin: 0 }}>"{selectedCandidate.RejectionReason}"</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeDrawerTab === 'attachments' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>Uploaded Attachments ({attachments.length})</div>
+                {attachments.length === 0 ? (
+                  <div style={{ padding: '24px 12px', background: 'var(--soft)', border: '1px dotted var(--border)', borderRadius: 12, textAlign: 'center', fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>
+                    📂 No files uploaded for this candidate.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {attachments.map((file, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 14, padding: '12px 16px', boxShadow: 'var(--shadow)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, flex: 1, marginRight: 12 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            📄 {file.name}
+                          </span>
+                          <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>Attachment #{idx + 1}</span>
+                        </div>
+                        <button type="button" onClick={() => handleDownloadCV(file)} style={{ height: 32, padding: '0 14px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 8, fontSize: 12, fontWeight: 800, color: 'var(--primary)', cursor: 'pointer', transition: 'all 0.15s' }}>
+                          Open File
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeDrawerTab === 'interviews' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>
+                  Interview History ({interviews.length})
+                </div>
+                {interviews.length === 0 ? (
+                  <div style={{ padding: '24px 12px', background: 'var(--soft)', border: '1px dotted var(--border)', borderRadius: 12, textAlign: 'center', fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>
+                    📅 No interview rounds scheduled yet for this candidate.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {interviews.map((item, idx) => {
+                      const roundLabels = {
+                        1: { text: 'Round 1: HR', bg: 'var(--blue-soft)', color: 'var(--blue)' },
+                        2: { text: 'Round 2: Technical', bg: '#e0e7ff', color: '#6366f1' },
+                        3: { text: 'Round 3: Manager', bg: 'var(--orange-soft)', color: 'var(--orange)' },
+                        4: { text: 'Round 4: Final', bg: 'var(--green-soft)', color: 'var(--green)' }
+                      };
+                      const rLbl = roundLabels[item.RoundNumber] || { text: `Round ${item.RoundNumber}`, bg: 'var(--soft)', color: 'var(--muted)' };
+
+                      const recs = {
+                        0: { text: 'Proceed', color: 'var(--green)', bg: 'var(--green-soft)' },
+                        1: { text: 'Reject', color: 'var(--red)', bg: 'var(--red-soft)' },
+                        2: { text: 'Hold', color: 'var(--muted)', bg: 'var(--soft)' }
+                      };
+                      const rec = recs[item.Recommendation];
+
+                      const states = {
+                        0: { text: 'Scheduled', color: 'var(--muted)', bg: 'var(--soft)' },
+                        1: { text: 'Completed', color: 'var(--text)', bg: 'var(--soft)' },
+                        2: { text: 'Passed', color: 'var(--green)', bg: 'var(--green-soft)' },
+                        3: { text: 'Delayed', color: 'var(--orange)', bg: 'var(--orange-soft)' },
+                        4: { text: 'Canceled', color: 'var(--red)', bg: 'var(--red-soft)' }
+                      };
+                      const state = states[item.InterviewState] || { text: 'Unknown', color: 'var(--muted)', bg: 'var(--soft)' };
+
+                      return (
+                        <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.015)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                            <span style={{ fontSize: 12, fontWeight: 800, padding: '3px 8px', borderRadius: 6, color: rLbl.color, background: rLbl.bg }}>
+                              {rLbl.text}
+                            </span>
+                            <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6, color: state.color, background: state.bg }}>
+                              {state.text}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5, fontWeight: 600 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ color: 'var(--muted)' }}>Interviewer</span>
+                              <span style={{ color: 'var(--text)' }}>
+                                {(() => {
+                                  const sysUser = systemUsers.find(u => u.Username.toLowerCase() === (item.InterviewerUser || '').toLowerCase());
+                                  return sysUser ? sysUser.Name : item.InterviewerUser;
+                                })()}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ color: 'var(--muted)' }}>Date & Time</span>
+                              <span style={{ color: 'var(--text)' }}>
+                                {item.ScheduledDate ? new Date(item.ScheduledDate).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {(Number(item.InterviewState) === 1 || Number(item.InterviewState) === 2) && (
+                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, fontWeight: 600 }}>
+                                <span style={{ color: 'var(--muted)' }}>Score / Rating</span>
+                                <span style={{ color: 'var(--amber)', fontWeight: 800 }}>⭐ {item.Rating} / 10</span>
+                              </div>
+                              {rec && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, fontWeight: 600 }}>
+                                  <span style={{ color: 'var(--muted)' }}>Recommendation</span>
+                                  <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 6, color: rec.color, background: rec.bg }}>
+                                    {rec.text}
+                                  </span>
+                                </div>
+                              )}
+                              {item.FeedbackComments && (
+                                <div style={{ marginTop: 4, background: 'var(--soft)', padding: 10, borderRadius: 10, borderLeft: '3px solid var(--primary)' }}>
+                                  <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 2 }}>Interviewer Comments</div>
+                                  <p style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 600, lineHeight: 1.4, margin: 0, fontStyle: 'italic' }}>
+                                    "{item.FeedbackComments}"
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {item.DelayCancelReason && (
+                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                              <div style={{ background: 'var(--soft)', padding: 10, borderRadius: 10, borderLeft: '3px solid var(--orange)', fontSize: 12 }}>
+                                <div style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 2 }}>
+                                  {Number(item.InterviewState) === 3 ? 'Delay Reason' : 'Cancellation Reason'}
+                                </div>
+                                <p style={{ color: 'var(--text)', fontWeight: 600, lineHeight: 1.4, margin: 0, fontStyle: 'italic' }}>
+                                  "{item.DelayCancelReason}"
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {Number(item.InterviewState) === 0 && (
+                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setStatusFormData({
+                                    InterviewID: String(item.InterviewID),
+                                    InterviewState: 3,
+                                    DelayCancelReason: ''
+                                  });
+                                  setShowStatusModal(true);
+                                }}
+                                style={{
+                                  flex: 1,
+                                  height: 30,
+                                  border: '1.5px solid var(--border)',
+                                  background: 'var(--surface)',
+                                  color: 'var(--text)',
+                                  borderRadius: 8,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  fontSize: 11.5,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: 4
+                                }}
+                              >
+                                ⚠️ Delay
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setStatusFormData({
+                                    InterviewID: String(item.InterviewID),
+                                    InterviewState: 4,
+                                    DelayCancelReason: ''
+                                  });
+                                  setShowStatusModal(true);
+                                }}
+                                style={{
+                                  flex: 1,
+                                  height: 30,
+                                  border: '1.5px solid var(--border)',
+                                  background: 'var(--surface)',
+                                  color: 'var(--red)',
+                                  borderRadius: 8,
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  fontSize: 11.5,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: 4
+                                }}
+                              >
+                                🚫 Cancel
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeDrawerTab === 'history' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>
+                  Reassignment Log History ({assignmentHistory.length})
+                </div>
+                {assignmentHistory.length === 0 ? (
+                  <div style={{ padding: '24px 12px', background: 'var(--soft)', border: '1px dotted var(--border)', borderRadius: 12, textAlign: 'center', fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>
+                    🔄 No reassignment records found for this candidate.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {assignmentHistory.map((item, idx) => {
+                      const candidateStates = {
+                        0: { text: 'New', color: 'var(--blue)', bg: 'var(--blue-soft)' },
+                        1: { text: 'Shortlisted', color: '#6366f1', bg: '#e0e7ff' },
+                        2: { text: 'Rejected', color: 'var(--red)', bg: 'var(--red-soft)' },
+                        3: { text: 'Interviewing', color: 'var(--orange)', bg: 'var(--orange-soft)' },
+                        4: { text: 'Selected', color: 'var(--primary)', bg: 'var(--primary-soft)' },
+                        5: { text: 'On Hold', color: 'var(--muted)', bg: 'var(--soft)' },
+                        6: { text: 'Hired', color: 'var(--green)', bg: 'var(--green-soft)' }
+                      };
+                      const oldState = candidateStates[item.OldCandidateState];
+
+                      return (
+                        <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.015)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--primary)', background: 'var(--primary-soft)', padding: '2px 8px', borderRadius: 6 }}>
+                              Reassigned Requisition
+                            </span>
+                            <span style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 600 }}>
+                              {item.AssignedDate ? new Date(item.AssignedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: 12.5, fontWeight: 600, display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ color: 'var(--muted)' }}>From Requisition</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ color: 'var(--text)' }}>
+                                  {item.OldPositionTitle ? `${item.OldPositionTitle} (${item.OldDepartment || '—'})` : 'None / Registered'}
+                                </span>
+                                {oldState && (
+                                  <span style={{ fontSize: 9.5, fontWeight: 800, color: oldState.color, background: oldState.bg, padding: '1px 5px', borderRadius: 4 }}>
+                                    {oldState.text}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: 'var(--muted)' }}>To Requisition</span>
+                            <span style={{ color: 'var(--text)', fontWeight: 800 }}>
+                              {item.NewPositionTitle} ({item.NewDepartment})
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed var(--border)', paddingTop: 6, marginTop: 2 }}>
+                            <span style={{ color: 'var(--muted)' }}>Assigned By</span>
+                            <span style={{ color: 'var(--text)' }}>{item.AssignedBy}</span>
+                          </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    );
   };
 
   const metrics = (() => {
@@ -316,6 +1678,138 @@ export default function CandidatesPool(props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+      <style>{`
+        .ai-summary-card {
+          background: linear-gradient(135deg, rgba(124, 58, 237, 0.03) 0%, rgba(99, 102, 241, 0.03) 100%);
+          border: 1.5px solid rgba(124, 58, 237, 0.12);
+          border-radius: 16px;
+          padding: 16px;
+          box-shadow: 0 4px 20px -2px rgba(124, 58, 237, 0.03);
+          position: relative;
+          overflow: hidden;
+          margin-bottom: 20px;
+        }
+        .ai-summary-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 3px;
+          background: linear-gradient(90deg, #7c3aed, #6366f1);
+        }
+        .ai-summary-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          border-bottom: 1px solid rgba(124, 58, 237, 0.06);
+          padding-bottom: 8px;
+        }
+        .ai-summary-title {
+          font-size: 12px;
+          font-weight: 850;
+          color: #7c3aed;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .ai-summary-actions {
+          display: flex;
+          gap: 12px;
+          align-items: center;
+        }
+        .ai-summary-action-btn {
+          background: none;
+          border: 0;
+          color: #6366f1;
+          font-size: 11px;
+          font-weight: 800;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 2px 6px;
+          border-radius: 6px;
+          transition: all 0.2s;
+          text-decoration: none;
+        }
+        .ai-summary-action-btn:hover {
+          background: rgba(99, 102, 241, 0.08);
+          color: #4f46e5;
+        }
+        .ai-summary-content {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .ai-summary-row {
+          display: flex;
+          gap: 10px;
+          align-items: flex-start;
+          padding: 8px 10px;
+          border-radius: 10px;
+          transition: all 0.2s ease;
+          border: 1px solid transparent;
+        }
+        .ai-summary-row:hover {
+          background-color: rgba(124, 58, 237, 0.03);
+          border-color: rgba(124, 58, 237, 0.05);
+          transform: translateX(3px);
+        }
+        .ai-summary-bullet {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: rgba(124, 58, 237, 0.08);
+          color: #7c3aed;
+          font-size: 10px;
+          margin-top: 1px;
+          flex-shrink: 0;
+          transition: all 0.2s ease;
+        }
+        .ai-summary-row:hover .ai-summary-bullet {
+          transform: scale(1.15) rotate(15deg);
+          background: rgba(124, 58, 237, 0.15);
+        }
+        .ai-summary-badge-row {
+          background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%);
+          border: 1px dashed rgba(124, 58, 237, 0.2);
+        }
+        .ai-summary-badge-row:hover {
+          background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+          border-color: rgba(124, 58, 237, 0.3);
+        }
+        .ai-summary-score-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 2px 8px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 950;
+          background: linear-gradient(135deg, #7c3aed, #6366f1);
+          color: #fff;
+          margin-left: 6px;
+          box-shadow: 0 2px 6px rgba(124, 58, 237, 0.15);
+        }
+        .ai-summary-row-label {
+          font-weight: 850;
+          color: var(--text-dark, #1f2937);
+          font-size: 13px;
+          margin-right: 4px;
+        }
+        .ai-summary-row-text {
+          color: var(--text, #4b5563);
+          font-size: 13px;
+          line-height: 1.5;
+          font-weight: 600;
+        }
+      `}</style>
       {error && (
         <div style={{ marginBottom: 20, background: 'var(--red-soft)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.2)', padding: 12, borderRadius: 8, fontSize: 13 }}>
           {error}
@@ -350,7 +1844,17 @@ export default function CandidatesPool(props) {
           rows={rows}
           loading={loading}
           onRefresh={loadData}
+          onRowClick={async (row) => {
+            setSelectedCandidate(row);
+            setActiveLanguage('en');
+            setActiveDrawerTab('details');
+            setInterviews([]);
+            setAssignmentHistory([]);
+            setShowDetailDrawer(true);
+            loadInterviewsAndHistory(row.CandidateID);
+          }}
           onAdd={() => {
+            setSelectedFiles([]);
             setFormData({
               CandidateID: '',
               RequestID: hiringRequests.length > 0 ? String(hiringRequests[0].RequestID) : '',
@@ -359,12 +1863,37 @@ export default function CandidatesPool(props) {
               Phone: '',
               CVFileName: '',
               CVFileContent: '',
-              Source: 'Job Board'
+              Source: 'Job Board',
+              Government: '',
+              City: '',
+              Address: ''
             });
             setModalError('');
             setShowAddModal(true);
           }}
           extraRowActions={[
+            {
+              label: '📝 Edit Details',
+              show: (row) => row.CandidateState === 0,
+              onClick: (row) => {
+                setFormData({
+                  CandidateID: String(row.CandidateID),
+                  RequestID: String(row.RequestID),
+                  FullName: row.FullName || '',
+                  Email: row.Email || '',
+                  Phone: row.Phone || '',
+                  CVFileName: row.CVFileName || '',
+                  CVFileContent: row.CVFileContent || '',
+                  Source: row.Source || 'Job Board',
+                  Government: row.Government || '',
+                  City: row.City || '',
+                  Address: row.Address || ''
+                });
+                setSelectedFiles([]);
+                setModalError('');
+                setShowAddModal(true);
+              }
+            },
             {
               label: '📋 Shortlist Candidate',
               show: (row) => row.CandidateState === 0,
@@ -372,7 +1901,7 @@ export default function CandidatesPool(props) {
             },
             {
               label: '📅 Schedule Interview',
-              show: (row) => row.CandidateState === 1 || row.CandidateState === 3,
+              show: (row) => row.CandidateState === 1 || row.CandidateState === 3 || row.CandidateState === 4,
               onClick: (row) => {
                 setInterviewFormData({
                   CandidateID: String(row.CandidateID),
@@ -407,6 +1936,50 @@ export default function CandidatesPool(props) {
               }
             },
             {
+              label: '⚠️ Delay Interview Round',
+              show: (row) => row.CandidateState === 3,
+              onClick: async (row) => {
+                try {
+                  const res = await apiCall('Get Interviews', { CandidateID: row.CandidateID }, {}, 'recruitment_requests');
+                  const activeInt = (res.List0 || []).find(i => Number(i.InterviewState) === 0);
+                  if (!activeInt) {
+                    alert('No scheduled/active interview rounds found for this candidate.');
+                    return;
+                  }
+                  setStatusFormData({
+                    InterviewID: String(activeInt.InterviewID),
+                    InterviewState: 3,
+                    DelayCancelReason: ''
+                  });
+                  setShowStatusModal(true);
+                } catch (err) {
+                  alert('Error loading interview: ' + err.message);
+                }
+              }
+            },
+            {
+              label: '🚫 Cancel Interview Round',
+              show: (row) => row.CandidateState === 3,
+              onClick: async (row) => {
+                try {
+                  const res = await apiCall('Get Interviews', { CandidateID: row.CandidateID }, {}, 'recruitment_requests');
+                  const activeInt = (res.List0 || []).find(i => Number(i.InterviewState) === 0);
+                  if (!activeInt) {
+                    alert('No scheduled/active interview rounds found for this candidate.');
+                    return;
+                  }
+                  setStatusFormData({
+                    InterviewID: String(activeInt.InterviewID),
+                    InterviewState: 4,
+                    DelayCancelReason: ''
+                  });
+                  setShowStatusModal(true);
+                } catch (err) {
+                  alert('Error loading interview: ' + err.message);
+                }
+              }
+            },
+            {
               label: '💼 Generate Job Offer',
               show: (row) => row.CandidateState === 4,
               onClick: (row) => {
@@ -417,6 +1990,17 @@ export default function CandidatesPool(props) {
                   OfferTerms: ''
                 });
                 setShowOfferModal(true);
+              }
+            },
+            {
+              label: '🔄 Reassign Requisition',
+              show: (row) => true,
+              onClick: (row) => {
+                setReassignFormData({
+                  CandidateID: String(row.CandidateID),
+                  RequestID: String(row.RequestID)
+                });
+                setShowReassignModal(true);
               }
             },
             {
@@ -437,7 +2021,9 @@ export default function CandidatesPool(props) {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' }}>
           <div style={{ width: 'min(480px, calc(100vw - 28px))', background: 'var(--surface)', borderRadius: 22, boxShadow: 'var(--shadow)', padding: 24, border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>Register Candidate</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>
+                {formData.CandidateID ? 'Edit Candidate Details' : 'Register Candidate'}
+              </h3>
               <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>&times;</button>
             </div>
 
@@ -482,15 +2068,63 @@ export default function CandidatesPool(props) {
                 </select>
               </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Government *</label>
+                  <select
+                    value={formData.Government}
+                    onChange={e => setFormData({ ...formData, Government: e.target.value, City: '' })}
+                    style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
+                    required
+                  >
+                    <option value="">Select Government</option>
+                    {Object.keys(EGYPT_LOCATIONS).map(gov => (
+                      <option key={gov} value={gov}>{gov}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>City *</label>
+                  <select
+                    value={formData.City}
+                    onChange={e => setFormData({ ...formData, City: e.target.value })}
+                    style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
+                    disabled={!formData.Government}
+                    required
+                  >
+                    <option value="">Select City</option>
+                    {(EGYPT_LOCATIONS[formData.Government] || []).map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Address</label>
+                <input type="text" value={formData.Address} onChange={e => setFormData({ ...formData, Address: e.target.value })} placeholder="e.g. Street 9" style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
+              </div>
+
               <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Upload CV (PDF/Word)</label>
-                <input type="file" onChange={handleFileChange} style={{ fontSize: 13 }} />
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Upload Attachments (CV, Certificates, etc.)</label>
+                <input type="file" onChange={handleFileChange} multiple style={{ fontSize: 13, display: 'block', marginBottom: 10 }} />
+                
+                {selectedFiles.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 120, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 10, padding: 8, background: 'var(--soft)' }}>
+                    {selectedFiles.map((file, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, fontWeight: 700, color: 'var(--text)', background: 'var(--surface)', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '85%' }}>📄 {file.name}</span>
+                        <button type="button" onClick={() => handleRemoveFile(idx)} style={{ border: 0, background: 'none', color: 'var(--red)', fontSize: 16, cursor: 'pointer', fontWeight: 900, padding: '0 4px' }}>&times;</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <button type="button" onClick={() => setShowAddModal(false)} style={{ height: 38, padding: '0 18px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
                 <button type="submit" disabled={submitting} style={{ height: 38, padding: '0 20px', border: 0, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>
-                  {submitting ? 'Saving...' : 'Register Candidate'}
+                  {submitting ? 'Saving...' : (formData.CandidateID ? 'Save Changes' : 'Register Candidate')}
                 </button>
               </div>
             </form>
@@ -536,7 +2170,7 @@ export default function CandidatesPool(props) {
             <form onSubmit={handleInterviewSubmit}>
               <div style={{ marginBottom: 14 }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Interview Round</label>
-                <select value={interviewFormData.RoundNumber} onChange={e => setInterviewFormData({ ...interviewFormData, RoundNumber: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}>
+                <select value={interviewFormData.RoundNumber} onChange={e => setInterviewFormData({ ...interviewFormData, RoundNumber: e.target.value, InterviewerUser: '' })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}>
                   <option value="1">Round 1: HR</option>
                   <option value="2">Round 2: Technical</option>
                   <option value="3">Round 3: Manager</option>
@@ -546,12 +2180,24 @@ export default function CandidatesPool(props) {
 
               <div style={{ marginBottom: 14 }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Interviewer User</label>
-                <input type="text" value={interviewFormData.InterviewerUser} onChange={e => setInterviewFormData({ ...interviewFormData, InterviewerUser: e.target.value })} placeholder="Interviewer user ID" style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required />
+                <select
+                  value={interviewFormData.InterviewerUser}
+                  onChange={e => setInterviewFormData({ ...interviewFormData, InterviewerUser: e.target.value })}
+                  style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
+                  required
+                >
+                  <option value="">Select Interviewer</option>
+                  {getInterviewerOptions().map(opt => (
+                    <option key={opt.Username} value={opt.Username}>
+                      {opt.Username} ({opt.RoleName}{opt.Department ? ` - ${opt.Department}` : ''})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Scheduled Date & Time</label>
-                <input type="datetime-local" value={interviewFormData.ScheduledDate} onChange={e => setInterviewFormData({ ...interviewFormData, ScheduledDate: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required />
+                <input type="datetime-local" step="1800" value={interviewFormData.ScheduledDate} onChange={e => setInterviewFormData({ ...interviewFormData, ScheduledDate: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required />
               </div>
 
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
@@ -642,6 +2288,87 @@ export default function CandidatesPool(props) {
                 <button type="button" onClick={() => setShowOfferModal(false)} style={{ height: 38, padding: '0 18px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
                 <button type="submit" disabled={submitting} style={{ height: 38, padding: '0 20px', border: 0, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>
                   Generate Offer
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Candidate Detail Drawer */}
+      {showDetailDrawer && renderDetailDrawer()}
+
+      {showStatusModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.3)', backdropFilter: 'blur(4px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 20, width: '100%', maxWidth: 460, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>
+                {Number(statusFormData.InterviewState) === 3 ? 'Delay Interview' : 'Cancel Interview'}
+              </h3>
+              <button onClick={() => setShowStatusModal(false)} style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>&times;</button>
+            </div>
+            <form onSubmit={handleStatusSubmit}>
+              <div style={{ padding: 24 }}>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+                    Reason for {Number(statusFormData.InterviewState) === 3 ? 'Delay' : 'Cancellation'}
+                  </label>
+                  <textarea 
+                    rows="4" 
+                    value={statusFormData.DelayCancelReason} 
+                    onChange={e => setStatusFormData({ ...statusFormData, DelayCancelReason: e.target.value })} 
+                    style={{ width: '100%', padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none', resize: 'none' }} 
+                    placeholder={`Please specify why this round is being ${Number(statusFormData.InterviewState) === 3 ? 'delayed' : 'canceled'}...`} 
+                    required 
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', padding: '16px 24px', background: 'var(--soft)', borderTop: '1px solid var(--border)' }}>
+                <button type="button" onClick={() => setShowStatusModal(false)} style={{ height: 38, padding: '0 18px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+                <button type="submit" disabled={submitting} style={{ height: 38, padding: '0 20px', border: 0, background: Number(statusFormData.InterviewState) === 3 ? 'linear-gradient(135deg, var(--orange), #f59e0b)' : 'linear-gradient(135deg, var(--red), #ef4444)', color: '#fff', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>
+                  {submitting ? 'Updating...' : Number(statusFormData.InterviewState) === 3 ? 'Confirm Delay' : 'Confirm Cancel'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showReassignModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.3)', backdropFilter: 'blur(4px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 20, width: '100%', maxWidth: 460, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>Reassign Candidate Requisition</h3>
+              <button onClick={() => setShowReassignModal(false)} style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>&times;</button>
+            </div>
+            <form onSubmit={handleReassignSubmit}>
+              <div style={{ padding: 24 }}>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Target Hiring Request / Requisition</label>
+                  <select 
+                    value={reassignFormData.RequestID} 
+                    onChange={e => setReassignFormData({ ...reassignFormData, RequestID: e.target.value })} 
+                    style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
+                    required
+                  >
+                    <option value="">Select Requisition</option>
+                    {hiringRequests.map(req => (
+                      <option key={req.RequestID} value={req.RequestID}>
+                        {req.PositionTitle} ({req.Department}) - Code: #{req.RequestID}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, lineHeight: 1.5 }}>
+                  💡 <strong>Note:</strong> Reassigning a candidate updates their active link to the chosen job requisition and resets their state to <strong>Shortlisted</strong>. All past interview records, comments, and decision ratings for other requisitions are preserved in their history log.
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', padding: '16px 24px', background: 'var(--soft)', borderTop: '1px solid var(--border)' }}>
+                <button type="button" onClick={() => setShowReassignModal(false)} style={{ height: 38, padding: '0 18px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+                <button type="submit" disabled={submitting} style={{ height: 38, padding: '0 20px', border: 0, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>
+                  {submitting ? 'Reassigning...' : 'Confirm Reassignment'}
                 </button>
               </div>
             </form>

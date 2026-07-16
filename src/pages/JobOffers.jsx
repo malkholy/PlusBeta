@@ -60,7 +60,7 @@ export default function JobOffers(props) {
                 if (k.toLowerCase().includes('salary') && val) {
                   return Number(val).toLocaleString('en-US');
                 }
-                if (k.toLowerCase().includes('date') && val) {
+                if (k.toLowerCase().endsWith('date') && val) {
                   try {
                     const d = new Date(val);
                     if (!isNaN(d.getTime())) {

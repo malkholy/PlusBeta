@@ -14,3 +14,7 @@ This document outlines workspace-specific rules and instructions for coding assi
 
 - **Query Isolation Requirement**: You must register/create a new separate query row in the `[PLS].[QueryMaster]` table if a query (even with the same Stored Procedure or Operation) is going to be used on a different page. Never share a single Query ID/Query Master registration across multiple pages, because permissions and custom row-level filter clauses are stored per User Group and per Query ID.
 
+## Grid Drawers and Click Events
+
+- **Drawer Double-Click Open Rule**: All details drawers (e.g., Candidates Pool detail drawer, Hiring Request detail drawer, PO detail drawer, etc.) that display individual record details must be configured to open only on a **double-click** event on the grid row, rather than a single click. Single clicks on the grid rows are reserved solely for row selection/highlighting.
+

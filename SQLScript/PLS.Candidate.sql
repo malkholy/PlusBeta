@@ -17,6 +17,10 @@ BEGIN
         [Source] NVARCHAR(50) NOT NULL, -- Board/Agency/Referral/etc.
         [CandidateState] INT NOT NULL DEFAULT 0, -- 0: New, 1: Shortlisted, 2: Rejected, 3: Interviewing, 4: Selected, 5: On Hold, 6: Hired
         [RejectionReason] NVARCHAR(300) NULL,
+        [Summary] NVARCHAR(MAX) NULL,
+        [Government] NVARCHAR(100) NULL,
+        [City] NVARCHAR(100) NULL,
+        [Address] NVARCHAR(250) NULL,
         [CreatedBy] NVARCHAR(100) NOT NULL,
         [CreatedDate] DATETIME NOT NULL DEFAULT GETDATE()
     );

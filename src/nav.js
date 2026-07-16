@@ -102,6 +102,12 @@ const NAV = [
         label: 'User Roles Setup',
         icon: '👥',
         desc: 'Configure recruitment access permissions by linking users to module roles'
+      },
+      {
+        id: 'recruitment_interviews',
+        label: 'Interviews Log',
+        icon: '📅',
+        desc: 'Review history, schedules, and feedback of all interviews'
       }
     ]
   }

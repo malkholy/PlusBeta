@@ -116,5 +116,44 @@ export async function apiCall(operation, lineData = null, extraParams = {}, apiT
   return JSON.parse(text);
 }
 
+async function sha1(string) {
+  const utf8 = new TextEncoder().encode(string);
+  const hashBuffer = await window.crypto.subtle.digest('SHA-1', utf8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+export async function uploadToCloudinary(file) {
+  const cloudName = 'peeuy5s9';
+  const apiKey = '419134873188179';
+  const apiSecret = 'NoxrhWPv3O0_kWuWIMPtuxuD16k';
+  const folder = 'Plus';
+  const timestamp = Math.round(new Date().getTime() / 1000);
+
+  const paramsToSign = `folder=${folder}&timestamp=${timestamp}`;
+  const signature = await sha1(paramsToSign + apiSecret);
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('folder', folder);
+  formData.append('timestamp', timestamp);
+  formData.append('api_key', apiKey);
+  formData.append('signature', signature);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error('Cloudinary upload failed: ' + errText);
+  }
+
+  const json = await res.json();
+  return json.secure_url;
+}
+
 
 

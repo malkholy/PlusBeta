@@ -262,9 +262,6 @@ export default function DataGrid({
       }
       return next;
     });
-    if (onRowClick) {
-      onRowClick(pageRows[i]);
-    }
   }
 
   useEffect(() => {
@@ -487,7 +484,7 @@ export default function DataGrid({
                 <tr key={i}
                   className={selected.has(i) ? "selected-row" : ""}
                   onClick={e => select(i, e)}
-                  onDoubleClick={() => { if (onRowDoubleClick) onRowDoubleClick(row); else if (onEdit) onEdit(row); }}
+                  onDoubleClick={() => { if (onRowDoubleClick) onRowDoubleClick(row); else if (onRowClick) onRowClick(row); else if (onEdit) onEdit(row); }}
                   onContextMenu={e => {
                     e.preventDefault();
                     lastSelRef.current = i;

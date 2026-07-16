@@ -30,6 +30,17 @@ BEGIN
     SET @State = 0;
     SET @Message = 'Success';
 
+    -- Normalize @LineData: treat empty string, 'null', or invalid JSON as SQL NULL
+    -- This prevents JSON_VALUE from throwing when LineData is not sent by the client
+    IF @LineData IS NOT NULL AND (
+        LTRIM(RTRIM(@LineData)) = '' OR 
+        LTRIM(RTRIM(@LineData)) = 'null' OR 
+        ISJSON(@LineData) = 0
+    )
+        SET @LineData = NULL;
+
+    BEGIN TRY
+
     -- ---------------------------------------------------------------------
     -- Operation: Get Hiring Requests
     -- ---------------------------------------------------------------------
@@ -243,11 +254,36 @@ BEGIN
         SELECT 
             c.*,
             r.PositionTitle,
-            r.Department
+            r.Department,
+            r.JobDescription,
+            r.RequiredSkills
         FROM [PLS].[Candidate] c
         JOIN [PLS].[HiringRequest] r ON c.RequestID = r.RequestID
         WHERE (@FilterRequestID IS NULL OR c.RequestID = @FilterRequestID)
         ORDER BY c.CreatedDate DESC;
+        RETURN;
+    END
+
+    -- ---------------------------------------------------------------------
+    -- Operation: Save Candidate Summary
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Save Candidate Summary'
+    BEGIN
+        DECLARE @SummCandID INT = JSON_VALUE(@LineData, '$.CandidateID');
+        DECLARE @SummText NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.Summary');
+
+        IF NOT EXISTS (SELECT 1 FROM [PLS].[Candidate] WHERE [CandidateID] = @SummCandID)
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Candidate not found.';
+            RETURN;
+        END
+
+        UPDATE [PLS].[Candidate]
+        SET [Summary] = @SummText
+        WHERE [CandidateID] = @SummCandID;
+
+        SET @Message = 'Candidate summary saved successfully.';
         RETURN;
     END
 
@@ -264,6 +300,9 @@ BEGIN
         DECLARE @CVFileName NVARCHAR(250) = JSON_VALUE(@LineData, '$.CVFileName');
         DECLARE @CVFileContent NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.CVFileContent');
         DECLARE @CandSource NVARCHAR(50) = JSON_VALUE(@LineData, '$.Source');
+        DECLARE @Government NVARCHAR(100) = JSON_VALUE(@LineData, '$.Government');
+        DECLARE @City NVARCHAR(100) = JSON_VALUE(@LineData, '$.City');
+        DECLARE @Address NVARCHAR(250) = JSON_VALUE(@LineData, '$.Address');
 
         IF @CandReqID IS NULL OR @FullName IS NULL OR @Email IS NULL OR @CandSource IS NULL
         BEGIN
@@ -276,11 +315,13 @@ BEGIN
         BEGIN
             INSERT INTO [PLS].[Candidate] (
                 [RequestID], [FullName], [Email], [Phone], [CVFileName], [CVFileContent], 
-                [Source], [CandidateState], [CreatedBy], [CreatedDate]
+                [Source], [CandidateState], [CreatedBy], [CreatedDate],
+                [Government], [City], [Address]
             )
             VALUES (
                 @CandReqID, @FullName, @Email, @Phone, @CVFileName, @CVFileContent, 
-                @CandSource, 0, @User, GETDATE()
+                @CandSource, 0, @User, GETDATE(),
+                @Government, @City, @Address
             );
             SET @Message = 'Candidate registered successfully.';
         END
@@ -292,7 +333,10 @@ BEGIN
                 [Phone] = @Phone,
                 [CVFileName] = COALESCE(@CVFileName, [CVFileName]),
                 [CVFileContent] = COALESCE(@CVFileContent, [CVFileContent]),
-                [Source] = @CandSource
+                [Source] = @CandSource,
+                [Government] = @Government,
+                [City] = @City,
+                [Address] = @Address
             WHERE [CandidateID] = @CandidateID;
             SET @Message = 'Candidate details updated.';
         END
@@ -323,15 +367,59 @@ BEGIN
     IF @Operation = 'Get Interviews'
     BEGIN
         DECLARE @IntFilterCandID INT = NULLIF(JSON_VALUE(@LineData, '$.CandidateID'), '');
+        DECLARE @IntFilterReqID INT = NULLIF(JSON_VALUE(@LineData, '$.RequestID'), '');
 
         SELECT 
             i.*,
             c.FullName,
+            c.Email,
+            c.Phone,
+            c.Source,
+            c.CVFileName,
+            c.CVFileContent,
+            c.Government,
+            c.City,
+            c.Address,
             r.PositionTitle
         FROM [PLS].[CandidateInterview] i
         JOIN [PLS].[Candidate] c ON i.CandidateID = c.CandidateID
-        JOIN [PLS].[HiringRequest] r ON c.RequestID = r.RequestID
+        JOIN [PLS].[HiringRequest] r ON ISNULL(i.RequestID, c.RequestID) = r.RequestID
         WHERE (@IntFilterCandID IS NULL OR i.CandidateID = @IntFilterCandID)
+          AND (@IntFilterReqID IS NULL OR ISNULL(i.RequestID, c.RequestID) = @IntFilterReqID)
+        ORDER BY i.ScheduledDate DESC;
+        RETURN;
+    END
+
+    -- ---------------------------------------------------------------------
+    -- Operation: Get Interviews Log
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Get Interviews Log'
+    BEGIN
+        SELECT 
+            i.InterviewID,
+            i.CandidateID,
+            c.FullName AS CandidateName,
+            c.Email AS CandidateEmail,
+            c.Phone AS CandidatePhone,
+            c.Source AS CandidateSource,
+            c.CVFileName,
+            c.CVFileContent,
+            c.Government AS CandidateGovernment,
+            c.City AS CandidateCity,
+            c.Address AS CandidateAddress,
+            r.PositionTitle,
+            r.Department,
+            i.RoundNumber,
+            i.InterviewerUser,
+            i.ScheduledDate,
+            i.InterviewState,
+            i.Rating,
+            i.FeedbackComments,
+            i.Recommendation,
+            i.DelayCancelReason
+        FROM [PLS].[CandidateInterview] i
+        JOIN [PLS].[Candidate] c ON i.CandidateID = c.CandidateID
+        JOIN [PLS].[HiringRequest] r ON ISNULL(i.RequestID, c.RequestID) = r.RequestID
         ORDER BY i.ScheduledDate DESC;
         RETURN;
     END
@@ -353,8 +441,10 @@ BEGIN
             RETURN;
         END
 
-        INSERT INTO [PLS].[CandidateInterview] ([CandidateID], [RoundNumber], [InterviewerUser], [ScheduledDate], [InterviewState])
-        VALUES (@SchedCandID, @RoundNumber, @Interviewer, @SchedDate, 0);
+        DECLARE @IntRequestID INT = (SELECT [RequestID] FROM [PLS].[Candidate] WHERE [CandidateID] = @SchedCandID);
+
+        INSERT INTO [PLS].[CandidateInterview] ([CandidateID], [RoundNumber], [InterviewerUser], [ScheduledDate], [InterviewState], [RequestID])
+        VALUES (@SchedCandID, @RoundNumber, @Interviewer, @SchedDate, 0, @IntRequestID);
 
         UPDATE [PLS].[Candidate] SET [CandidateState] = 3 WHERE [CandidateID] = @SchedCandID; -- Interviewing
 
@@ -365,7 +455,7 @@ BEGIN
     -- ---------------------------------------------------------------------
     -- Operation: Submit Feedback
     -- ---------------------------------------------------------------------
-    IF @Operation = 'Submit Feedback'
+    IF @Operation = 'Submit Feedback' OR @Operation = 'Submit interview feedback'
     BEGIN
         DECLARE @IntID INT = JSON_VALUE(@LineData, '$.InterviewID');
         DECLARE @Rating INT = JSON_VALUE(@LineData, '$.Rating');
@@ -400,6 +490,44 @@ BEGIN
         END
 
         SET @Message = 'Interview feedback submitted.';
+        RETURN;
+    END
+
+    -- ---------------------------------------------------------------------
+    -- Operation: Update Interview State
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Update Interview State'
+    BEGIN
+        DECLARE @UpdIntID INT = JSON_VALUE(@LineData, '$.InterviewID');
+        DECLARE @NewState INT = JSON_VALUE(@LineData, '$.InterviewState'); -- 3: Delayed, 4: Canceled
+        DECLARE @DelayReason NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.DelayCancelReason');
+
+        IF NOT EXISTS (SELECT 1 FROM [PLS].[CandidateInterview] WHERE [InterviewID] = @UpdIntID)
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Interview record not found.';
+            RETURN;
+        END
+
+        IF @NewState NOT IN (3, 4)
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Invalid interview state. Only Delayed (3) or Canceled (4) are permitted.';
+            RETURN;
+        END
+
+        UPDATE [PLS].[CandidateInterview]
+        SET [InterviewState] = @NewState,
+            [DelayCancelReason] = @DelayReason
+        WHERE [InterviewID] = @UpdIntID;
+
+        IF @NewState = 4 -- Canceled
+        BEGIN
+            DECLARE @CancelCandID INT = (SELECT CandidateID FROM [PLS].[CandidateInterview] WHERE [InterviewID] = @UpdIntID);
+            UPDATE [PLS].[Candidate] SET [CandidateState] = 1 WHERE [CandidateID] = @CancelCandID; -- Reset to Shortlisted
+        END
+
+        SET @Message = 'Interview status updated successfully.';
         RETURN;
     END
 
@@ -605,5 +733,78 @@ BEGIN
         SET @Message = 'User role linkage removed successfully.';
         RETURN;
     END
+
+    -- ---------------------------------------------------------------------
+    -- Operation: Reassign Candidate
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Reassign Candidate'
+    BEGIN
+        DECLARE @ReassCandID INT = JSON_VALUE(@LineData, '$.CandidateID');
+        DECLARE @NewReqID INT = JSON_VALUE(@LineData, '$.RequestID');
+
+        IF NOT EXISTS (SELECT 1 FROM [PLS].[Candidate] WHERE [CandidateID] = @ReassCandID)
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Candidate not found.';
+            RETURN;
+        END
+
+        IF NOT EXISTS (SELECT 1 FROM [PLS].[HiringRequest] WHERE [RequestID] = @NewReqID)
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Hiring request not found.';
+            RETURN;
+        END
+
+        DECLARE @OldReqID INT = (SELECT [RequestID] FROM [PLS].[Candidate] WHERE [CandidateID] = @ReassCandID);
+        DECLARE @OldState INT = (SELECT [CandidateState] FROM [PLS].[Candidate] WHERE [CandidateID] = @ReassCandID);
+
+        -- Reassign the candidate to the new Hiring Request, resetting their state to Shortlisted
+        UPDATE [PLS].[Candidate]
+        SET [RequestID] = @NewReqID,
+            [CandidateState] = 1,
+            [RejectionReason] = NULL
+        WHERE [CandidateID] = @ReassCandID;
+
+        -- Record assignment history
+        INSERT INTO [PLS].[CandidateAssignmentHistory] ([CandidateID], [OldRequestID], [OldCandidateState], [NewRequestID], [AssignedBy], [AssignedDate])
+        VALUES (@ReassCandID, @OldReqID, @OldState, @NewReqID, @User, GETDATE());
+
+        SET @Message = 'Candidate reassigned successfully.';
+        RETURN;
+    END
+
+    -- ---------------------------------------------------------------------
+    -- Operation: Get Candidate Assignment History
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Get Candidate Assignment History'
+    BEGIN
+        DECLARE @HistCandID INT = JSON_VALUE(@LineData, '$.CandidateID');
+
+        SELECT 
+            h.AssignmentHistoryID,
+            h.CandidateID,
+            h.OldRequestID,
+            r1.PositionTitle AS OldPositionTitle,
+            r1.Department AS OldDepartment,
+            h.OldCandidateState,
+            h.NewRequestID,
+            r2.PositionTitle AS NewPositionTitle,
+            r2.Department AS NewDepartment,
+            h.AssignedBy,
+            h.AssignedDate
+        FROM [PLS].[CandidateAssignmentHistory] h
+        LEFT JOIN [PLS].[HiringRequest] r1 ON h.OldRequestID = r1.RequestID
+        JOIN [PLS].[HiringRequest] r2 ON h.NewRequestID = r2.RequestID
+        WHERE h.CandidateID = @HistCandID
+        ORDER BY h.AssignedDate DESC;
+        RETURN;
+    END
+
+    END TRY
+    BEGIN CATCH
+        SET @State = ERROR_NUMBER();
+        SET @Message = 'SQL Exception: ' + ERROR_MESSAGE() + ' (Line: ' + CAST(ERROR_LINE() AS VARCHAR(10)) + ')';
+    END CATCH
 END
 GO
