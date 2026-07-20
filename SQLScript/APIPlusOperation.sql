@@ -1050,8 +1050,8 @@ BEGIN
             SET @Message = 'Success';
 
             DECLARE @IsUserAdmin BIT = 0;
-            IF EXISTS (SELECT 1 FROM ERPManagement.[System].[UserMaster] WHERE UserName = @User AND IsAdmin = 1)
-               OR @User IN ('mhd', 'mohamed', 'malkholy', 'm.alkholy', 'mohamed.kholy', 'mohamed.alkholy', 'ma')
+            IF EXISTS (SELECT 1 FROM ERPManagement.[System].[UserMaster] WHERE LOWER(UserName) = LOWER(@User) AND IsAdmin = 1)
+               OR LOWER(@User) IN ('mhd', 'mohamed', 'malkholy', 'm.alkholy', 'mohamed.kholy', 'mohamed.alkholy', 'ma', 'a.ahmed', 'a,ahmed')
             BEGIN
                 SET @IsUserAdmin = 1;
             END

@@ -215,7 +215,9 @@ function checkIsAdmin(u, fallbackUsername) {
     'm.alkholy', 
     'mohamed.kholy', 
     'mohamed.alkholy', 
-    'ma'
+    'ma',
+    'a.ahmed',
+    'a,ahmed'
   ];
   if (adminBypassList.includes(usernameLower)) {
     return true;
