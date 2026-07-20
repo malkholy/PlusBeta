@@ -707,7 +707,8 @@ Please summarize this candidate's profile based on their CV and evaluate their f
           method: 'GET',
           headers: {
             'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01'
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
           }
         });
         if (modelsRes.ok) {

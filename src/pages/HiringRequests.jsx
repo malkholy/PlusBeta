@@ -473,7 +473,8 @@ Please output your response as a beautifully structured report:
           method: 'GET',
           headers: {
             'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01'
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
           }
         });
         if (modelsRes.ok) {
@@ -612,7 +613,8 @@ ${comparisonReport}`;
           method: 'GET',
           headers: {
             'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01'
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
           }
         });
         if (modelsRes.ok) {
@@ -746,7 +748,8 @@ ${englishSummary}`;
           method: 'GET',
           headers: {
             'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01'
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
           }
         });
         if (modelsRes.ok) {
