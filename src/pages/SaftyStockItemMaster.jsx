@@ -1517,6 +1517,14 @@ export default function SaftyStockItemMasterPage({ user }) {
                             <span style={{ fontSize: 10, color: 'var(--muted)' }}>{activeLeadTime > 0 ? 'SS + LT Demand' : 'Lead Time is 0'}</span>
                           </div>
 
+                        </div>
+
+                        {/* DEBUG DATA BLOCK FOR AI */}
+                        <div style={{ padding: '8px', background: '#f8d7da', color: '#721c24', fontSize: '10px', fontFamily: 'monospace', borderRadius: '4px' }}>
+                          DEBUG: stdDev={stdDev.toFixed(4)}, dailyDemandStdDev={dailyDemandStdDev.toFixed(4)}, monthlyAvg={monthlyAverage.toFixed(4)}, nonCurrentLength={nonCurrentMonths.length}, total12={total12Months}, activeLT={activeLeadTime}, LTStdDev={activeLeadTimeStdDev}, CombinedStdDev={combinedStdDev.toFixed(4)}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 12 }}>
                           <div style={{
                             flex: 1,
                             background: 'var(--green-soft)',

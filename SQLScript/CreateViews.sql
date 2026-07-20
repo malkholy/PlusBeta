@@ -252,14 +252,27 @@ GO
 
 -- 8. QGetSaftyStockItems
 CREATE OR ALTER VIEW [dbo].[QGetSaftyStockItems] AS
-WITH ConsumptionBase AS (
+WITH GroupedConsumption AS (
     SELECT 
         ItemCode,
-        AVG(TotalQuantity) AS AvgMonthlyQty,
-        STDEV(TotalQuantity) AS StdDevMonthlyQty
+        Yer,
+        Mnth,
+        SUM(TotalQuantity) AS MonthlyQty
     FROM inv.ItemConsuming
     WHERE (Yer * 12 + Mnth) >= (YEAR(GETDATE()) * 12 + MONTH(GETDATE()) - 12)
       AND (Yer * 12 + Mnth) < (YEAR(GETDATE()) * 12 + MONTH(GETDATE()))
+    GROUP BY ItemCode, Yer, Mnth
+),
+ConsumptionBase AS (
+    SELECT 
+        ItemCode,
+        SUM(MonthlyQty) / 12.0 AS AvgMonthlyQty,
+        SQRT(
+            CASE WHEN (SUM(POWER(MonthlyQty, 2)) - POWER(SUM(MonthlyQty), 2) / 12.0) / 11.0 < 0 THEN 0 
+            ELSE (SUM(POWER(MonthlyQty, 2)) - POWER(SUM(MonthlyQty), 2) / 12.0) / 11.0 
+            END
+        ) AS StdDevMonthlyQty
+    FROM GroupedConsumption
     GROUP BY ItemCode
 ),
 LeadTimeBase AS (
