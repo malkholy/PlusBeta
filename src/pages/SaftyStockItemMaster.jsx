@@ -1326,7 +1326,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                     const totalMonitored = balances.reduce((sum, b) => {
                       const wPurchasing = isFlagActive(b.Purchasing);
                       const wProduction = isFlagActive(b.Production);
-                      const monitored = (isPurchasingActive && wPurchasing) || (isProductionActive && wProduction);
+                      const monitored = b.Warehouse !== '999' && ((isPurchasingActive && wPurchasing) || (isProductionActive && wProduction));
                       return sum + (monitored ? Number(b.ItemBalance || 0) : 0);
                     }, 0);
 
@@ -1345,7 +1345,7 @@ export default function SaftyStockItemMasterPage({ user }) {
 
                     // Lead Time list by order, with ActualArrivalDate (take 3 most recent)
                     const sortedByArrival = [...leadTimes]
-                      .filter(l => l.ActualArrivalDate && !isNaN(new Date(l.ActualArrivalDate).getTime()) && l.LeadTime != null)
+                      .filter(l => l.ActualArrivalDate && !isNaN(new Date(l.ActualArrivalDate).getTime()) && l.LeadTime != null && Number(l.OrderNumber) > 2499999 && Number(l.QuantityReceived) > 0)
                       .sort((a, b) => new Date(b.ActualArrivalDate) - new Date(a.ActualArrivalDate));
                     const recentThree = sortedByArrival.slice(0, 3);
                     
@@ -2403,7 +2403,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                     const totalMonitored = balances.reduce((sum, b) => {
                       const wPurchasing = isFlagActive(b.Purchasing);
                       const wProduction = isFlagActive(b.Production);
-                      const monitored = (isPurchasingActive && wPurchasing) || (isProductionActive && wProduction);
+                      const monitored = b.Warehouse !== '999' && ((isPurchasingActive && wPurchasing) || (isProductionActive && wProduction));
                       return sum + (monitored ? Number(b.ItemBalance || 0) : 0);
                     }, 0);
 
@@ -2572,7 +2572,7 @@ export default function SaftyStockItemMasterPage({ user }) {
 
                     // Lead Time list by order, with ActualArrivalDate (take 3 most recent)
                     const sortedByArrival = [...leadTimes]
-                      .filter(l => l.ActualArrivalDate && !isNaN(new Date(l.ActualArrivalDate).getTime()) && l.LeadTime != null)
+                      .filter(l => l.ActualArrivalDate && !isNaN(new Date(l.ActualArrivalDate).getTime()) && l.LeadTime != null && Number(l.OrderNumber) > 2499999 && Number(l.QuantityReceived) > 0)
                       .sort((a, b) => new Date(b.ActualArrivalDate) - new Date(a.ActualArrivalDate));
                     const recentThree = sortedByArrival.slice(0, 3);
                     
