@@ -1341,7 +1341,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                       variance = sqDiffs.reduce((sum, d) => sum + d, 0) / (values.length - 1);
                     }
                     const stdDev = Math.sqrt(variance);
-                    const dailyAvg = monthlyAverage / 26;
+                    const dailyAvg = Math.ceil(monthlyAverage / 26);
 
                     // Lead Time list by order, with ActualArrivalDate (take 3 most recent)
                     const sortedByArrival = [...leadTimes]
@@ -2567,7 +2567,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                     }
                     const stdDev = Math.sqrt(variance);
                     
-                    const avgDailyDemand = monthlyAverage / 26;
+                    const avgDailyDemand = Math.ceil(monthlyAverage / 26);
                     const dailyDemandStdDev = stdDev / 26;
 
                     // Lead Time list by order, with ActualArrivalDate (take 3 most recent)
