@@ -1333,7 +1333,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                     // Consumption Calculations
                     const nonCurrentMonths = consumption.filter(c => !(c.Yer === new Date().getFullYear() && c.Mnth === (new Date().getMonth() + 1)));
                     const total12Months = nonCurrentMonths.reduce((sum, c) => sum + Number(c.TotalQuantity || 0), 0);
-                    const monthlyAverage = total12Months > 0 ? (total12Months / 12) : 0;
+                    const monthlyAverage = nonCurrentMonths.length > 0 ? (total12Months / nonCurrentMonths.length) : 0;
                     const values = nonCurrentMonths.map(c => Number(c.TotalQuantity || 0));
                     let variance = 0;
                     if (values.length > 1) {
@@ -2409,8 +2409,8 @@ export default function SaftyStockItemMasterPage({ user }) {
 
                     const nonCurrentMonths = consumption.filter(c => !(c.Yer === new Date().getFullYear() && c.Mnth === (new Date().getMonth() + 1)));
                     const total12Months = nonCurrentMonths.reduce((sum, c) => sum + Number(c.TotalQuantity || 0), 0);
-                    const monthlyAverage = total12Months > 0 ? (total12Months / 12) : 0;
-                    const dailyAvg = monthlyAverage / 26;
+                    const monthlyAverage = nonCurrentMonths.length > 0 ? (total12Months / nonCurrentMonths.length) : 0;
+                    const dailyAvg = Math.ceil(monthlyAverage / 26);
                     const totalOpenQty = openPos.reduce((sum, p) => sum + Number(p.OpenQty || 0), 0);
                     const monitoredDays = dailyAvg > 0 ? (totalMonitored / dailyAvg) : 0;
                     const physicalDays = dailyAvg > 0 ? (totalPhysical / dailyAvg) : 0;
@@ -2558,7 +2558,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                   ) : (() => {
                     const nonCurrentMonths = consumption.filter(c => !(c.Yer === new Date().getFullYear() && c.Mnth === (new Date().getMonth() + 1)));
                     const total12Months = nonCurrentMonths.reduce((sum, c) => sum + Number(c.TotalQuantity || 0), 0);
-                    const monthlyAverage = total12Months > 0 ? (total12Months / 12) : 0;
+                    const monthlyAverage = nonCurrentMonths.length > 0 ? (total12Months / nonCurrentMonths.length) : 0;
                     const values = nonCurrentMonths.map(c => Number(c.TotalQuantity || 0));
                     let variance = 0;
                     if (values.length > 1) {
