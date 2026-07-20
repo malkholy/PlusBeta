@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiCall } from '../shared/api.js';
+import { apiCall, getAnthropicAPIKey } from '../shared/api.js';
 import DataGrid from '../shared/DataGrid.jsx';
 
 export default function HiringRequests(props) {
@@ -223,12 +223,34 @@ export default function HiringRequests(props) {
         setRows(list);
 
         if (list.length > 0) {
-          const keys = Object.keys(list[0]).filter(k => k !== 'JobDescription' && k !== 'RequiredSkills');
+          const excludedKeys = [
+            'RequestID',
+            'JobDescription',
+            'RequiredSkills',
+            'CreatedBy',
+            'LastMaintBy',
+            'LastMaintDate',
+            'ReturnComments'
+          ];
+          const keys = Object.keys(list[0]).filter(k => !excludedKeys.includes(k));
           const cols = keys.map(k => {
-            const label = k.replace(/([A-Z])/g, ' $1').trim();
+            let label = k.replace(/([A-Z])/g, ' $1').trim();
+            label = label.charAt(0).toUpperCase() + label.slice(1);
+            
+            if (k === 'RequestState') label = 'Status';
+            if (k === 'SalaryMin') label = 'Min Salary';
+            if (k === 'SalaryMax') label = 'Max Salary';
+            if (k === 'TotalDaysForOpening') label = 'Days Open';
+            if (k === 'CreatorName') label = 'Requested By';
+            if (k === 'CreatedDate') label = 'Created Date';
+            if (k === 'TargetStartDate') label = 'Target Start';
+            if (k === 'TotalCandidates') label = 'Candidates';
+            if (k === 'HiredCount') label = 'Hired';
+            if (k === 'TotalInterviews') label = 'Interviews';
+
             return {
               key: k,
-              label: label.charAt(0).toUpperCase() + label.slice(1),
+              label,
               render: (val, row, search, highlight) => {
                 if (k === 'RequestState') {
                   const states = {
@@ -253,6 +275,9 @@ export default function HiringRequests(props) {
                       {state.text}
                     </span>
                   );
+                }
+                if (k === 'TotalDaysForOpening') {
+                  return <span style={{ fontWeight: 600, color: 'var(--text)' }}>{val} Days</span>;
                 }
                 if (k.toLowerCase().includes('salary') && val) {
                   return Number(val).toLocaleString('en-US');
@@ -371,7 +396,7 @@ export default function HiringRequests(props) {
       return;
     }
 
-    let apiKey = localStorage.getItem('Anthropic_API_Key');
+    let apiKey = await getAnthropicAPIKey();
     if (!apiKey) {
       apiKey = window.prompt("Please enter your Anthropic API Key to call Claude AI:");
       if (!apiKey || !apiKey.trim()) return;
@@ -554,7 +579,7 @@ Please output your response as a beautifully structured report:
       return;
     }
 
-    let apiKey = localStorage.getItem('Anthropic_API_Key');
+    let apiKey = await getAnthropicAPIKey();
     if (!apiKey) {
       apiKey = window.prompt("Please enter your Anthropic API Key to call Claude AI:");
       if (!apiKey || !apiKey.trim()) return;
@@ -688,7 +713,7 @@ ${comparisonReport}`;
       return;
     }
 
-    let apiKey = localStorage.getItem('Anthropic_API_Key');
+    let apiKey = await getAnthropicAPIKey();
     if (!apiKey) {
       apiKey = window.prompt("Please enter your Anthropic API Key to call Claude AI:");
       if (!apiKey || !apiKey.trim()) return;
@@ -2327,6 +2352,15 @@ ${englishSummary}`;
                 setApprovalComments('');
                 setShowApproveModal(true);
               }
+            },
+            {
+              label: '🔗 Copy Public Apply Link',
+              show: (row) => row.RequestState === 2 || row.RequestState === 5,
+              onClick: (row) => {
+                const link = `${window.location.origin}${window.location.pathname}?apply=${row.RequestID}`;
+                navigator.clipboard.writeText(link);
+                alert(`Public Application URL copied to clipboard!\n${link}`);
+              }
             }
           ]}
         />
@@ -2373,13 +2407,47 @@ ${englishSummary}`;
           }}>
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>
+                  {(() => {
+                    const r = rows.find(x => Number(x.RequestID) === Number(formData.RequestID));
+                    const isEd = r ? (r.RequestState === 0 || r.RequestState === 4) : true;
+                    return isEd ? 'Edit Hiring Request' : 'View Hiring Request';
+                  })()}
+                </h3>
                 {(() => {
                   const r = rows.find(x => Number(x.RequestID) === Number(formData.RequestID));
-                  const isEd = r ? (r.RequestState === 0 || r.RequestState === 4) : true;
-                  return isEd ? 'Edit Hiring Request' : 'View Hiring Request';
+                  if (r && (r.RequestState === 2 || r.RequestState === 5)) {
+                    return (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const link = `${window.location.origin}${window.location.pathname}?apply=${r.RequestID}`;
+                          navigator.clipboard.writeText(link);
+                          alert(`Public Application URL copied to clipboard!\n${link}`);
+                        }}
+                        style={{
+                          height: 28,
+                          padding: '0 10px',
+                          border: '1px solid var(--border)',
+                          borderRadius: 8,
+                          background: 'var(--soft)',
+                          color: 'var(--orange)',
+                          fontWeight: 700,
+                          fontSize: 11.5,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 5
+                        }}
+                      >
+                        🔗 Copy Public Link
+                      </button>
+                    );
+                  }
+                  return null;
                 })()}
-              </h3>
+              </div>
               <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>&times;</button>
             </div>
 

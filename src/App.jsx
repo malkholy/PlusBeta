@@ -22,6 +22,7 @@ import CandidatesPool from './pages/CandidatesPool.jsx';
 import JobOffers from './pages/JobOffers.jsx';
 import RecruitmentRoles from './pages/RecruitmentRoles.jsx';
 import RecruitmentInterviews from './pages/RecruitmentInterviews.jsx';
+import PublicApply from './pages/PublicApply.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -225,6 +226,13 @@ function checkIsAdmin(u, fallbackUsername) {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 export default function App() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const publicRequestId = urlParams.get('apply');
+
+  if (publicRequestId) {
+    return <PublicApply requestId={publicRequestId} />;
+  }
+
   const [user, setUser] = useState(() => {
     const username = sessionStorage.getItem('Username');
     const name = sessionStorage.getItem('FullName');

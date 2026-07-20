@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { apiCall, uploadToCloudinary } from '../shared/api.js';
+import { apiCall, uploadToCloudinary, getAnthropicAPIKey } from '../shared/api.js';
 import DataGrid from '../shared/DataGrid.jsx';
 
 const EGYPT_LOCATIONS = {
@@ -618,7 +618,7 @@ export default function CandidatesPool(props) {
   const [translatedSummaries, setTranslatedSummaries] = useState({});
 
   async function handleAISummarize(candidateID) {
-    let apiKey = localStorage.getItem('Anthropic_API_Key');
+    let apiKey = await getAnthropicAPIKey();
     if (!apiKey) {
       apiKey = window.prompt("Please enter your Anthropic API Key to call Claude AI:");
       if (!apiKey || !apiKey.trim()) return;
@@ -847,7 +847,7 @@ Please summarize this candidate's profile based on their CV and evaluate their f
       return;
     }
 
-    let apiKey = localStorage.getItem('Anthropic_API_Key');
+    let apiKey = await getAnthropicAPIKey();
     if (!apiKey) {
       apiKey = window.prompt("Please enter your Anthropic API Key to call Claude AI:");
       if (!apiKey || !apiKey.trim()) return;
@@ -1227,16 +1227,6 @@ ${selectedCandidate.Summary}`;
                           >
                             📋 Copy
                           </button>
-                          <button 
-                            type="button" 
-                            onClick={() => {
-                              localStorage.removeItem('Anthropic_API_Key');
-                              alert('Anthropic API Key has been reset.');
-                            }}
-                            className="ai-summary-action-btn"
-                          >
-                            🔑 Reset Key
-                          </button>
                         </div>
                       </div>
                       <div className="ai-summary-content" style={{ direction: activeLanguage === 'ar' ? 'rtl' : 'ltr', textAlign: activeLanguage === 'ar' ? 'right' : 'left' }}>
@@ -1302,18 +1292,6 @@ ${selectedCandidate.Summary}`;
                         <>✨ Summarize Profile with Claude AI</>
                       )}
                     </button>
-                    {localStorage.getItem('Anthropic_API_Key') && (
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          localStorage.removeItem('Anthropic_API_Key');
-                          alert('Anthropic API Key has been reset.');
-                        }}
-                        style={{ alignSelf: 'flex-end', background: 'none', border: 0, color: 'var(--muted)', fontSize: 10.5, fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', padding: '2px 0' }}
-                      >
-                        Reset saved Anthropic API Key
-                      </button>
-                    )}
                   </div>
                 )}
 

@@ -1,17 +1,16 @@
 USE [ERPMega]
 GO
-
+/****** Object:  StoredProcedure [dbo].[APIPlusLogisticsOperation]    Script Date: 7/16/2026 3:10:01 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-
 -- =========================================================================
 -- Author:      Plus Beta Developer
 -- Create date: 2026-07-09
 -- Description: Logistics tracking history operations
 -- =========================================================================
-CREATE OR ALTER PROCEDURE [dbo].[APIPlusLogisticsOperation]
+ALTER   PROCEDURE [dbo].[APIPlusLogisticsOperation]
     @Operation VARCHAR(100),
     @LineData NVARCHAR(MAX) = '',
     @User           nvarchar(100) = '',
@@ -228,35 +227,43 @@ BEGIN
             END
 
             -- Return Lookup data for Filters (Customer list & Item list)
-            SELECT DISTINCT CustomerNo, CustomerExtraName 
-            FROM dbo.QGetSalesExportStatistics 
+            SELECT DISTINCT x.CustomerNo, CustomerExtraName 
+            FROM acr.CustomerInvoiceLine x left outer join acr.CustomerMaster z on x.CustomerNo=z.CustomerNo where year (  InvoiceDate ) in (2025 , 2026 ) and x.CustomerNo like '6%'
             ORDER BY CustomerExtraName;
 
-            SELECT DISTINCT ItemCode, ItemExtraDescription 
-            FROM dbo.QGetSalesExportStatistics 
-            ORDER BY ItemCode;
+            SELECT DISTINCT x.ItemCode, ItemExtraDescription 
+             FROM acr.CustomerInvoiceLine x left outer join inv.ItemMaster z on x.itemid=z.itemid where year (  InvoiceDate ) in (2025 , 2026 ) and x.CustomerNo like '6%'
+            ORDER BY x.ItemCode;
 
             -- Return monthly raw records for processing on frontend
             SELECT 
                 YEAR(InvoiceDate) AS [Year],
                 MONTH(InvoiceDate) AS [Month],
-                CustomerNo,
+                x.CustomerNo,
                 CustomerExtraName,
-                ItemCode,
+                x.ItemCode,
                 ItemExtraDescription,
-                SUM(ABS(InvoicedQuantity)) AS TotalQuantity,
-                SUM(ABS(InvoicedQuantity) * GrossWeight) AS TotalWeight
-            FROM dbo.QGetSalesExportStatistics
-            WHERE (@CustomerNo IS NULL OR CustomerNo = @CustomerNo)
-              AND (@ItemCode IS NULL OR ItemCode = @ItemCode)
+                ( select FamilyDescription from inv.FamilyMaster f1 where f1.FamilyID=z.ItemFamily2 )  as FamilyL2,
+                ( select FamilyDescription from inv.FamilyMaster f1 where f1.FamilyID=z.ItemFamily3 )  as FamilyL3,
+                SUM(InvoicedQuantity) AS TotalQuantity,
+                SUM(InvoicedQuantity * z.GrossWeight) AS TotalWeight,
+                SUM(InvoicedQuantity * z.Volume) AS TotalVolume
+            FROM acr.CustomerInvoiceLine x 
+            left outer join inv.ItemMaster z on x.itemid=z.itemid 
+            left outer join acr.CustomerMaster c on x.CustomerNo=c.CustomerNo
+            where year(InvoiceDate) in (2025, 2026) and x.CustomerNo like '6%' and 
+             (@CustomerNo IS NULL OR x.CustomerNo = @CustomerNo)
+              AND (@ItemCode IS NULL OR x.ItemCode = @ItemCode)
               AND (@Month IS NULL OR MONTH(InvoiceDate) = @Month)
             GROUP BY 
                 YEAR(InvoiceDate), 
                 MONTH(InvoiceDate), 
-                CustomerNo, 
+                x.CustomerNo, 
                 CustomerExtraName, 
-                ItemCode, 
-                ItemExtraDescription;
+                x.ItemCode, 
+                ItemExtraDescription,
+                z.ItemFamily2,
+                z.ItemFamily3;
             
             RETURN;
         END
@@ -289,4 +296,3 @@ BEGIN
         SET @Message = 'SQL Exception: ' + ERROR_MESSAGE() + ' (Line: ' + CAST(ERROR_LINE() AS VARCHAR(10)) + ')';
     END CATCH
 END
-GO

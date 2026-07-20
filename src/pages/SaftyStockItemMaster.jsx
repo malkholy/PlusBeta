@@ -1445,16 +1445,17 @@ export default function SaftyStockItemMasterPage({ user }) {
                       date.setDate(today.getDate() + Math.ceil(totalCoverageDays));
                       totalCoveredUntilStr = date.toLocaleDateString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' });
                     }
-
+                    
                     const minHistLTVal = recentThree.length > 0 ? Math.min(...recentThree.map(l => Number(l.LeadTime))) : -1;
+                    const row = rows.find(r => r.ID === selectedID) || {};
                     const statusObj = getInventoryStatus(
-                      totalMonitored,
-                      reorderLimit,
-                      calculatedSafetyStock,
-                      totalOpenQty,
-                      leadTime,
-                      activeLeadTime,
-                      minHistLTVal
+                      row.TotalMonitored !== undefined ? row.TotalMonitored : totalMonitored,
+                      row.ReorderLimitPoint !== undefined ? row.ReorderLimitPoint : reorderLimit,
+                      row.StatisticalTarget !== undefined ? row.StatisticalTarget : calculatedSafetyStock,
+                      row.TotalOpenPO !== undefined ? row.TotalOpenPO : totalOpenQty,
+                      row.LeadTime !== undefined ? row.LeadTime : leadTime,
+                      row.ActiveLeadTime !== undefined ? row.ActiveLeadTime : activeLeadTime,
+                      row.MinHistLT !== undefined ? row.MinHistLT : minHistLTVal
                     );
                     let healthStatus = `${statusObj.dot} ${statusObj.label}`;
                     let healthColor = statusObj.color;
@@ -2449,23 +2450,19 @@ export default function SaftyStockItemMasterPage({ user }) {
                       daysToArrive = diffDays >= 0 ? diffDays : 0;
                     }
 
-                    let healthStatus = 'Safe Stock level';
-                    let healthColor = '#22c55e';
-                    let healthBg = 'rgba(34, 197, 94, 0.12)';
-                    
-                    if (dailyAvg <= 0) {
-                      healthStatus = 'Calculation Error';
-                      healthColor = '#ef4444';
-                      healthBg = 'rgba(239, 68, 68, 0.12)';
-                    } else if (totalMonitored <= 0) {
-                      healthStatus = 'Stock Out Danger';
-                      healthColor = '#ef4444';
-                      healthBg = 'rgba(239, 68, 68, 0.12)';
-                    } else if (monitoredDays < 15) {
-                      healthStatus = 'Low Stock level';
-                      healthColor = '#f97316';
-                      healthBg = 'rgba(249, 115, 22, 0.12)';
-                    }
+                    const row = rows.find(r => r.ID === selectedID) || {};
+                    const statusObj = getInventoryStatus(
+                       row.TotalMonitored !== undefined ? row.TotalMonitored : totalMonitored,
+                       row.ReorderLimitPoint !== undefined ? row.ReorderLimitPoint : reorderLimit,
+                       row.StatisticalTarget !== undefined ? row.StatisticalTarget : calculatedSafetyStock,
+                       row.TotalOpenPO !== undefined ? row.TotalOpenPO : totalOpenQty,
+                       row.LeadTime !== undefined ? row.LeadTime : leadTime,
+                       row.ActiveLeadTime !== undefined ? row.ActiveLeadTime : activeLeadTime,
+                       row.MinHistLT !== undefined ? row.MinHistLT : minHistLTVal
+                     );
+                     let healthStatus = `${statusObj.dot} ${statusObj.label}`;
+                     let healthColor = statusObj.color;
+                     let healthBg = `${statusObj.color}15`;
 
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

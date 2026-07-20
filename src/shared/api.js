@@ -57,7 +57,7 @@ export async function apiCall(operation, lineData = null, extraParams = {}, apiT
   } else if (target === 'purchasing') {
     url = (IS_DEV || isGitHubPages) 
       ? (IS_DEV ? '/purchasing-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/') 
-      : '/plus-api/General/GeneralAPI/';
+      : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
     spName = (IS_DEV || isGitHubPages) ? 'APIPlusPurchasingOperation' : 'APIPlusOperation';
   } else if (target === 'logistics') {
     url = IS_DEV ? '/logistics-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
@@ -153,6 +153,23 @@ export async function uploadToCloudinary(file) {
 
   const json = await res.json();
   return json.secure_url;
+}
+
+export async function getAnthropicAPIKey() {
+  let apiKey = '';
+  try {
+    const keyRes = await apiCall('Get AI Key', null, {}, 'recruitment_requests');
+    if (keyRes.State === 0 && keyRes.List0 && keyRes.List0[0] && keyRes.List0[0].APIKey) {
+      apiKey = keyRes.List0[0].APIKey;
+    }
+  } catch (e) {
+    console.warn("Failed to fetch AI key from DB:", e);
+  }
+
+  if (!apiKey) {
+    apiKey = localStorage.getItem('Anthropic_API_Key') || '';
+  }
+  return apiKey;
 }
 
 

@@ -41,6 +41,13 @@ try {
   
   console.log('🚀 Copying build files to IIS folder...');
   copyFolderSync(srcDir, destDir);
+
+  const configSrc = path.join(__dirname, 'web.config');
+  const configDest = path.join(destDir, 'web.config');
+  if (fs.existsSync(configSrc)) {
+    console.log('📄 Copying web.config to IIS folder...');
+    fs.copyFileSync(configSrc, configDest);
+  }
   
   console.log('✅ Successfully published to IIS folder!');
 } catch (error) {

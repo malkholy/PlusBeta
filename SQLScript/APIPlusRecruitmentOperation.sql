@@ -42,15 +42,59 @@ BEGIN
     BEGIN TRY
 
     -- ---------------------------------------------------------------------
+    -- Operation: Get AI Key
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Get AI Key'
+    BEGIN
+        SELECT TOP 1 [APIKey] FROM [PLS].[AIKey] ORDER BY [ID] DESC;
+        RETURN;
+    END
+
+    -- ---------------------------------------------------------------------
+    -- Operation: Get Public Job Details
+    -- ---------------------------------------------------------------------
+    IF @Operation = 'Get Public Job Details'
+    BEGIN
+        DECLARE @JobReqID INT = JSON_VALUE(@LineData, '$.RequestID');
+
+        SELECT 
+            [RequestID],
+            [PositionTitle],
+            [Department],
+            [JobDescription],
+            [RequiredSkills]
+        FROM [PLS].[HiringRequest]
+        WHERE [RequestID] = @JobReqID AND [RequestState] IN (2, 5); -- Approved or Open sourcing
+        RETURN;
+    END
+
+    -- ---------------------------------------------------------------------
     -- Operation: Get Hiring Requests
     -- ---------------------------------------------------------------------
     IF @Operation = 'Get Hiring Requests'
     BEGIN
         SELECT 
-            r.*,
+            r.[RequestID],
+            r.[PositionTitle],
+            r.[Department],
+            r.[Headcount],
+            r.[Reason],
+            r.[JobDescription],
+            r.[RequiredSkills],
+            r.[SalaryMin],
+            r.[SalaryMax],
+            r.[Urgency],
+            r.[TargetStartDate],
+            r.[RequestState],
+            r.[CreatedBy],
+            r.[CreatedDate],
+            r.[LastMaintBy],
+            r.[LastMaintDate],
             COALESCE(r.CreatorName, r.CreatedBy) AS CreatorName,
             (SELECT COUNT(*) FROM [PLS].[Candidate] c WHERE c.RequestID = r.RequestID) AS TotalCandidates,
             (SELECT COUNT(*) FROM [PLS].[Candidate] c WHERE c.RequestID = r.RequestID AND c.CandidateState = 6) AS HiredCount,
+            COALESCE((SELECT COUNT(*) FROM [PLS].[CandidateInterview] i JOIN [PLS].[Candidate] c ON i.CandidateID = c.CandidateID WHERE c.RequestID = r.RequestID), 0) AS TotalInterviews,
+            DATEDIFF(day, r.CreatedDate, COALESCE(CASE WHEN r.RequestState IN (3, 6) THEN r.LastMaintDate END, GETDATE())) AS TotalDaysForOpening,
             (
                 SELECT TOP 1 Comments 
                 FROM [PLS].[HiringRequestApproval] 
@@ -328,7 +372,8 @@ BEGIN
         ELSE
         BEGIN
             UPDATE [PLS].[Candidate]
-            SET [FullName] = @FullName,
+            SET [RequestID] = @CandReqID,
+                [FullName] = @FullName,
                 [Email] = @Email,
                 [Phone] = @Phone,
                 [CVFileName] = COALESCE(@CVFileName, [CVFileName]),

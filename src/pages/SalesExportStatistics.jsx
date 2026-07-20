@@ -365,6 +365,152 @@ function SearchableItemSelect({ value, onChange, options, placeholder = "Select 
   );
 }
 
+function SearchableGenericSelect({ value, onChange, options, placeholder, containerClass }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const triggerLabel = value || placeholder;
+
+  const filteredOptions = options.filter(opt => 
+    String(opt || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleOutsideClick = (e) => {
+      if (!e.target.closest(`.${containerClass}`)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("click", handleOutsideClick);
+    return () => document.removeEventListener("click", handleOutsideClick);
+  }, [isOpen, containerClass]);
+
+  return (
+    <div className={containerClass} style={{ position: 'relative', width: '100%' }}>
+      <div 
+        onClick={() => {
+          setIsOpen(!isOpen);
+          setSearchTerm("");
+        }}
+        style={{
+          height: 38,
+          padding: '0 12px',
+          border: '1.5px solid var(--border)',
+          borderRadius: 8,
+          background: 'var(--bg)',
+          color: 'var(--text)',
+          fontSize: 13,
+          fontFamily: 'var(--font)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          userSelect: 'none',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          transition: 'all 0.15s'
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: value ? 600 : 500 }}>{triggerLabel}</span>
+        <span style={{ fontSize: 9, color: 'var(--orange)', marginLeft: 6 }}>▼</span>
+      </div>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: 42,
+          left: 0,
+          right: 0,
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.18)',
+          zIndex: 1000,
+          maxHeight: 260,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          <div style={{ padding: 8, borderBottom: '1px solid var(--border)', background: 'var(--soft)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12 }}>🔍</span>
+            <input 
+              type="text"
+              placeholder="Search..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              autoFocus
+              style={{
+                height: 30,
+                width: '100%',
+                padding: '0 8px',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-xs)',
+                background: 'var(--surface)',
+                color: 'var(--text)',
+                outline: 'none',
+                fontSize: 12,
+                fontFamily: 'var(--font)'
+              }}
+            />
+          </div>
+          <div style={{ overflowY: 'auto', flex: 1, maxHeight: 220 }}>
+            {filteredOptions.length === 0 ? (
+              <div style={{ padding: '12px 16px', color: 'var(--muted)', fontSize: 12.5, textAlign: 'center' }}>No matches found</div>
+            ) : (
+              <>
+                {value && (
+                  <div 
+                    onClick={() => {
+                      onChange('');
+                      setIsOpen(false);
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      cursor: 'pointer',
+                      borderBottom: '1px solid var(--border)',
+                      color: 'var(--orange)',
+                      fontWeight: 600,
+                      background: 'rgba(249,115,22,0.04)'
+                    }}
+                  >
+                    ✕ Clear Selection
+                  </div>
+                )}
+                {filteredOptions.map((opt, i) => (
+                  <div 
+                    key={i}
+                    onClick={() => {
+                      onChange(opt);
+                      setIsOpen(false);
+                    }}
+                    style={{
+                      padding: '10px 12px',
+                      fontSize: 12.5,
+                      cursor: 'pointer',
+                      background: value === opt ? 'var(--orange-soft)' : 'transparent',
+                      color: value === opt ? 'var(--orange2)' : 'var(--text)',
+                      fontWeight: value === opt ? 700 : 500,
+                      borderBottom: '1px solid rgba(0,0,0,0.02)',
+                      transition: 'background .12s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--soft)'}
+                    onMouseLeave={e => e.currentTarget.style.background = value === opt ? 'var(--orange-soft)' : 'transparent'}
+                  >
+                    {opt}
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function exportItemsToExcel(data, prevYear, activeYear, fileName = 'SalesExport_ItemBreakdown.xls') {
   let html = `
     <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -400,12 +546,17 @@ function exportItemsToExcel(data, prevYear, activeYear, fileName = 'SalesExport_
           <tr>
             <th>Item Code</th>
             <th>Item Description</th>
+            <th>Family L2</th>
+            <th>Family L3</th>
             <th>${prevYear} Qty</th>
             <th>${activeYear} Qty</th>
             <th>Qty Growth</th>
             <th>${prevYear} Weight (Ton)</th>
             <th>${activeYear} Weight (Ton)</th>
             <th>Weight Growth</th>
+            <th>${prevYear} Volume (Liter)</th>
+            <th>${activeYear} Volume (Liter)</th>
+            <th>Volume Growth</th>
           </tr>
         </thead>
         <tbody>
@@ -414,17 +565,23 @@ function exportItemsToExcel(data, prevYear, activeYear, fileName = 'SalesExport_
   data.forEach(item => {
     const qtyGrowth = item.qtyPrev ? ((item.qtyActive - item.qtyPrev) / item.qtyPrev) : null;
     const wtGrowth = item.wtPrev ? ((item.wtActive - item.wtPrev) / item.wtPrev) : null;
+    const volGrowth = item.volPrev ? ((item.volActive - item.volPrev) / item.volPrev) : null;
 
     html += `
       <tr>
         <td class="text">${item.code || ''}</td>
         <td>${item.desc || ''}</td>
+        <td>${item.familyL2 || '—'}</td>
+        <td>${item.familyL3 || '—'}</td>
         <td class="number">${item.qtyPrev}</td>
         <td class="number">${item.qtyActive}</td>
         <td class="center">${qtyGrowth !== null ? (qtyGrowth * 100).toFixed(1) + '%' : '—'}</td>
         <td class="number-dec">${(item.wtPrev / 1000).toFixed(3)}</td>
         <td class="number-dec">${(item.wtActive / 1000).toFixed(3)}</td>
         <td class="center">${wtGrowth !== null ? (wtGrowth * 100).toFixed(1) + '%' : '—'}</td>
+        <td class="number-dec">${(item.volPrev / 1000).toFixed(3)}</td>
+        <td class="number-dec">${(item.volActive / 1000).toFixed(3)}</td>
+        <td class="center">${volGrowth !== null ? (volGrowth * 100).toFixed(1) + '%' : '—'}</td>
       </tr>
     `;
   });
@@ -486,6 +643,9 @@ function exportMonthsToExcel(data, prevYear, activeYear, fileName = 'SalesExport
             <th>${prevYear} Weight (Ton)</th>
             <th>${activeYear} Weight (Ton)</th>
             <th>Weight Growth</th>
+            <th>${prevYear} Volume (Liter)</th>
+            <th>${activeYear} Volume (Liter)</th>
+            <th>Volume Growth</th>
           </tr>
         </thead>
         <tbody>
@@ -494,6 +654,7 @@ function exportMonthsToExcel(data, prevYear, activeYear, fileName = 'SalesExport
   data.forEach(item => {
     const qtyGrowth = item.qtyPrev ? ((item.qtyActive - item.qtyPrev) / item.qtyPrev) : null;
     const wtGrowth = item.wtPrev ? ((item.wtActive - item.wtPrev) / item.wtPrev) : null;
+    const volGrowth = item.volPrev ? ((item.volActive - item.volPrev) / item.volPrev) : null;
 
     html += `
       <tr>
@@ -504,6 +665,9 @@ function exportMonthsToExcel(data, prevYear, activeYear, fileName = 'SalesExport
         <td class="number-dec">${(item.wtPrev / 1000).toFixed(3)}</td>
         <td class="number-dec">${(item.wtActive / 1000).toFixed(3)}</td>
         <td class="center">${wtGrowth !== null ? (wtGrowth * 100).toFixed(1) + '%' : '—'}</td>
+        <td class="number-dec">${(item.volPrev / 1000).toFixed(3)}</td>
+        <td class="number-dec">${(item.volActive / 1000).toFixed(3)}</td>
+        <td class="center">${volGrowth !== null ? (volGrowth * 100).toFixed(1) + '%' : '—'}</td>
       </tr>
     `;
   });
@@ -536,6 +700,8 @@ export default function SalesExportStatistics(props) {
   // Primary Filters
   const [selectedCustomer, setSelectedCustomer] = useState('');
   const [selectedItem, setSelectedItem] = useState('');
+  const [selectedFamilyL2, setSelectedFamilyL2] = useState('');
+  const [selectedFamilyL3, setSelectedFamilyL3] = useState('');
 
   // Period / Date Filters (replicated from Sales Details)
   const [period, setPeriod] = useState('monthly');
@@ -608,26 +774,41 @@ export default function SalesExportStatistics(props) {
   const activeYear = year;
   const prevYear = year - 1;
 
+  // Filtered dataset for local calculations
+  const filteredRecords = records.filter(r => {
+    if (selectedFamilyL2 && r.FamilyL2 !== selectedFamilyL2) return false;
+    if (selectedFamilyL3 && r.FamilyL3 !== selectedFamilyL3) return false;
+    return true;
+  });
+
+  // Extract unique families dynamically from the fetched records
+  const familyL2Options = [...new Set(records.map(r => r.FamilyL2).filter(Boolean))].sort();
+  const familyL3Options = [...new Set(records.map(r => r.FamilyL3).filter(Boolean))].sort();
+
   // YoY calculations for KPI Cards
   const totals = (() => {
     let qtyPrev = 0;
     let qtyActive = 0;
     let wtPrev = 0;
     let wtActive = 0;
+    let volPrev = 0;
+    let volActive = 0;
 
-    records.forEach(r => {
+    filteredRecords.forEach(r => {
       if (activeMonthsList.includes(r.Month)) {
         if (r.Year === prevYear) {
           qtyPrev += Number(r.TotalQuantity || 0);
           wtPrev += Number(r.TotalWeight || 0);
+          volPrev += Number(r.TotalVolume || 0);
         } else if (r.Year === activeYear) {
           qtyActive += Number(r.TotalQuantity || 0);
           wtActive += Number(r.TotalWeight || 0);
+          volActive += Number(r.TotalVolume || 0);
         }
       }
     });
 
-    return { qtyPrev, qtyActive, wtPrev, wtActive };
+    return { qtyPrev, qtyActive, wtPrev, wtActive, volPrev, volActive };
   })();
 
   // Aggregate monthly data for grid (restricted to active list)
@@ -638,19 +819,23 @@ export default function SalesExportStatistics(props) {
       qtyPrev: 0,
       qtyActive: 0,
       wtPrev: 0,
-      wtActive: 0
+      wtActive: 0,
+      volPrev: 0,
+      volActive: 0
     }));
 
-    records.forEach(r => {
+    filteredRecords.forEach(r => {
       if (activeMonthsList.includes(r.Month)) {
         const item = list.find(x => x.monthNum === r.Month);
         if (item) {
           if (r.Year === prevYear) {
             item.qtyPrev += Number(r.TotalQuantity || 0);
             item.wtPrev += Number(r.TotalWeight || 0);
+            item.volPrev += Number(r.TotalVolume || 0);
           } else if (r.Year === activeYear) {
             item.qtyActive += Number(r.TotalQuantity || 0);
             item.wtActive += Number(r.TotalWeight || 0);
+            item.volActive += Number(r.TotalVolume || 0);
           }
         }
       }
@@ -662,24 +847,30 @@ export default function SalesExportStatistics(props) {
   // Aggregate item breakdown (restricted to active list)
   const itemBreakdown = (() => {
     const itemsMap = {};
-    records.forEach(r => {
+    filteredRecords.forEach(r => {
       if (activeMonthsList.includes(r.Month)) {
         if (!itemsMap[r.ItemCode]) {
           itemsMap[r.ItemCode] = {
             code: r.ItemCode,
             desc: r.ItemExtraDescription || 'Unknown Item',
+            familyL2: r.FamilyL2 || '—',
+            familyL3: r.FamilyL3 || '—',
             qtyPrev: 0,
             qtyActive: 0,
             wtPrev: 0,
-            wtActive: 0
+            wtActive: 0,
+            volPrev: 0,
+            volActive: 0
           };
         }
         if (r.Year === prevYear) {
           itemsMap[r.ItemCode].qtyPrev += Number(r.TotalQuantity || 0);
           itemsMap[r.ItemCode].wtPrev += Number(r.TotalWeight || 0);
+          itemsMap[r.ItemCode].volPrev += Number(r.TotalVolume || 0);
         } else if (r.Year === activeYear) {
           itemsMap[r.ItemCode].qtyActive += Number(r.TotalQuantity || 0);
           itemsMap[r.ItemCode].wtActive += Number(r.TotalWeight || 0);
+          itemsMap[r.ItemCode].volActive += Number(r.TotalVolume || 0);
         }
       }
     });
@@ -713,6 +904,8 @@ export default function SalesExportStatistics(props) {
   function resetFilters() {
     setSelectedCustomer('');
     setSelectedItem('');
+    setSelectedFamilyL2('');
+    setSelectedFamilyL3('');
     setPeriod('monthly');
     setMonths([now.getMonth() + 1]);
     setQuarters([Math.ceil((now.getMonth() + 1) / 3)]);
@@ -781,6 +974,7 @@ export default function SalesExportStatistics(props) {
       </div>
 
       {/* Primary Customer / Item Filters */}
+      {/* Primary Customer / Item Filters */}
       <div style={{
         background: 'var(--surface)',
         border: '1px solid var(--border)',
@@ -789,52 +983,82 @@ export default function SalesExportStatistics(props) {
         marginBottom: 20,
         boxShadow: 'var(--shadow)',
         display: 'flex',
-        flexWrap: 'wrap',
-        gap: 16,
-        alignItems: 'flex-end'
+        flexDirection: 'column',
+        gap: 16
       }}>
-        <div style={{ flex: '1 1 250px' }}>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
-            Customer (Export 6%)
-          </label>
-          <SearchableCustomerSelect 
-            value={selectedCustomer}
-            onChange={setSelectedCustomer}
-            options={customers}
-            placeholder="All Customers"
-          />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end' }}>
+          <div style={{ flex: '1 1 300px' }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+              Customer (Export 6%)
+            </label>
+            <SearchableCustomerSelect 
+              value={selectedCustomer}
+              onChange={setSelectedCustomer}
+              options={customers}
+              placeholder="All Customers"
+            />
+          </div>
+
+          <button 
+            onClick={resetFilters}
+            disabled={loading}
+            style={{
+              height: 38,
+              padding: '0 20px',
+              background: 'var(--soft)',
+              border: '1.5px solid var(--border)',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              color: 'var(--text)',
+              cursor: 'pointer',
+              marginLeft: 'auto',
+              transition: 'all 0.15s'
+            }}
+          >
+            {loading ? 'Refreshing...' : '🔄 Reset Filters'}
+          </button>
         </div>
 
-        <div style={{ flex: '1 1 220px' }}>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
-            Item Description
-          </label>
-          <SearchableItemSelect 
-            value={selectedItem}
-            onChange={setSelectedItem}
-            options={items}
-            placeholder="All Items"
-          />
-        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end', paddingTop: 12, borderTop: '1px dashed var(--border)' }}>
+          <div style={{ flex: '2 1 300px' }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+              Item Description
+            </label>
+            <SearchableItemSelect 
+              value={selectedItem}
+              onChange={setSelectedItem}
+              options={items}
+              placeholder="All Items"
+            />
+          </div>
 
-        <button 
-          onClick={resetFilters}
-          disabled={loading}
-          style={{
-            height: 38,
-            padding: '0 20px',
-            background: 'var(--soft)',
-            border: '1.5px solid var(--border)',
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 700,
-            color: 'var(--text)',
-            cursor: 'pointer',
-            transition: 'all 0.15s'
-          }}
-        >
-          {loading ? 'Refreshing...' : '🔄 Reset Filters'}
-        </button>
+          <div style={{ flex: '1 1 200px' }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+              Family L2
+            </label>
+            <SearchableGenericSelect
+              value={selectedFamilyL2}
+              onChange={setSelectedFamilyL2}
+              options={familyL2Options}
+              placeholder="All Family L2"
+              containerClass="searchable-family-l2-container"
+            />
+          </div>
+
+          <div style={{ flex: '1 1 200px' }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>
+              Family L3
+            </label>
+            <SearchableGenericSelect
+              value={selectedFamilyL3}
+              onChange={setSelectedFamilyL3}
+              options={familyL3Options}
+              placeholder="All Family L3"
+              containerClass="searchable-family-l3-container"
+            />
+          </div>
+        </div>
       </div>
 
       {error && <div className="err-page" style={{ marginBottom: 20 }}>⚠ {error}</div>}
@@ -857,6 +1081,15 @@ export default function SalesExportStatistics(props) {
             <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)' }}>vs {(totals.wtPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</span>
           </div>
           <div style={{ marginTop: 6 }}>{renderGrowthBadge(totals.wtPrev, totals.wtActive)}</div>
+        </div>
+
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 18, boxShadow: 'var(--shadow)' }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Export Volume ({activeYear})</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--primary)', marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            {(totals.volActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Liter
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)' }}>vs {(totals.volPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Liter</span>
+          </div>
+          <div style={{ marginTop: 6 }}>{renderGrowthBadge(totals.volPrev, totals.volActive)}</div>
         </div>
       </div>
 
@@ -924,6 +1157,9 @@ export default function SalesExportStatistics(props) {
                     <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight (Ton)</th>
                     <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight (Ton)</th>
                     <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Vol (Liter)</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Vol (Liter)</th>
+                    <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Vol Growth</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -931,7 +1167,11 @@ export default function SalesExportStatistics(props) {
                     <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
                       <td style={{ padding: '10px 12px' }}>
                         <div style={{ fontWeight: 600, color: 'var(--text)' }}>{item.code}</div>
-                        <div style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 300 }} title={item.desc}>{item.desc}</div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 300, marginBottom: 4 }} title={item.desc}>{item.desc}</div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
+                          <span style={{ fontSize: 10, background: 'var(--soft)', padding: '2px 6px', borderRadius: 4, border: '0.5px solid var(--border)', color: 'var(--text-dark)', fontWeight: 600 }}>L2: {item.familyL2}</span>
+                          <span style={{ fontSize: 10, background: 'var(--soft)', padding: '2px 6px', borderRadius: 4, border: '0.5px solid var(--border)', color: 'var(--text-dark)', fontWeight: 600 }}>L3: {item.familyL3}</span>
+                        </div>
                       </td>
                       <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{item.qtyPrev.toLocaleString('en-US')}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{item.qtyActive.toLocaleString('en-US')}</td>
@@ -939,6 +1179,9 @@ export default function SalesExportStatistics(props) {
                       <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(item.wtPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                       <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{(item.wtActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                       <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.wtPrev, item.wtActive)}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(item.volPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} L</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--primary)' }}>{(item.volActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} L</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.volPrev, item.volActive)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1006,6 +1249,9 @@ export default function SalesExportStatistics(props) {
                   <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight (Ton)</th>
                   <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight (Ton)</th>
                   <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Vol (Liter)</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Vol (Liter)</th>
+                  <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Vol Growth</th>
                 </tr>
               </thead>
               <tbody>
@@ -1018,6 +1264,9 @@ export default function SalesExportStatistics(props) {
                     <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(m.wtPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                     <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{(m.wtActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                     <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.wtPrev, m.wtActive)}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(m.volPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} L</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--primary)' }}>{(m.volActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} L</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.volPrev, m.volActive)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1109,6 +1358,9 @@ export default function SalesExportStatistics(props) {
                         <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight (Ton)</th>
                         <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight (Ton)</th>
                         <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Vol (Liter)</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Vol (Liter)</th>
+                        <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Vol Growth</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1116,7 +1368,11 @@ export default function SalesExportStatistics(props) {
                         <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
                           <td style={{ padding: '10px 12px' }}>
                             <div style={{ fontWeight: 600, color: 'var(--text)' }}>{item.code}</div>
-                            <div style={{ fontSize: 11, color: 'var(--muted)' }}>{item.desc}</div>
+                            <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>{item.desc}</div>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 2 }}>
+                              <span style={{ fontSize: 10, background: 'var(--soft)', padding: '2px 6px', borderRadius: 4, border: '0.5px solid var(--border)', color: 'var(--text-dark)', fontWeight: 600 }}>L2: {item.familyL2}</span>
+                              <span style={{ fontSize: 10, background: 'var(--soft)', padding: '2px 6px', borderRadius: 4, border: '0.5px solid var(--border)', color: 'var(--text-dark)', fontWeight: 600 }}>L3: {item.familyL3}</span>
+                            </div>
                           </td>
                           <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{item.qtyPrev.toLocaleString('en-US')}</td>
                           <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{item.qtyActive.toLocaleString('en-US')}</td>
@@ -1124,6 +1380,9 @@ export default function SalesExportStatistics(props) {
                           <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(item.wtPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                           <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{(item.wtActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                           <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.wtPrev, item.wtActive)}</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(item.volPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} L</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--primary)' }}>{(item.volActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} L</td>
+                          <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(item.volPrev, item.volActive)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1140,6 +1399,9 @@ export default function SalesExportStatistics(props) {
                       <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Weight (Ton)</th>
                       <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Weight (Ton)</th>
                       <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Wt Growth</th>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{prevYear} Vol (Liter)</th>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'right' }}>{activeYear} Vol (Liter)</th>
+                      <th style={{ padding: '10px 12px', fontWeight: 800, color: 'var(--muted)', textAlign: 'center' }}>Vol Growth</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1152,6 +1414,9 @@ export default function SalesExportStatistics(props) {
                         <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(m.wtPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                         <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--orange)' }}>{(m.wtActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} Ton</td>
                         <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.wtPrev, m.wtActive)}</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--muted)' }}>{(m.volPrev / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} L</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--primary)' }}>{(m.volActive / 1000).toLocaleString('en-US', { maximumFractionDigits: 3 })} L</td>
+                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>{renderGrowthBadge(m.volPrev, m.volActive)}</td>
                       </tr>
                     ))}
                   </tbody>
