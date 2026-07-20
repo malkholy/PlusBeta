@@ -1353,7 +1353,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                     const defaultLT = configuredLT > 0 
                       ? configuredLT 
                       : (recentThree.length > 0 
-                          ? (recentThree.reduce((sum, l) => sum + Number(l.LeadTime), 0) / recentThree.length)
+                          ? Math.ceil(recentThree.reduce((sum, l) => sum + Number(l.LeadTime), 0) / recentThree.length)
                           : 0);
 
                     let computedLeadTimeStdDev = 0;
@@ -2581,7 +2581,7 @@ export default function SaftyStockItemMasterPage({ user }) {
                     const defaultLT = configuredLT > 0 
                       ? configuredLT 
                       : (recentThree.length > 0 
-                          ? (recentThree.reduce((sum, l) => sum + Number(l.LeadTime), 0) / recentThree.length)
+                          ? Math.ceil(recentThree.reduce((sum, l) => sum + Number(l.LeadTime), 0) / recentThree.length)
                           : 0);
 
                     let computedLeadTimeStdDev = 0;
