@@ -991,6 +991,7 @@ BEGIN
             t.TestType,
             r.Score,
             r.Status,
+            r.AnswersDetails,
             r.TestDate
         FROM [PLS].[CandidateTestResults] r
         JOIN [PLS].[RecruitmentTests] t ON r.TestID = t.TestID
@@ -1010,10 +1011,15 @@ BEGIN
         DECLARE @SResultID INT = JSON_VALUE(@LineData, '$.ResultID');
         DECLARE @SScore DECIMAL(5,2) = CAST(JSON_VALUE(@LineData, '$.Score') AS DECIMAL(5,2));
         DECLARE @SStatus VARCHAR(50) = JSON_VALUE(@LineData, '$.Status');
+        DECLARE @SAnswers NVARCHAR(MAX) = JSON_QUERY(@LineData, '$.AnswersDetails');
+
+        IF @SAnswers IS NULL
+            SET @SAnswers = JSON_VALUE(@LineData, '$.AnswersDetails');
 
         UPDATE [PLS].[CandidateTestResults]
         SET Score = @SScore,
-            Status = ISNULL(@SStatus, 'Completed')
+            Status = ISNULL(@SStatus, 'Completed'),
+            AnswersDetails = ISNULL(@SAnswers, AnswersDetails)
         WHERE ResultID = @SResultID;
 
         RETURN;

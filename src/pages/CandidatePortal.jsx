@@ -198,12 +198,23 @@ export default function CandidatePortal() {
     if (!activeQuiz) return;
     const { questions, testItem } = activeQuiz;
     
-    // Calculate total correct
+    // Calculate total correct & build detailed breakdown
     let correctCount = 0;
-    questions.forEach(q => {
-      if (userAnswers[q.QuestionID] === q.CorrectAnswer) {
-        correctCount++;
-      }
+    const breakdown = questions.map(q => {
+      const selected = userAnswers[q.QuestionID] || null;
+      const isCorrect = selected === q.CorrectAnswer;
+      if (isCorrect) correctCount++;
+      return {
+        QuestionID: q.QuestionID,
+        QuestionText: q.QuestionText,
+        OptionA: q.OptionA,
+        OptionB: q.OptionB,
+        OptionC: q.OptionC,
+        OptionD: q.OptionD,
+        CorrectAnswer: q.CorrectAnswer,
+        SelectedAnswer: selected,
+        IsCorrect: isCorrect
+      };
     });
 
     const totalQs = questions.length;
@@ -214,7 +225,8 @@ export default function CandidatePortal() {
       const res = await apiCall('SaveCandidateTestResult', {
         ResultID: testItem.ResultID,
         Score: percentage,
-        Status: 'Completed'
+        Status: 'Completed',
+        AnswersDetails: JSON.stringify(breakdown)
       }, {}, 'recruitment_tests');
 
       if (res.State === 0) {

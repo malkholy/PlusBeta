@@ -124,6 +124,10 @@ export default function CandidatesPool(props) {
     TestID: ''
   });
 
+  // Answer Breakdown Modal State
+  const [showAnswerModal, setShowAnswerModal] = useState(false);
+  const [selectedAnswerTest, setSelectedAnswerTest] = useState(null);
+
   useEffect(() => {
     loadData();
     loadHiringRequests();
@@ -1857,16 +1861,39 @@ ${selectedCandidate.Summary}`;
                         </div>
                         <div>
                           {item.Score !== null && item.Score !== undefined ? (
-                            <span style={{
-                              fontSize: 13,
-                              fontWeight: 800,
-                              color: item.Score >= 60 ? 'var(--green)' : 'var(--red)',
-                              background: item.Score >= 60 ? 'var(--green-soft)' : 'var(--red-soft)',
-                              padding: '4px 10px',
-                              borderRadius: 8
-                            }}>
-                              Score: {item.Score}% {item.Score >= 60 ? '✓' : '⚠️'}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <span style={{
+                                fontSize: 13,
+                                fontWeight: 800,
+                                color: item.Score >= 60 ? 'var(--green)' : 'var(--red)',
+                                background: item.Score >= 60 ? 'var(--green-soft)' : 'var(--red-soft)',
+                                padding: '4px 10px',
+                                borderRadius: 8
+                              }}>
+                                Score: {item.Score}% {item.Score >= 60 ? '✓' : '⚠️'}
+                              </span>
+                              {item.AnswersDetails && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedAnswerTest(item);
+                                    setShowAnswerModal(true);
+                                  }}
+                                  style={{
+                                    background: 'var(--primary-soft)',
+                                    color: 'var(--primary)',
+                                    border: '1px solid var(--primary)',
+                                    padding: '4px 10px',
+                                    borderRadius: 8,
+                                    fontSize: 11.5,
+                                    fontWeight: 800,
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  👁️ View Answer Breakdown
+                                </button>
+                              )}
+                            </div>
                           ) : (
                             <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--orange)', background: 'var(--orange-soft)', padding: '4px 8px', borderRadius: 6 }}>
                               {item.Status || 'Assigned'}
@@ -2706,6 +2733,178 @@ ${selectedCandidate.Summary}`;
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Answer Breakdown Modal */}
+      {showAnswerModal && selectedAnswerTest && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15,23,42,0.6)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 10000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 20
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            borderRadius: 20,
+            border: '1px solid var(--border)',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)',
+            maxWidth: 760,
+            width: '100%',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--soft)' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: 'var(--text)' }}>
+                  Candidate Answer Breakdown: {selectedAnswerTest.TestTitle}
+                </h3>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2, fontWeight: 600 }}>
+                  Candidate: {selectedCandidate?.FullName} | Score: <strong style={{ color: selectedAnswerTest.Score >= 60 ? 'var(--green)' : 'var(--red)' }}>{selectedAnswerTest.Score}%</strong>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAnswerModal(false)}
+                style={{ background: 'none', border: 0, fontSize: 24, cursor: 'pointer', color: 'var(--muted)', fontWeight: 'bold' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Content - Question List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {(() => {
+                let questions = [];
+                try {
+                  questions = typeof selectedAnswerTest.AnswersDetails === 'string'
+                    ? JSON.parse(selectedAnswerTest.AnswersDetails)
+                    : selectedAnswerTest.AnswersDetails;
+                } catch (e) {}
+
+                if (!Array.isArray(questions) || questions.length === 0) {
+                  return (
+                    <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+                      No question breakdown details available for this test.
+                    </div>
+                  );
+                }
+
+                return questions.map((q, idx) => {
+                  const isCorrect = q.IsCorrect;
+
+                  return (
+                    <div key={idx} style={{
+                      background: 'var(--surface)',
+                      border: isCorrect ? '1.5px solid var(--green)' : '1.5px solid var(--red)',
+                      borderRadius: 14,
+                      padding: 16,
+                      boxShadow: 'var(--shadow)'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                        <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase' }}>
+                          Question #{idx + 1}
+                        </span>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          color: isCorrect ? 'var(--green)' : 'var(--red)',
+                          background: isCorrect ? 'var(--green-soft)' : 'var(--red-soft)',
+                          padding: '2px 8px',
+                          borderRadius: 6
+                        }}>
+                          {isCorrect ? '✓ Correct' : '❌ Incorrect'}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 12, lineHeight: 1.4 }}>
+                        {q.QuestionText}
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        {[
+                          { key: 'A', text: q.OptionA },
+                          { key: 'B', text: q.OptionB },
+                          { key: 'C', text: q.OptionC },
+                          { key: 'D', text: q.OptionD }
+                        ].map(opt => {
+                          const isCandidateChoice = q.SelectedAnswer === opt.key;
+                          const isCorrectAnswer = q.CorrectAnswer === opt.key;
+
+                          let bg = 'var(--soft)';
+                          let border = '1px solid var(--border)';
+                          let color = 'var(--text)';
+                          let badgeText = '';
+
+                          if (isCandidateChoice && isCorrectAnswer) {
+                            bg = 'var(--green-soft)';
+                            border = '1.5px solid var(--green)';
+                            color = 'var(--green)';
+                            badgeText = ' (Candidate Choice ✓)';
+                          } else if (isCandidateChoice && !isCorrectAnswer) {
+                            bg = 'var(--red-soft)';
+                            border = '1.5px solid var(--red)';
+                            color = 'var(--red)';
+                            badgeText = ' (Candidate Selected ❌)';
+                          } else if (isCorrectAnswer) {
+                            bg = 'var(--green-soft)';
+                            border = '1.5px solid var(--green)';
+                            color = 'var(--green)';
+                            badgeText = ' (Correct Key ✓)';
+                          }
+
+                          return (
+                            <div key={opt.key} style={{
+                              background: bg,
+                              border: border,
+                              color: color,
+                              borderRadius: 10,
+                              padding: '8px 12px',
+                              fontSize: 12.5,
+                              fontWeight: 600,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between'
+                            }}>
+                              <span><strong>{opt.key}:</strong> {opt.text}</span>
+                              {badgeText && <span style={{ fontSize: 10, fontWeight: 800 }}>{badgeText}</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', background: 'var(--soft)' }}>
+              <button
+                onClick={() => setShowAnswerModal(false)}
+                style={{
+                  height: 38,
+                  padding: '0 20px',
+                  background: 'var(--primary)',
+                  color: '#fff',
+                  border: 0,
+                  borderRadius: 10,
+                  fontWeight: 800,
+                  fontSize: 13,
+                  cursor: 'pointer'
+                }}
+              >
+                Close Review
+              </button>
+            </div>
           </div>
         </div>
       )}
