@@ -619,6 +619,9 @@ export default function CandidatesPool(props) {
       if (res.State === 0) {
         setShowFeedbackModal(false);
         loadData();
+        if (selectedCandidate) {
+          loadInterviews(selectedCandidate.CandidateID);
+        }
       } else {
         alert(res.Message || 'Failed to submit feedback.');
       }
@@ -1914,8 +1917,37 @@ ${selectedCandidate.Summary}`;
                             </div>
                           )}
 
-                          {Number(item.InterviewState) === 0 && (
+                          {Number(item.InterviewState) === 0 ? (
                             <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFeedbackFormData({
+                                    InterviewID: String(item.InterviewID),
+                                    Rating: '8',
+                                    FeedbackComments: item.FeedbackComments || '',
+                                    Recommendation: String(item.Recommendation ?? 0)
+                                  });
+                                  setShowFeedbackModal(true);
+                                }}
+                                style={{
+                                  flex: 1.3,
+                                  height: 32,
+                                  border: 0,
+                                  background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                                  color: '#fff',
+                                  borderRadius: 8,
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  fontSize: 11.5,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: 4
+                                }}
+                              >
+                                ⭐ Rate & Complete
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => {
@@ -1971,6 +2003,37 @@ ${selectedCandidate.Summary}`;
                                 }}
                               >
                                 🚫 Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFeedbackFormData({
+                                    InterviewID: String(item.InterviewID),
+                                    Rating: String(item.Rating || 8),
+                                    FeedbackComments: item.FeedbackComments || '',
+                                    Recommendation: String(item.Recommendation ?? 0)
+                                  });
+                                  setShowFeedbackModal(true);
+                                }}
+                                style={{
+                                  height: 28,
+                                  padding: '0 12px',
+                                  border: '1px solid var(--border)',
+                                  background: 'var(--soft)',
+                                  color: 'var(--primary)',
+                                  borderRadius: 7,
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  fontSize: 11,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5
+                                }}
+                              >
+                                ✏️ Edit Rating & Feedback
                               </button>
                             </div>
                           )}
