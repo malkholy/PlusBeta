@@ -105,13 +105,30 @@ export default function RecruitmentTests(props) {
     setColumns(cols);
   }
 
+  function getDefaultPromptForType(type) {
+    switch (type) {
+      case 'IQ':
+        return 'Generate 5 intermediate IQ and logical reasoning multiple-choice questions with 4 options and answers.';
+      case 'English':
+        return 'Generate 5 intermediate English grammar and vocabulary multiple-choice questions with 4 options and answers.';
+      case 'Technical':
+        return 'Generate 5 technical assessment multiple-choice questions for a software development candidate.';
+      case 'Personality':
+        return 'Generate 5 situational judgment and workplace personality multiple-choice questions.';
+      default:
+        return 'Generate 5 general aptitude multiple-choice questions with 4 options and answers.';
+    }
+  }
+
   function handleOpenDrawer(testRow) {
     if (testRow) {
+      const type = testRow.TestType || 'IQ';
       setEditingTest({
         TestID: testRow.TestID,
         TestTitle: testRow.TestTitle || '',
-        TestType: testRow.TestType || ''
+        TestType: type
       });
+      setAiPrompt(getDefaultPromptForType(type));
       loadQuestions(testRow.TestID);
     } else {
       setEditingTest({
@@ -119,6 +136,7 @@ export default function RecruitmentTests(props) {
         TestTitle: '',
         TestType: 'IQ'
       });
+      setAiPrompt(getDefaultPromptForType('IQ'));
       setQuestions([]);
     }
     setShowDrawer(true);
@@ -363,7 +381,11 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Category / Type</label>
                 <select
                   value={editingTest.TestType}
-                  onChange={(e) => setEditingTest({...editingTest, TestType: e.target.value})}
+                  onChange={(e) => {
+                    const newType = e.target.value;
+                    setEditingTest({...editingTest, TestType: newType});
+                    setAiPrompt(getDefaultPromptForType(newType));
+                  }}
                   style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none', fontSize: 13, fontWeight: 600 }}
                 >
                   <option value="IQ">IQ & Aptitude Test</option>
