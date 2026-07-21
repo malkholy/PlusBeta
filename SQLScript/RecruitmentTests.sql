@@ -37,9 +37,17 @@ BEGIN
         [CandidateID] INT NOT NULL,
         [TestID] INT NOT NULL,
         [Score] DECIMAL(5,2) NULL,
+        [Status] VARCHAR(50) DEFAULT 'Assigned',
         [TestDate] DATETIME DEFAULT GETDATE(),
         CONSTRAINT FK_CandidateTestResults_TestID FOREIGN KEY ([TestID]) REFERENCES [PLS].[RecruitmentTests]([TestID]) ON DELETE CASCADE,
         CONSTRAINT FK_CandidateTestResults_CandidateID FOREIGN KEY ([CandidateID]) REFERENCES [PLS].[Candidate]([CandidateID]) ON DELETE CASCADE
     );
+END
+ELSE
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[PLS].[CandidateTestResults]') AND name = 'Status')
+    BEGIN
+        ALTER TABLE [PLS].[CandidateTestResults] ADD [Status] VARCHAR(50) DEFAULT 'Assigned';
+    END
 END
 GO

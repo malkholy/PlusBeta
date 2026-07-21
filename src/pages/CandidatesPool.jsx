@@ -115,12 +115,69 @@ export default function CandidatesPool(props) {
     OfferTerms: ''
   });
 
+  // Test Assignment State
+  const [assignedTests, setAssignedTests] = useState([]);
+  const [availableTests, setAvailableTests] = useState([]);
+  const [showAssignTestModal, setShowAssignTestModal] = useState(false);
+  const [assignTestFormData, setAssignTestFormData] = useState({
+    CandidateID: '',
+    TestID: ''
+  });
+
   useEffect(() => {
     loadData();
     loadHiringRequests();
     loadRecruitmentRoles();
     loadSystemUsers();
+    loadAvailableTests();
   }, []);
+
+  async function loadAvailableTests() {
+    try {
+      const res = await apiCall('GetRecruitmentTests', {}, {}, 'recruitment_tests');
+      if (res.State === 0 || res.List0) {
+        setAvailableTests(res.List0 || []);
+      }
+    } catch (e) {
+      console.error('Failed to load available tests:', e);
+    }
+  }
+
+  async function loadAssignedTests(candidateId) {
+    if (!candidateId) return;
+    try {
+      const res = await apiCall('GetCandidateAssignedTests', { CandidateID: candidateId }, {}, 'recruitment_tests');
+      if (res.State === 0 || res.List0) {
+        setAssignedTests(res.List0 || []);
+      }
+    } catch (err) {
+      console.error('Failed to load assigned tests:', err);
+    }
+  }
+
+  async function handleAssignTestSubmit(e) {
+    e.preventDefault();
+    if (!assignTestFormData.TestID) return alert('Please select a test.');
+    setSubmitting(true);
+    try {
+      const res = await apiCall('AssignCandidateTest', {
+        CandidateID: Number(assignTestFormData.CandidateID),
+        TestID: Number(assignTestFormData.TestID)
+      }, {}, 'recruitment_tests');
+      
+      if (res.State === 0) {
+        setShowAssignTestModal(false);
+        if (selectedCandidate) {
+          loadAssignedTests(selectedCandidate.CandidateID);
+        }
+      } else {
+        alert(res.Message || 'Failed to assign test.');
+      }
+    } catch (err) {
+      alert('Error assigning test: ' + err.message);
+    }
+    setSubmitting(false);
+  }
 
   async function loadSystemUsers() {
     try {
@@ -135,6 +192,7 @@ export default function CandidatesPool(props) {
 
   async function loadInterviewsAndHistory(candidateId) {
     if (!candidateId) return;
+    loadAssignedTests(candidateId);
     try {
       const res = await apiCall('Get Interviews', { CandidateID: candidateId }, {}, 'recruitment_requests');
       if (res.State === 0) {
@@ -1155,6 +1213,37 @@ ${selectedCandidate.Summary}`;
               </button>
               <button
                 type="button"
+                onClick={() => setActiveDrawerTab('tests')}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  borderBottom: activeDrawerTab === 'tests' ? '2.5px solid var(--primary)' : '2.5px solid transparent',
+                  color: activeDrawerTab === 'tests' ? 'var(--primary)' : 'var(--muted)',
+                  padding: '8px 4px',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                📝 Tests
+                <span style={{
+                  fontSize: 10,
+                  background: activeDrawerTab === 'tests' ? 'var(--primary)' : 'var(--border2)',
+                  color: activeDrawerTab === 'tests' ? '#fff' : 'var(--muted)',
+                  padding: '2px 6px',
+                  borderRadius: 10,
+                  fontWeight: 800,
+                  marginLeft: 2
+                }}>
+                  {assignedTests.length}
+                </span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveDrawerTab('history')}
                 style={{
                   background: 'none',
@@ -1576,6 +1665,72 @@ ${selectedCandidate.Summary}`;
               </div>
             )}
 
+            {activeDrawerTab === 'tests' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    Assigned Assessment Tests ({assignedTests.length})
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAssignTestFormData({ CandidateID: String(selectedCandidate.CandidateID), TestID: '' });
+                      setShowAssignTestModal(true);
+                    }}
+                    style={{
+                      background: 'var(--primary-soft)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--primary)',
+                      padding: '5px 12px',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    + Assign New Test
+                  </button>
+                </div>
+
+                {assignedTests.length === 0 ? (
+                  <div style={{ padding: '24px 12px', background: 'var(--soft)', border: '1px dotted var(--border)', borderRadius: 12, textAlign: 'center', fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>
+                    📝 No tests assigned to this candidate yet.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {assignedTests.map((item, idx) => (
+                      <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.015)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 4 }}>
+                            {item.TestTitle}
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, background: 'var(--soft)', padding: '2px 8px', borderRadius: 6, color: 'var(--muted)' }}>
+                              {item.TestType}
+                            </span>
+                            <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                              Assigned: {item.TestDate ? new Date(item.TestDate).toLocaleDateString() : '—'}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          {item.Score !== null && item.Score !== undefined ? (
+                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--green)', background: 'var(--green-soft)', padding: '4px 10px', borderRadius: 8 }}>
+                              Score: {item.Score}%
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--orange)', background: 'var(--orange-soft)', padding: '4px 8px', borderRadius: 6 }}>
+                              {item.Status || 'Assigned'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeDrawerTab === 'history' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>
@@ -1877,6 +2032,17 @@ ${selectedCandidate.Summary}`;
               label: '📋 Shortlist Candidate',
               show: (row) => row.CandidateState === 0,
               onClick: (row) => handleShortlist(row.CandidateID)
+            },
+            {
+              label: '📝 Assign Assessment Test',
+              show: (row) => row.CandidateState !== 2,
+              onClick: (row) => {
+                setAssignTestFormData({
+                  CandidateID: String(row.CandidateID),
+                  TestID: ''
+                });
+                setShowAssignTestModal(true);
+              }
             },
             {
               label: '📅 Schedule Interview',
@@ -2348,6 +2514,46 @@ ${selectedCandidate.Summary}`;
                 <button type="button" onClick={() => setShowReassignModal(false)} style={{ height: 38, padding: '0 18px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
                 <button type="submit" disabled={submitting} style={{ height: 38, padding: '0 20px', border: 0, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>
                   {submitting ? 'Reassigning...' : 'Confirm Reassignment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {showAssignTestModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.3)', backdropFilter: 'blur(4px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 20, width: '100%', maxWidth: 460, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid var(--border)' }}>
+              <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>Assign Assessment Test</h3>
+              <button onClick={() => setShowAssignTestModal(false)} style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>&times;</button>
+            </div>
+            <form onSubmit={handleAssignTestSubmit}>
+              <div style={{ padding: 24 }}>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Select Test</label>
+                  <select
+                    value={assignTestFormData.TestID}
+                    onChange={e => setAssignTestFormData({ ...assignTestFormData, TestID: e.target.value })}
+                    style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
+                    required
+                  >
+                    <option value="">Select Test...</option>
+                    {availableTests.map(t => (
+                      <option key={t.TestID} value={t.TestID}>
+                        {t.TestTitle} ({t.TestType}) - {t.QuestionCount || 0} Questions
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600, lineHeight: 1.5 }}>
+                  💡 Assigning a test links it to the candidate's recruitment profile. You will be able to review their score once completed.
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', padding: '16px 24px', background: 'var(--soft)', borderTop: '1px solid var(--border)' }}>
+                <button type="button" onClick={() => setShowAssignTestModal(false)} style={{ height: 38, padding: '0 18px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+                <button type="submit" disabled={submitting} style={{ height: 38, padding: '0 20px', border: 0, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>
+                  {submitting ? 'Assigning...' : 'Assign Test'}
                 </button>
               </div>
             </form>

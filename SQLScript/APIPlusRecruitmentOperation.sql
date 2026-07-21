@@ -955,6 +955,70 @@ BEGIN
         RETURN;
     END
 
+    -- ======================================================================
+    -- Operation: Assign Candidate Test
+    -- ======================================================================
+    IF @Operation = 'AssignCandidateTest'
+    BEGIN
+        SET @State = 0;
+        SET @Message = 'Success';
+
+        DECLARE @ACandID INT = JSON_VALUE(@LineData, '$.CandidateID');
+        DECLARE @ATestID INT = JSON_VALUE(@LineData, '$.TestID');
+
+        INSERT INTO [PLS].[CandidateTestResults] (CandidateID, TestID, Status, TestDate)
+        VALUES (@ACandID, @ATestID, 'Assigned', GETDATE());
+
+        SELECT SCOPE_IDENTITY() AS ResultID;
+        RETURN;
+    END
+
+    -- ======================================================================
+    -- Operation: Get Candidate Assigned Tests
+    -- ======================================================================
+    IF @Operation = 'GetCandidateAssignedTests'
+    BEGIN
+        SET @State = 0;
+        SET @Message = 'Success';
+
+        DECLARE @GCandID INT = JSON_VALUE(@LineData, '$.CandidateID');
+
+        SELECT 
+            r.ResultID,
+            r.CandidateID,
+            r.TestID,
+            t.TestTitle,
+            t.TestType,
+            r.Score,
+            r.Status,
+            r.TestDate
+        FROM [PLS].[CandidateTestResults] r
+        JOIN [PLS].[RecruitmentTests] t ON r.TestID = t.TestID
+        WHERE r.CandidateID = @GCandID
+        ORDER BY r.ResultID DESC;
+        RETURN;
+    END
+
+    -- ======================================================================
+    -- Operation: Save Candidate Test Result
+    -- ======================================================================
+    IF @Operation = 'SaveCandidateTestResult'
+    BEGIN
+        SET @State = 0;
+        SET @Message = 'Success';
+
+        DECLARE @SResultID INT = JSON_VALUE(@LineData, '$.ResultID');
+        DECLARE @SScore DECIMAL(5,2) = CAST(JSON_VALUE(@LineData, '$.Score') AS DECIMAL(5,2));
+        DECLARE @SStatus VARCHAR(50) = JSON_VALUE(@LineData, '$.Status');
+
+        UPDATE [PLS].[CandidateTestResults]
+        SET Score = @SScore,
+            Status = ISNULL(@SStatus, 'Completed')
+        WHERE ResultID = @SResultID;
+
+        RETURN;
+    END
+
     END TRY
     BEGIN CATCH
         SET @State = ERROR_NUMBER();
