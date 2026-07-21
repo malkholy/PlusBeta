@@ -2478,12 +2478,7 @@ ${englishSummary}`;
                   marginBottom: 18,
                   boxShadow: 'var(--shadow)'
                 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                      <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>🎯 Target Headcount</span>
-                      <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>{targetHeadCount} {targetHeadCount === 1 ? 'Opening' : 'Openings'}</span>
-                    </div>
-
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                       <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>👥 Total Applicants</span>
                       <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--blue)' }}>{totalApplicants} Candidates</span>
