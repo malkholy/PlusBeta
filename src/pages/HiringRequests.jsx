@@ -1197,6 +1197,33 @@ ${englishSummary}`;
       }
     });
 
+    // 3. Add interviews to timeline
+    interviews.forEach(inv => {
+      const cand = candidates.find(c => Number(c.CandidateID) === Number(inv.CandidateID));
+      const candName = cand ? cand.FullName : (inv.CandidateName || `Candidate #${inv.CandidateID}`);
+      const roundText = inv.RoundNumber === 1 ? 'HR Round' : inv.RoundNumber === 2 ? 'Technical Round' : inv.RoundNumber === 3 ? 'Manager Round' : 'Final Round';
+      
+      const states = {
+        0: { text: 'Scheduled', icon: '📅', color: 'var(--blue)', bg: 'var(--blue-soft)' },
+        1: { text: 'Completed', icon: '💬', color: 'var(--text)', bg: 'var(--soft)' },
+        2: { text: 'Passed', icon: '🌟', color: 'var(--green)', bg: 'var(--green-soft)' },
+        3: { text: 'Delayed', icon: '⚠️', color: 'var(--orange)', bg: 'var(--orange-soft)' },
+        4: { text: 'Canceled', icon: '🚫', color: 'var(--red)', bg: 'var(--red-soft)' }
+      };
+
+      const st = states[inv.InterviewState] || { text: 'Interview', icon: '📅', color: 'var(--muted)', bg: 'var(--soft)' };
+
+      timelineItems.push({
+        title: `Interview (${roundText}): ${candName} — ${st.text}`,
+        user: `Interviewer: ${inv.InterviewerUser || 'Unassigned'}`,
+        date: inv.ScheduledDate,
+        comments: inv.FeedbackComments || (inv.Rating ? `Rating: ⭐ ${inv.Rating} / 10` : null),
+        icon: st.icon,
+        color: st.color,
+        bg: st.bg
+      });
+    });
+
     // Sort items by date (except pending steps which should sit at the end)
     timelineItems.sort((a, b) => {
       if (!a.date) return 1;
