@@ -1931,8 +1931,15 @@ ${selectedCandidate.Summary}`;
                         </div>
                         <div>
                           {item.Score !== null && item.Score !== undefined ? (
-                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--green)', background: 'var(--green-soft)', padding: '4px 10px', borderRadius: 8 }}>
-                              Score: {item.Score}%
+                            <span style={{
+                              fontSize: 13,
+                              fontWeight: 800,
+                              color: item.Score >= 60 ? 'var(--green)' : 'var(--red)',
+                              background: item.Score >= 60 ? 'var(--green-soft)' : 'var(--red-soft)',
+                              padding: '4px 10px',
+                              borderRadius: 8
+                            }}>
+                              Score: {item.Score}% {item.Score >= 60 ? '✓' : '⚠️'}
                             </span>
                           ) : (
                             <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--orange)', background: 'var(--orange-soft)', padding: '4px 8px', borderRadius: 6 }}>
