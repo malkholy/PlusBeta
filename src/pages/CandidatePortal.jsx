@@ -1,6 +1,36 @@
 import { useState, useEffect } from 'react';
 import { apiCall, uploadToCloudinary } from '../shared/api.js';
 
+const EGYPT_LOCATIONS = {
+  'Cairo': ['New Cairo', 'Maadi', 'Nasr City', 'Heliopolis', 'Shoubra', 'Zamalek', 'Sheraton', 'El Rehab', 'Madinaty', 'Hadayek El-Kobba', 'Cairo City'],
+  'Giza': ['6th of October', 'Sheikh Zayed', 'Haram', 'Faisal', 'Dokki', 'Mohandessin', 'Imbaba', 'Giza City'],
+  'Alexandria': ['Sidi Bishr', 'Smouha', 'Miami', 'Montaza', 'Maamoura', 'Roushdy', 'Glim', 'Alexandria City'],
+  'Qalyubia': ['Banha', 'Shubra El-Kheima', 'Qalyub', 'Khanka', 'Qaha'],
+  'Gharbia': ['Tanta', 'Kafr El-Zayat', 'El Mahalla El-Kubra', 'Zifta'],
+  'Monufia': ['Shibin El Kom', 'Sadat City', 'Ashmoun', 'Menouf'],
+  'Sharqia': ['Zagazig', '10th of Ramadan', 'Belbeis', 'Minya El-Qamh'],
+  'Dakahlia': ['Mansoura', 'Talkha', 'Mit Ghamr', 'Senbellawein'],
+  'Damietta': ['Damietta City', 'New Damietta', 'Ras El Bar'],
+  'Beheira': ['Damanhour', 'Kafr El Dawar', 'Kom Hamada', 'Rashid'],
+  'Kafr El Sheikh': ['Kafr El Sheikh City', 'Desouk', 'Metoubes', 'Baltim'],
+  'Matrouh': ['Marsa Matrouh', 'Siwa', 'El Alamein'],
+  'Port Said': ['Port Said City', 'Port Fouad'],
+  'Ismailia': ['Ismailia City', 'Fayed', 'El Qantara'],
+  'Suez': ['Suez City', 'Ain Sokhna'],
+  'North Sinai': ['Arish', 'Sheikh Zuweid'],
+  'South Sinai': ['Sharm El Sheikh', 'Dahab', 'Nuweiba', 'Tor'],
+  'Faiyum': ['Faiyum City', 'Sinnuris', 'Ibshaway'],
+  'Beni Suef': ['Beni Suef City', 'New Beni Suef', 'Beba'],
+  'Minya': ['Minya City', 'Mallawi', 'Samalut'],
+  'Asyut': ['Asyut City', 'Dairut', 'Manfalut'],
+  'Sohag': ['Sohag City', 'Akhmim', 'Girga'],
+  'Qena': ['Qena City', 'Nag Hammadi', 'Deshna'],
+  'Luxor': ['Luxor City', 'Esna', 'Armant'],
+  'Aswan': ['Aswan City', 'Kom Ombo', 'Edfu'],
+  'Red Sea': ['Hurghada', 'El Gouna', 'Safaga', 'Marsa Alam'],
+  'New Valley': ['Kharga', 'Dakhla', 'Farafra']
+};
+
 export default function CandidatePortal() {
   const [candidate, setCandidate] = useState(() => {
     const saved = sessionStorage.getItem('CandidatePortalUser');
@@ -1028,23 +1058,38 @@ export default function CandidatePortal() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 14 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Government / State</label>
-                    <input
-                      type="text"
+                    <select
                       value={profileForm.Government}
-                      onChange={e => setProfileForm({ ...profileForm, Government: e.target.value })}
-                      placeholder="e.g. Cairo"
-                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
-                    />
+                      onChange={e => {
+                        const gov = e.target.value;
+                        const availableCities = EGYPT_LOCATIONS[gov] || [];
+                        setProfileForm({
+                          ...profileForm,
+                          Government: gov,
+                          City: availableCities.length > 0 ? availableCities[0] : ''
+                        });
+                      }}
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, background: '#fff', boxSizing: 'border-box' }}
+                    >
+                      <option value="">Select Government / State...</option>
+                      {Object.keys(EGYPT_LOCATIONS).map(gov => (
+                        <option key={gov} value={gov}>{gov}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>City / Area</label>
-                    <input
-                      type="text"
+                    <select
                       value={profileForm.City}
                       onChange={e => setProfileForm({ ...profileForm, City: e.target.value })}
-                      placeholder="e.g. New Cairo"
-                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
-                    />
+                      disabled={!profileForm.Government}
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, background: '#fff', boxSizing: 'border-box', opacity: !profileForm.Government ? 0.6 : 1 }}
+                    >
+                      <option value="">Select City / Area...</option>
+                      {(EGYPT_LOCATIONS[profileForm.Government] || []).map(city => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
