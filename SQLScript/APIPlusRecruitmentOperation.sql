@@ -881,7 +881,7 @@ BEGIN
         IF @SaveTestID IS NULL OR @SaveTestID = 0
         BEGIN
             INSERT INTO [PLS].[RecruitmentTests] (TestTitle, TestType, CreatedBy, CreatedDate)
-            VALUES (@SaveTestTitle, @SaveTestType, @CreatedBy, GETDATE());
+            VALUES (@SaveTestTitle, @SaveTestType, @User, GETDATE());
             SET @SaveTestID = SCOPE_IDENTITY();
         END
         ELSE
