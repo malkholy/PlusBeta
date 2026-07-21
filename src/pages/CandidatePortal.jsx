@@ -975,9 +975,33 @@ export default function CandidatePortal() {
         {/* TAB 2: EXTENDED PROFILE FORM */}
         {activeTab === 'profile' && (
           <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 20, padding: 28 }}>
-            <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 900, color: '#0f172a' }}>
-              My Candidate Extended Profile
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 12 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0f172a' }}>
+                My Candidate Extended Profile
+              </h3>
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                disabled={savingProfile}
+                style={{
+                  height: 42,
+                  padding: '0 24px',
+                  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                  color: '#ffffff',
+                  border: 0,
+                  borderRadius: 12,
+                  fontWeight: 800,
+                  fontSize: 13.5,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                💾 {savingProfile ? 'Saving...' : 'Save Extended Profile'}
+              </button>
+            </div>
 
             {profileMsg && (
               <div style={{ marginBottom: 20, padding: '12px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
