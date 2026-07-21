@@ -1679,94 +1679,175 @@ ${selectedCandidate.Summary}`;
             )}
 
             {activeDrawerTab === 'interviews' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>
-                  Interview History ({interviews.length})
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                    Interview History ({interviews.length})
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScheduleFormData({ CandidateID: selectedCandidate.CandidateID, RequestID: selectedCandidate.RequestID || '', RoundNumber: 1, InterviewerUser: '', ScheduledDate: '' });
+                      setShowScheduleModal(true);
+                    }}
+                    style={{
+                      background: 'var(--primary-soft)',
+                      border: '1px solid var(--primary)',
+                      color: 'var(--primary)',
+                      padding: '5px 12px',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    + Schedule Round
+                  </button>
                 </div>
+
                 {interviews.length === 0 ? (
-                  <div style={{ padding: '24px 12px', background: 'var(--soft)', border: '1px dotted var(--border)', borderRadius: 12, textAlign: 'center', fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>
-                    📅 No interview rounds scheduled yet for this candidate.
+                  <div style={{ padding: '36px 16px', background: 'var(--soft)', border: '1.5px dashed var(--border)', borderRadius: 16, textAlign: 'center', fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>📅</div>
+                    No interview rounds scheduled yet for this candidate.
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                     {interviews.map((item, idx) => {
                       const roundLabels = {
-                        1: { text: 'Round 1: HR', bg: 'var(--blue-soft)', color: 'var(--blue)' },
-                        2: { text: 'Round 2: Technical', bg: '#e0e7ff', color: '#6366f1' },
-                        3: { text: 'Round 3: Manager', bg: 'var(--orange-soft)', color: 'var(--orange)' },
-                        4: { text: 'Round 4: Final', bg: 'var(--green-soft)', color: 'var(--green)' }
+                        1: { text: 'HR Round', icon: '👤', bg: 'var(--blue-soft)', color: 'var(--blue)' },
+                        2: { text: 'Technical Round', icon: '⚡', bg: '#e0e7ff', color: '#6366f1' },
+                        3: { text: 'Manager Round', icon: '💼', bg: 'var(--orange-soft)', color: 'var(--orange)' },
+                        4: { text: 'Final Round', icon: '🏆', bg: 'var(--green-soft)', color: 'var(--green)' }
                       };
-                      const rLbl = roundLabels[item.RoundNumber] || { text: `Round ${item.RoundNumber}`, bg: 'var(--soft)', color: 'var(--muted)' };
+                      const rLbl = roundLabels[item.RoundNumber] || { text: `Round ${item.RoundNumber}`, icon: '📅', bg: 'var(--soft)', color: 'var(--muted)' };
 
                       const recs = {
-                        0: { text: 'Proceed', color: 'var(--green)', bg: 'var(--green-soft)' },
-                        1: { text: 'Reject', color: 'var(--red)', bg: 'var(--red-soft)' },
-                        2: { text: 'Hold', color: 'var(--muted)', bg: 'var(--soft)' }
+                        0: { text: 'Proceed ✓', color: 'var(--green)', bg: 'var(--green-soft)' },
+                        1: { text: 'Reject ❌', color: 'var(--red)', bg: 'var(--red-soft)' },
+                        2: { text: 'Hold ⏸️', color: 'var(--muted)', bg: 'var(--soft)' }
                       };
                       const rec = recs[item.Recommendation];
 
                       const states = {
-                        0: { text: 'Scheduled', color: 'var(--muted)', bg: 'var(--soft)' },
-                        1: { text: 'Completed', color: 'var(--text)', bg: 'var(--soft)' },
-                        2: { text: 'Passed', color: 'var(--green)', bg: 'var(--green-soft)' },
-                        3: { text: 'Delayed', color: 'var(--orange)', bg: 'var(--orange-soft)' },
-                        4: { text: 'Canceled', color: 'var(--red)', bg: 'var(--red-soft)' }
+                        0: { text: 'Scheduled', dot: '●', color: 'var(--blue)', bg: 'var(--blue-soft)' },
+                        1: { text: 'Completed', dot: '●', color: 'var(--text)', bg: 'var(--soft)' },
+                        2: { text: 'Passed', dot: '●', color: 'var(--green)', bg: 'var(--green-soft)' },
+                        3: { text: 'Delayed', dot: '●', color: 'var(--orange)', bg: 'var(--orange-soft)' },
+                        4: { text: 'Canceled', dot: '●', color: 'var(--red)', bg: 'var(--red-soft)' }
                       };
-                      const state = states[item.InterviewState] || { text: 'Unknown', color: 'var(--muted)', bg: 'var(--soft)' };
+                      const state = states[item.InterviewState] || { text: 'Unknown', dot: '●', color: 'var(--muted)', bg: 'var(--soft)' };
+
+                      const reqTitle = item.PositionTitle ? `${item.PositionTitle}${item.Department ? ` (${item.Department})` : ''}` : (selectedCandidate?.PositionTitle ? `${selectedCandidate.PositionTitle}${selectedCandidate.Department ? ` (${selectedCandidate.Department})` : ''}` : '—');
 
                       return (
-                        <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.015)' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                            <span style={{ fontSize: 12, fontWeight: 800, padding: '3px 8px', borderRadius: 6, color: rLbl.color, background: rLbl.bg }}>
-                              {rLbl.text}
-                            </span>
-                            <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6, color: state.color, background: state.bg }}>
-                              {state.text}
+                        <div key={idx} style={{
+                          background: 'var(--surface)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 18,
+                          padding: 18,
+                          boxShadow: 'var(--shadow)',
+                          transition: 'all 0.2s ease'
+                        }}>
+                          {/* Top Header */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{
+                                fontSize: 12,
+                                fontWeight: 900,
+                                padding: '4px 10px',
+                                borderRadius: 8,
+                                color: rLbl.color,
+                                background: rLbl.bg,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6
+                              }}>
+                                {rLbl.icon} {rLbl.text}
+                              </span>
+                            </div>
+                            <span style={{
+                              fontSize: 11.5,
+                              fontWeight: 800,
+                              padding: '4px 10px',
+                              borderRadius: 8,
+                              color: state.color,
+                              background: state.bg,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 5
+                            }}>
+                              <span style={{ fontSize: 9 }}>{state.dot}</span> {state.text}
                             </span>
                           </div>
 
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5, fontWeight: 600 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span style={{ color: 'var(--muted)' }}>Job Requisition</span>
+                          {/* Metadata Grid */}
+                          <div style={{
+                            background: 'var(--soft)',
+                            borderRadius: 14,
+                            padding: '12px 14px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 8,
+                            fontSize: 12.5
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ color: 'var(--muted)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                📋 Job Requisition:
+                              </span>
                               <span style={{ color: 'var(--text)', fontWeight: 800 }}>
-                                {item.PositionTitle ? `${item.PositionTitle}${item.Department ? ` (${item.Department})` : ''}` : (selectedCandidate?.PositionTitle ? `${selectedCandidate.PositionTitle}${selectedCandidate.Department ? ` (${selectedCandidate.Department})` : ''}` : '—')}
+                                {reqTitle}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span style={{ color: 'var(--muted)' }}>Interviewer</span>
-                              <span style={{ color: 'var(--text)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ color: 'var(--muted)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                👤 Interviewer:
+                              </span>
+                              <span style={{ color: 'var(--text)', fontWeight: 700 }}>
                                 {(() => {
                                   const sysUser = systemUsers.find(u => u.Username.toLowerCase() === (item.InterviewerUser || '').toLowerCase());
                                   return sysUser ? sysUser.Name : item.InterviewerUser;
                                 })()}
                               </span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                              <span style={{ color: 'var(--muted)' }}>Date & Time</span>
-                              <span style={{ color: 'var(--text)' }}>
-                                {item.ScheduledDate ? new Date(item.ScheduledDate).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ color: 'var(--muted)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                📅 Date & Time:
+                              </span>
+                              <span style={{ color: 'var(--text)', fontWeight: 700 }}>
+                                {item.ScheduledDate ? new Date(item.ScheduledDate).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                               </span>
                             </div>
                           </div>
 
+                          {/* Ratings & Results */}
                           {(Number(item.InterviewState) === 1 || Number(item.InterviewState) === 2) && (
-                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, fontWeight: 600 }}>
-                                <span style={{ color: 'var(--muted)' }}>Score / Rating</span>
-                                <span style={{ color: 'var(--amber)', fontWeight: 800 }}>⭐ {item.Rating} / 10</span>
-                              </div>
-                              {rec && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, fontWeight: 600 }}>
-                                  <span style={{ color: 'var(--muted)' }}>Recommendation</span>
-                                  <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 6, color: rec.color, background: rec.bg }}>
-                                    {rec.text}
+                            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Rating:</span>
+                                  <span style={{ color: 'var(--amber)', fontWeight: 900, fontSize: 14, background: 'var(--soft)', padding: '3px 9px', borderRadius: 8, border: '1px solid var(--border)' }}>
+                                    ⭐ {item.Rating} / 10
                                   </span>
                                 </div>
-                              )}
+                                {rec && (
+                                  <span style={{ fontSize: 11.5, fontWeight: 900, padding: '4px 10px', borderRadius: 8, color: rec.color, background: rec.bg }}>
+                                    {rec.text}
+                                  </span>
+                                )}
+                              </div>
                               {item.FeedbackComments && (
-                                <div style={{ marginTop: 4, background: 'var(--soft)', padding: 10, borderRadius: 10, borderLeft: '3px solid var(--primary)' }}>
-                                  <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 2 }}>Interviewer Comments</div>
-                                  <p style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 600, lineHeight: 1.4, margin: 0, fontStyle: 'italic' }}>
+                                <div style={{
+                                  marginTop: 4,
+                                  background: 'var(--soft)',
+                                  padding: '10px 14px',
+                                  borderRadius: 12,
+                                  borderLeft: '4px solid var(--primary)',
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                                }}>
+                                  <div style={{ fontSize: 10, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>
+                                    💬 Interviewer Feedback & Comments
+                                  </div>
+                                  <p style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 600, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
                                     "{item.FeedbackComments}"
                                   </p>
                                 </div>
@@ -1776,9 +1857,9 @@ ${selectedCandidate.Summary}`;
 
                           {item.DelayCancelReason && (
                             <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-                              <div style={{ background: 'var(--soft)', padding: 10, borderRadius: 10, borderLeft: '3px solid var(--orange)', fontSize: 12 }}>
-                                <div style={{ fontSize: 9.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 2 }}>
-                                  {Number(item.InterviewState) === 3 ? 'Delay Reason' : 'Cancellation Reason'}
+                              <div style={{ background: 'var(--soft)', padding: '10px 14px', borderRadius: 12, borderLeft: '4px solid var(--orange)', fontSize: 12 }}>
+                                <div style={{ fontSize: 10, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>
+                                  {Number(item.InterviewState) === 3 ? '⚠️ Delay Reason' : '🚫 Cancellation Reason'}
                                 </div>
                                 <p style={{ color: 'var(--text)', fontWeight: 600, lineHeight: 1.4, margin: 0, fontStyle: 'italic' }}>
                                   "{item.DelayCancelReason}"
@@ -1788,7 +1869,7 @@ ${selectedCandidate.Summary}`;
                           )}
 
                           {Number(item.InterviewState) === 0 && (
-                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
+                            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
                               <button
                                 type="button"
                                 onClick={() => {
@@ -1801,12 +1882,12 @@ ${selectedCandidate.Summary}`;
                                 }}
                                 style={{
                                   flex: 1,
-                                  height: 30,
-                                  border: '1.5px solid var(--border)',
+                                  height: 32,
+                                  border: '1px solid var(--border)',
                                   background: 'var(--surface)',
                                   color: 'var(--text)',
                                   borderRadius: 8,
-                                  fontWeight: 700,
+                                  fontWeight: 800,
                                   cursor: 'pointer',
                                   fontSize: 11.5,
                                   display: 'inline-flex',
@@ -1829,12 +1910,12 @@ ${selectedCandidate.Summary}`;
                                 }}
                                 style={{
                                   flex: 1,
-                                  height: 30,
-                                  border: '1.5px solid var(--border)',
+                                  height: 32,
+                                  border: '1px solid var(--border)',
                                   background: 'var(--surface)',
                                   color: 'var(--red)',
                                   borderRadius: 8,
-                                  fontWeight: 700,
+                                  fontWeight: 800,
                                   cursor: 'pointer',
                                   fontSize: 11.5,
                                   display: 'inline-flex',
