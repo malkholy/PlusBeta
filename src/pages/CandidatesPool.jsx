@@ -124,6 +124,16 @@ export default function CandidatesPool(props) {
     TestID: ''
   });
 
+  // Expanded Interviews state (click on details to show feedback/ratings)
+  const [expandedInterviews, setExpandedInterviews] = useState({});
+
+  const toggleInterviewDetails = (id) => {
+    setExpandedInterviews(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
   // Answer Breakdown Modal State
   const [showAnswerModal, setShowAnswerModal] = useState(false);
   const [selectedAnswerTest, setSelectedAnswerTest] = useState(null);
@@ -1868,55 +1878,7 @@ ${selectedCandidate.Summary}`;
                             </div>
                           </div>
 
-                          {/* Ratings & Results */}
-                          {(Number(item.InterviewState) === 1 || Number(item.InterviewState) === 2) && (
-                            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Rating:</span>
-                                  <span style={{ color: 'var(--amber)', fontWeight: 900, fontSize: 14, background: 'var(--soft)', padding: '3px 9px', borderRadius: 8, border: '1px solid var(--border)' }}>
-                                    ⭐ {item.Rating} / 10
-                                  </span>
-                                </div>
-                                {rec && (
-                                  <span style={{ fontSize: 11.5, fontWeight: 900, padding: '4px 10px', borderRadius: 8, color: rec.color, background: rec.bg }}>
-                                    {rec.text}
-                                  </span>
-                                )}
-                              </div>
-                              {item.FeedbackComments && (
-                                <div style={{
-                                  marginTop: 4,
-                                  background: 'var(--soft)',
-                                  padding: '10px 14px',
-                                  borderRadius: 12,
-                                  borderLeft: '4px solid var(--primary)',
-                                  boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-                                }}>
-                                  <div style={{ fontSize: 10, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>
-                                    💬 Interviewer Feedback & Comments
-                                  </div>
-                                  <p style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 600, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
-                                    "{item.FeedbackComments}"
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {item.DelayCancelReason && (
-                            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-                              <div style={{ background: 'var(--soft)', padding: '10px 14px', borderRadius: 12, borderLeft: '4px solid var(--orange)', fontSize: 12 }}>
-                                <div style={{ fontSize: 10, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>
-                                  {Number(item.InterviewState) === 3 ? '⚠️ Delay Reason' : '🚫 Cancellation Reason'}
-                                </div>
-                                <p style={{ color: 'var(--text)', fontWeight: 600, lineHeight: 1.4, margin: 0, fontStyle: 'italic' }}>
-                                  "{item.DelayCancelReason}"
-                                </p>
-                              </div>
-                            </div>
-                          )}
-
+                          {/* Scheduled Action Controls */}
                           {Number(item.InterviewState) === 0 ? (
                             <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border)', display: 'flex', gap: 10 }}>
                               <button
@@ -2006,35 +1968,112 @@ ${selectedCandidate.Summary}`;
                               </button>
                             </div>
                           ) : (
-                            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setFeedbackFormData({
-                                    InterviewID: String(item.InterviewID),
-                                    Rating: String(item.Rating || 8),
-                                    FeedbackComments: item.FeedbackComments || '',
-                                    Recommendation: String(item.Recommendation ?? 0)
-                                  });
-                                  setShowFeedbackModal(true);
-                                }}
-                                style={{
-                                  height: 28,
-                                  padding: '0 12px',
-                                  border: '1px solid var(--border)',
-                                  background: 'var(--soft)',
-                                  color: 'var(--primary)',
-                                  borderRadius: 7,
-                                  fontWeight: 800,
-                                  cursor: 'pointer',
-                                  fontSize: 11,
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 5
-                                }}
-                              >
-                                ✏️ Edit Rating & Feedback
-                              </button>
+                            <div>
+                              {/* Details Toggle Button */}
+                              <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleInterviewDetails(item.InterviewID)}
+                                  style={{
+                                    height: 28,
+                                    padding: '0 12px',
+                                    border: '1px solid var(--primary)',
+                                    background: expandedInterviews[item.InterviewID] ? 'var(--soft)' : 'var(--primary-soft)',
+                                    color: 'var(--primary)',
+                                    borderRadius: 7,
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                    fontSize: 11.5,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 5
+                                  }}
+                                >
+                                  {expandedInterviews[item.InterviewID] ? '🔼 Hide Details' : '👁️ View Details'}
+                                </button>
+                              </div>
+
+                              {/* Expanded Details Content */}
+                              {expandedInterviews[item.InterviewID] && (
+                                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+                                  {(Number(item.InterviewState) === 1 || Number(item.InterviewState) === 2) && (
+                                    <>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                          <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Rating:</span>
+                                          <span style={{ color: 'var(--amber)', fontWeight: 900, fontSize: 14, background: 'var(--soft)', padding: '3px 9px', borderRadius: 8, border: '1px solid var(--border)' }}>
+                                            ⭐ {item.Rating} / 10
+                                          </span>
+                                        </div>
+                                        {rec && (
+                                          <span style={{ fontSize: 11.5, fontWeight: 900, padding: '4px 10px', borderRadius: 8, color: rec.color, background: rec.bg }}>
+                                            {rec.text}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {item.FeedbackComments && (
+                                        <div style={{
+                                          marginTop: 4,
+                                          background: 'var(--soft)',
+                                          padding: '10px 14px',
+                                          borderRadius: 12,
+                                          borderLeft: '4px solid var(--primary)',
+                                          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                                        }}>
+                                          <div style={{ fontSize: 10, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: 0.5 }}>
+                                            💬 Interviewer Feedback & Comments
+                                          </div>
+                                          <p style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 600, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
+                                            "{item.FeedbackComments}"
+                                          </p>
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+
+                                  {item.DelayCancelReason && (
+                                    <div style={{ background: 'var(--soft)', padding: '10px 14px', borderRadius: 12, borderLeft: '4px solid var(--orange)', fontSize: 12 }}>
+                                      <div style={{ fontSize: 10, fontWeight: 900, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>
+                                        {Number(item.InterviewState) === 3 ? '⚠️ Delay Reason' : '🚫 Cancellation Reason'}
+                                      </div>
+                                      <p style={{ color: 'var(--text)', fontWeight: 600, lineHeight: 1.4, margin: 0, fontStyle: 'italic' }}>
+                                        "{item.DelayCancelReason}"
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setFeedbackFormData({
+                                          InterviewID: String(item.InterviewID),
+                                          Rating: String(item.Rating || 8),
+                                          FeedbackComments: item.FeedbackComments || '',
+                                          Recommendation: String(item.Recommendation ?? 0)
+                                        });
+                                        setShowFeedbackModal(true);
+                                      }}
+                                      style={{
+                                        height: 28,
+                                        padding: '0 12px',
+                                        border: '1px solid var(--border)',
+                                        background: 'var(--surface)',
+                                        color: 'var(--primary)',
+                                        borderRadius: 7,
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        fontSize: 11,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 5
+                                      }}
+                                    >
+                                      ✏️ Edit Rating & Feedback
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
