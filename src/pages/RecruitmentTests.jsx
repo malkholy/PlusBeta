@@ -255,31 +255,25 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
   }
 
   return (
-    <div className="p-6 h-full flex flex-col relative">
-      <div className="flex justify-between items-center mb-6 bg-white/60 p-4 rounded-2xl shadow-sm backdrop-blur-md border border-white/50">
-        <div>
-          <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 tracking-tight drop-shadow-sm">
-            Candidate Tests & Assessments
-          </h1>
-          <p className="text-gray-500 mt-1 font-medium">Manage multiple-choice tests and generate questions with AI.</p>
+    <div className="rt-container">
+      <div className="rt-header">
+        <div className="rt-title-area">
+          <h1>Candidate Tests & Assessments</h1>
+          <p>Manage multiple-choice tests and generate questions with AI.</p>
         </div>
-        <button
-          onClick={handleCreateNew}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-2"
-        >
-          <span className="material-icons text-sm">add</span>
+        <button className="rt-btn-primary" onClick={handleCreateNew}>
+          <span className="material-icons" style={{fontSize: '18px'}}>add</span>
           Create New Test
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-4 border border-red-100 flex items-center">
-          <span className="material-icons mr-2">error_outline</span>
+        <div className="err-page">
           {error}
         </div>
       )}
 
-      <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="table-panel" style={{ flex: 1 }}>
         <DataGrid
           rows={rows}
           columns={columns}
@@ -290,40 +284,32 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
       </div>
 
       {/* Side Drawer */}
-      <div className={`fixed inset-y-0 right-0 w-full md:w-[600px] bg-white shadow-2xl transform transition-transform duration-300 z-50 flex flex-col ${showDrawer ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`rt-drawer ${showDrawer ? 'open' : ''}`}>
         {editingTest && (
           <>
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 backdrop-blur">
-              <h2 className="text-xl font-semibold text-gray-800">
-                {editingTest.TestID === 0 ? 'New Test' : `Edit Test #${editingTest.TestID}`}
-              </h2>
-              <button 
-                onClick={() => setShowDrawer(false)}
-                className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-              >
+            <div className="rt-drawer-header">
+              <h2>{editingTest.TestID === 0 ? 'New Test' : `Edit Test #${editingTest.TestID}`}</h2>
+              <button className="rt-close-btn" onClick={() => setShowDrawer(false)}>
                 <span className="material-icons">close</span>
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Header Info */}
-              <div className="grid grid-cols-2 gap-5 p-5 bg-white rounded-2xl shadow-sm border border-gray-100">
-                <div className="col-span-2 md:col-span-1">
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Test Title</label>
+            <div className="rt-drawer-body">
+              <div className="rt-form-grid">
+                <div className="rt-field">
+                  <label>Test Title</label>
                   <input 
                     type="text" 
                     value={editingTest.TestTitle}
                     onChange={(e) => setEditingTest({...editingTest, TestTitle: e.target.value})}
-                    className="w-full bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm p-3 transition-all outline-none"
                     placeholder="Enter test title..."
                   />
                 </div>
-                <div className="col-span-2 md:col-span-1">
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Test Type</label>
+                <div className="rt-field">
+                  <label>Test Type</label>
                   <select
                     value={editingTest.TestType}
                     onChange={(e) => setEditingTest({...editingTest, TestType: e.target.value})}
-                    className="w-full bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm p-3 transition-all outline-none"
                   >
                     <option value="IQ">IQ Test</option>
                     <option value="English">English Proficiency</option>
@@ -334,114 +320,86 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
                 </div>
               </div>
 
-              {/* AI Generator Box */}
-              <div className="relative overflow-hidden p-6 rounded-2xl border border-indigo-100 shadow-sm group">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                  <span className="material-icons text-6xl text-indigo-600">psychology</span>
+              <div className="rt-ai-box">
+                <span className="material-icons" style={{position:'absolute', right: '10px', top: '10px', fontSize: '64px', opacity: 0.1, color: '#3730a3'}}>psychology</span>
+                <h3>
+                  <span className="material-icons" style={{fontSize: '18px'}}>auto_awesome</span>
+                  Generate with Claude AI
+                </h3>
+                <div className="rt-ai-input-row" style={{position: 'relative', zIndex: 2}}>
+                  <input
+                    type="text"
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="E.g. Generate 5 intermediate English questions about past perfect tense"
+                  />
+                  <button
+                    className="rt-btn-primary"
+                    onClick={generateWithAI}
+                    disabled={generating}
+                  >
+                    {generating ? (
+                      <><span className="material-icons spinner" style={{fontSize: '16px', width: '16px', height:'16px', borderTopColor: '#fff', marginRight: '4px'}}></span> Generating...</>
+                    ) : (
+                      <><span className="material-icons" style={{fontSize: '18px'}}>magic_button</span> Generate</>
+                    )}
+                  </button>
                 </div>
-                
-                <div className="relative z-10">
-                  <h3 className="text-base font-bold text-indigo-900 mb-3 flex items-center gap-2">
-                    <span className="material-icons text-indigo-600">auto_awesome</span>
-                    Generate with Claude AI
-                  </h3>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      value={aiPrompt}
-                      onChange={(e) => setAiPrompt(e.target.value)}
-                      className="flex-1 bg-white/80 backdrop-blur border border-indigo-200 rounded-xl text-sm p-3 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all shadow-sm"
-                      placeholder="E.g. Generate 5 intermediate English questions about past perfect tense"
-                    />
-                    <button
-                      onClick={generateWithAI}
-                      disabled={generating}
-                      className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-indigo-300 disabled:to-purple-300 text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-md shadow-indigo-200 transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-95 whitespace-nowrap flex items-center gap-2"
-                    >
-                      {generating ? (
-                        <><span className="material-icons animate-spin text-sm">refresh</span> Generating...</>
-                      ) : (
-                        <><span className="material-icons text-sm">magic_button</span> Generate</>
-                      )}
-                    </button>
-                  </div>
-                  {aiError && <p className="text-red-500 text-sm font-medium mt-3 bg-red-50 p-2 rounded-lg border border-red-100">{aiError}</p>}
-                </div>
+                {aiError && <p style={{color: 'var(--red)', fontSize: '13px', marginTop: '12px'}}>{aiError}</p>}
               </div>
 
-              {/* Questions List */}
-              <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100">
-                <div className="flex justify-between items-center mb-5">
-                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <span className="material-icons text-gray-400">help_outline</span>
-                    Questions <span className="bg-gray-200 text-gray-600 py-0.5 px-2.5 rounded-full text-xs">{questions.length}</span>
-                  </h3>
-                  <button 
-                    onClick={handleAddEmptyQuestion}
-                    className="text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-1"
-                  >
-                    <span className="material-icons text-sm">add</span>
+              <div className="rt-questions-section">
+                <div className="rt-questions-header">
+                  <h3>Questions <span style={{background: '#f1f5f9', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', color: 'var(--muted)'}}>{questions.length}</span></h3>
+                  <button className="rt-add-btn" onClick={handleAddEmptyQuestion}>
+                    <span className="material-icons" style={{fontSize: '16px'}}>add</span>
                     Add Manual Question
                   </button>
                 </div>
                 
-                <div className="space-y-5">
+                <div className="rt-questions-list">
                   {questions.map((q, idx) => (
-                    <div key={idx} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm relative group hover:border-indigo-200 hover:shadow-md transition-all duration-300">
-                      <button 
-                        onClick={() => removeQuestion(idx)}
-                        className="absolute top-4 right-4 text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
-                        title="Remove Question"
-                      >
-                        <span className="material-icons text-[20px]">delete</span>
+                    <div key={idx} className="rt-question-card">
+                      <button className="rt-del-q-btn" onClick={() => removeQuestion(idx)} title="Remove Question">
+                        <span className="material-icons">delete</span>
                       </button>
                       
-                      <div className="mb-4 pr-10">
-                        <label className="block text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">Question {idx + 1}</label>
-                        <textarea
-                          value={q.QuestionText}
-                          onChange={(e) => updateQuestion(idx, 'QuestionText', e.target.value)}
-                          className="w-full text-sm p-3 bg-gray-50/50 border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-y"
-                          rows="2"
-                          placeholder="Type your question here..."
-                        />
-                      </div>
+                      <span className="rt-q-label">Question {idx + 1}</span>
+                      <textarea
+                        className="rt-q-text"
+                        value={q.QuestionText}
+                        onChange={(e) => updateQuestion(idx, 'QuestionText', e.target.value)}
+                        rows="2"
+                        placeholder="Type your question here..."
+                      />
 
-                      <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="rt-options-grid">
                         {[
                           { key: 'OptionA', label: 'A' },
                           { key: 'OptionB', label: 'B' },
                           { key: 'OptionC', label: 'C' },
                           { key: 'OptionD', label: 'D' }
                         ].map((opt) => (
-                          <div key={opt.key} className="flex items-center gap-3 bg-gray-50/50 p-2 border border-gray-100 rounded-xl focus-within:border-indigo-300 focus-within:bg-white transition-colors">
-                            <span className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-lg shadow-sm ${q.CorrectAnswer === opt.label ? 'bg-green-500 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}>
-                              {opt.label}
-                            </span>
+                          <div key={opt.key} className={`rt-opt-row ${q.CorrectAnswer === opt.label ? 'is-correct' : ''}`}>
+                            <div className="rt-opt-letter">{opt.label}</div>
                             <input 
                               type="text" 
                               value={q[opt.key]} 
                               onChange={(e) => updateQuestion(idx, opt.key, e.target.value)} 
-                              className="w-full text-sm bg-transparent border-none p-1 focus:ring-0 outline-none" 
                               placeholder={`Option ${opt.label}...`}
                             />
                           </div>
                         ))}
                       </div>
 
-                      <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Correct Answer:</label>
-                        <div className="flex gap-2">
+                      <div className="rt-correct-ans-row">
+                        <span className="rt-correct-ans-label">Correct Answer:</span>
+                        <div className="rt-ans-btns">
                           {['A', 'B', 'C', 'D'].map(val => (
                             <button
                               key={val}
                               onClick={() => updateQuestion(idx, 'CorrectAnswer', val)}
-                              className={`w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
-                                q.CorrectAnswer === val 
-                                  ? 'bg-green-500 text-white shadow-md shadow-green-200 transform scale-110' 
-                                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                              }`}
+                              className={`rt-ans-btn ${q.CorrectAnswer === val ? 'active' : ''}`}
                             >
                               {val}
                             </button>
@@ -452,32 +410,23 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
                   ))}
                   
                   {questions.length === 0 && (
-                    <div className="text-center py-12 bg-white/50 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center group hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors">
-                      <span className="material-icons text-5xl text-gray-300 mb-3 group-hover:text-indigo-300 transition-colors">quiz</span>
-                      <p className="text-gray-500 font-medium">No questions added yet.</p>
-                      <p className="text-sm text-gray-400 mt-1">Add one manually or let Claude AI generate them for you.</p>
+                    <div style={{textAlign: 'center', padding: '40px', border: '2px dashed var(--border)', borderRadius: '12px', background: '#f8fafc', color: 'var(--muted)'}}>
+                      <span className="material-icons" style={{fontSize: '48px', opacity: 0.3, marginBottom: '12px'}}>quiz</span>
+                      <div style={{fontWeight: '600', color: 'var(--text)'}}>No questions added yet.</div>
+                      <div style={{fontSize: '13px', marginTop: '4px'}}>Add one manually or let Claude AI generate them for you.</div>
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="p-5 border-t border-gray-100 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] flex justify-end gap-3 z-10">
-              <button 
-                onClick={() => setShowDrawer(false)}
-                className="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSaveTest}
-                disabled={saving}
-                className="px-8 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 shadow-md shadow-blue-200 transition-all flex items-center gap-2"
-              >
+            <div className="rt-drawer-footer">
+              <button className="rt-btn-secondary" onClick={() => setShowDrawer(false)}>Cancel</button>
+              <button className="rt-btn-primary" onClick={handleSaveTest} disabled={saving}>
                 {saving ? (
-                  <><span className="material-icons animate-spin text-[18px]">autorenew</span> Saving...</>
+                  <><span className="material-icons spinner" style={{fontSize: '16px', width: '16px', height:'16px', borderTopColor: '#fff'}}></span> Saving...</>
                 ) : (
-                  <><span className="material-icons text-[18px]">save</span> Save Test</>
+                  <><span className="material-icons" style={{fontSize: '18px'}}>save</span> Save Test</>
                 )}
               </button>
             </div>
@@ -485,12 +434,8 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
         )}
       </div>
 
-      {/* Overlay */}
       {showDrawer && (
-        <div 
-          className="fixed inset-0 bg-black/20 z-40 backdrop-blur-sm transition-opacity"
-          onClick={() => setShowDrawer(false)}
-        />
+        <div className="rt-drawer-overlay" onClick={() => setShowDrawer(false)} />
       )}
     </div>
   );
