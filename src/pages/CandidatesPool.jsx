@@ -1283,6 +1283,26 @@ ${selectedCandidate.Summary}`;
               </button>
               <button
                 type="button"
+                onClick={() => setActiveDrawerTab('education')}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  borderBottom: activeDrawerTab === 'education' ? '2.5px solid var(--primary)' : '2.5px solid transparent',
+                  color: activeDrawerTab === 'education' ? 'var(--primary)' : 'var(--muted)',
+                  padding: '8px 4px',
+                  fontSize: 13,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}
+              >
+                🎓 Education & Experience
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveDrawerTab('attachments')}
                 style={{
                   background: 'none',
@@ -1632,70 +1652,93 @@ ${selectedCandidate.Summary}`;
                   </div>
                 </div>
 
+            {/* Education & Experience Tab */}
+            {activeDrawerTab === 'education' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {/* Education Section */}
-                {(() => {
-                  if (!selectedCandidate.EducationDetails) return null;
-                  try {
-                    const edu = typeof selectedCandidate.EducationDetails === 'string' ? JSON.parse(selectedCandidate.EducationDetails) : selectedCandidate.EducationDetails;
-                    if (!edu || (!edu.Degree && !edu.University)) return null;
-
-                    return (
-                      <div style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 }}>
-                          🎓 Education Background
+                <div style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 16, padding: 18 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 14, letterSpacing: 0.5 }}>
+                    🎓 Education Background
+                  </div>
+                  {(() => {
+                    if (!selectedCandidate.EducationDetails) {
+                      return <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>No education background recorded.</div>;
+                    }
+                    try {
+                      const edu = typeof selectedCandidate.EducationDetails === 'string' ? JSON.parse(selectedCandidate.EducationDetails) : selectedCandidate.EducationDetails;
+                      if (!edu || (!edu.Degree && !edu.University)) {
+                        return <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>No education background recorded.</div>;
+                      }
+                      return (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, fontSize: 13, fontWeight: 600 }}>
+                          <div><span style={{ color: 'var(--muted)' }}>Qualification / Degree:</span> <strong style={{ color: 'var(--text)' }}>{edu.Degree || '—'}</strong></div>
+                          <div><span style={{ color: 'var(--muted)' }}>University / Institute:</span> <strong style={{ color: 'var(--text)' }}>{edu.University || '—'}</strong></div>
+                          <div><span style={{ color: 'var(--muted)' }}>Major / Field of Study:</span> <strong style={{ color: 'var(--text)' }}>{edu.Major || '—'}</strong></div>
+                          <div><span style={{ color: 'var(--muted)' }}>Graduation Year:</span> <strong style={{ color: 'var(--text)' }}>{edu.GraduationYear || '—'}</strong></div>
+                          <div><span style={{ color: 'var(--muted)' }}>Grade / GPA:</span> <strong style={{ color: 'var(--text)' }}>{edu.Grade || '—'}</strong></div>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13, fontWeight: 600 }}>
-                          <div><span style={{ color: 'var(--muted)' }}>Qualification:</span> {edu.Degree || '—'}</div>
-                          <div><span style={{ color: 'var(--muted)' }}>University:</span> {edu.University || '—'}</div>
-                          <div><span style={{ color: 'var(--muted)' }}>Major:</span> {edu.Major || '—'}</div>
-                          <div><span style={{ color: 'var(--muted)' }}>Graduation Year:</span> {edu.GraduationYear || '—'}</div>
-                          {edu.Grade && <div><span style={{ color: 'var(--muted)' }}>Grade / GPA:</span> {edu.Grade}</div>}
-                        </div>
-                      </div>
-                    );
-                  } catch (e) { return null; }
-                })()}
+                      );
+                    } catch (e) {
+                      return <div style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>No education background recorded.</div>;
+                    }
+                  })()}
+                </div>
 
                 {/* Work Experience Section */}
                 {(() => {
-                  if (!selectedCandidate.WorkExperienceDetails) return null;
-                  try {
-                    const exps = typeof selectedCandidate.WorkExperienceDetails === 'string' ? JSON.parse(selectedCandidate.WorkExperienceDetails) : selectedCandidate.WorkExperienceDetails;
-                    if (!Array.isArray(exps) || exps.length === 0) return null;
+                  let exps = [];
+                  if (selectedCandidate.WorkExperienceDetails) {
+                    try {
+                      exps = typeof selectedCandidate.WorkExperienceDetails === 'string' ? JSON.parse(selectedCandidate.WorkExperienceDetails) : selectedCandidate.WorkExperienceDetails;
+                    } catch (e) {}
+                  }
 
-                    return (
-                      <div>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 }}>
-                          💼 Work Experience History ({exps.length})
+                  return (
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 12, letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        💼 Work Experience History
+                        <span style={{ fontSize: 10, background: 'var(--primary-soft)', color: 'var(--primary)', padding: '2px 8px', borderRadius: 10, fontWeight: 900 }}>
+                          {Array.isArray(exps) ? exps.length : 0}
+                        </span>
+                      </div>
+
+                      {(!Array.isArray(exps) || exps.length === 0) ? (
+                        <div style={{ padding: '24px 16px', background: 'var(--soft)', border: '1.5px dashed var(--border)', borderRadius: 16, textAlign: 'center', fontSize: 13, color: 'var(--muted)', fontWeight: 600 }}>
+                          <div style={{ fontSize: 28, marginBottom: 6 }}>💼</div>
+                          No work experience history recorded for this candidate.
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                           {exps.map((w, idx) => (
-                            <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
-                                  {w.JobTitle} @ {w.CompanyName}
+                            <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, boxShadow: 'var(--shadow)' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                <div style={{ fontSize: 14.5, fontWeight: 900, color: 'var(--text)' }}>
+                                  {w.JobTitle || 'Position'} {w.CompanyName ? `@ ${w.CompanyName}` : ''}
                                 </div>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: w.IsCurrent ? 'var(--green)' : 'var(--muted)', background: w.IsCurrent ? 'var(--green-soft)' : 'var(--soft)', padding: '2px 8px', borderRadius: 6 }}>
+                                <span style={{ fontSize: 11, fontWeight: 800, color: w.IsCurrent ? 'var(--green)' : 'var(--muted)', background: w.IsCurrent ? 'var(--green-soft)' : 'var(--soft)', padding: '3px 9px', borderRadius: 8 }}>
                                   {w.IsCurrent ? 'Current Job' : `${w.StartDate || '—'} to ${w.EndDate || '—'}`}
                                 </span>
                               </div>
                               {w.Responsibilities && (
-                                <p style={{ margin: '6px 0 0 0', fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.4 }}>
+                                <div style={{ marginTop: 8, fontSize: 13, color: 'var(--text)', lineHeight: 1.5, background: 'var(--soft)', padding: '10px 12px', borderRadius: 10 }}>
+                                  <strong style={{ fontSize: 11, textTransform: 'uppercase', color: 'var(--muted)', display: 'block', marginBottom: 2 }}>Main Responsibilities:</strong>
                                   {w.Responsibilities}
-                                </p>
+                                </div>
                               )}
                               {w.ReasonForLeaving && (
-                                <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4, fontStyle: 'italic' }}>
-                                  Reason for leaving: {w.ReasonForLeaving}
+                                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, fontStyle: 'italic' }}>
+                                  🚪 Reason for leaving: {w.ReasonForLeaving}
                                 </div>
                               )}
                             </div>
                           ))}
                         </div>
-                      </div>
-                    );
-                  } catch (e) { return null; }
+                      )}
+                    </div>
+                  );
                 })()}
+              </div>
+            )}
 
                 {selectedCandidate.RejectionReason && (
                   <div style={{ background: 'var(--red-soft)', border: '1px solid rgba(220,38,38,0.15)', borderRadius: 14, padding: 14 }}>
