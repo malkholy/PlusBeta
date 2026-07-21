@@ -2451,8 +2451,73 @@ ${englishSummary}`;
                   return null;
                 })()}
               </div>
-              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>&times;</button>
+              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 0, fontSize: 24, cursor: 'pointer', color: 'var(--muted)', fontWeight: 'bold' }}>&times;</button>
             </div>
+            {(() => {
+              if (!formData.RequestID) return null;
+              const currentReq = rows.find(x => Number(x.RequestID) === Number(formData.RequestID)) || formData;
+              const targetHeadCount = Number(currentReq.HeadCount || formData.HeadCount || 1);
+              const totalApplicants = candidates.length;
+              const activePipeline = candidates.filter(c => c.CandidateState === 1 || c.CandidateState === 3 || c.CandidateState === 4).length;
+              const hiredCount = candidates.filter(c => c.CandidateState === 6).length;
+              const fulfillmentPct = Math.min(100, Math.round((hiredCount / targetHeadCount) * 100));
+
+              let daysActive = 0;
+              if (currentReq.CreatedDate || currentReq.RequestDate) {
+                const createdDate = new Date(currentReq.CreatedDate || currentReq.RequestDate);
+                const diffTime = Math.abs(new Date() - createdDate);
+                daysActive = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              }
+
+              return (
+                <div style={{
+                  background: 'var(--soft)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 16,
+                  padding: '14px 18px',
+                  marginBottom: 18,
+                  boxShadow: 'var(--shadow)'
+                }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>🎯 Target Headcount</span>
+                      <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>{targetHeadCount} {targetHeadCount === 1 ? 'Opening' : 'Openings'}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>👥 Total Applicants</span>
+                      <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--blue)' }}>{totalApplicants} Candidates</span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>⚡ Active Pipeline</span>
+                      <span style={{ fontSize: 18, fontWeight: 900, color: '#6366f1' }}>{activePipeline} Active</span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>🏆 Hired / Fulfilled</span>
+                      <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--green)' }}>{hiredCount} / {targetHeadCount} ({fulfillmentPct}%)</span>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>⏱️ Days Active</span>
+                      <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--amber)' }}>{daysActive} Days</span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div style={{ marginTop: 12 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 4 }}>
+                      <span>Requisition Fulfillment Rate</span>
+                      <span>{fulfillmentPct}% Completed</span>
+                    </div>
+                    <div style={{ height: 6, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', background: 'linear-gradient(90deg, var(--primary), var(--green))', width: `${fulfillmentPct}%`, transition: 'width 0.4s' }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Tab Navigation */}
             <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 20, gap: 16 }}>
