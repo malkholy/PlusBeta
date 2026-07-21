@@ -1086,7 +1086,7 @@ BEGIN
         SET @State = 0;
         SET @Message = 'Success';
 
-        DECLARE @UpCandID INT = JSON_VALUE(@LineData, '$.CandidateID');
+        DECLARE @UpProfCandID INT = JSON_VALUE(@LineData, '$.CandidateID');
         DECLARE @UpFullName NVARCHAR(150) = JSON_VALUE(@LineData, '$.FullName');
         DECLARE @UpEmail NVARCHAR(150) = JSON_VALUE(@LineData, '$.Email');
         DECLARE @UpGov NVARCHAR(100) = JSON_VALUE(@LineData, '$.Government');
@@ -1106,7 +1106,7 @@ BEGIN
             Address = ISNULL(@UpAddr, Address),
             CVFileName = ISNULL(@UpCVName, CVFileName),
             CVFileContent = ISNULL(@UpCVContent, CVFileContent)
-        WHERE CandidateID = @UpCandID;
+        WHERE CandidateID = @UpProfCandID;
 
         RETURN;
     END
