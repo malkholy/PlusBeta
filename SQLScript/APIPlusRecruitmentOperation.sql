@@ -1056,6 +1056,7 @@ BEGIN
             c.ExpectedSalary,
             c.EducationDetails,
             c.WorkExperienceDetails,
+            ISNULL(c.IsProfileLocked, 0) AS IsProfileLocked,
             r.PositionTitle,
             r.Department
         FROM [PLS].[Candidate] c
@@ -1092,6 +1093,29 @@ BEGIN
     END
 
     -- ======================================================================
+    -- Operation: Toggle Candidate Profile Lock
+    -- ======================================================================
+    IF @Operation = 'ToggleCandidateProfileLock'
+    BEGIN
+        SET @State = 0;
+        SET @Message = 'Success';
+
+        DECLARE @TglCandID INT = JSON_VALUE(@LineData, '$.CandidateID');
+        DECLARE @TglLockState BIT = ISNULL(JSON_VALUE(@LineData, '$.IsProfileLocked'), 0);
+
+        UPDATE [PLS].[Candidate]
+        SET IsProfileLocked = @TglLockState
+        WHERE CandidateID = @TglCandID;
+
+        IF @TglLockState = 1
+            SET @Message = 'Candidate profile locked successfully.';
+        ELSE
+            SET @Message = 'Candidate profile unlocked successfully.';
+
+        RETURN;
+    END
+
+    -- ======================================================================
     -- Operation: Update Candidate Profile
     -- ======================================================================
     IF @Operation = 'UpdateCandidateProfile'
@@ -1100,6 +1124,14 @@ BEGIN
         SET @Message = 'Success';
 
         DECLARE @UpProfCandID INT = JSON_VALUE(@LineData, '$.CandidateID');
+
+        IF EXISTS (SELECT 1 FROM [PLS].[Candidate] WHERE CandidateID = @UpProfCandID AND IsProfileLocked = 1)
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Your candidate profile has been locked by HR and cannot be modified.';
+            RETURN;
+        END
+
         DECLARE @UpFullName NVARCHAR(150) = JSON_VALUE(@LineData, '$.FullName');
         DECLARE @UpEmail NVARCHAR(150) = JSON_VALUE(@LineData, '$.Email');
         DECLARE @UpGov NVARCHAR(100) = JSON_VALUE(@LineData, '$.Government');

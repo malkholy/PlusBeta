@@ -973,43 +973,62 @@ export default function CandidatePortal() {
         )}
 
         {/* TAB 2: EXTENDED PROFILE FORM */}
-        {activeTab === 'profile' && (
-          <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 20, padding: 28 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 12 }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0f172a' }}>
-                My Candidate Extended Profile
-              </h3>
-              <button
-                type="button"
-                onClick={handleSaveProfile}
-                disabled={savingProfile}
-                style={{
-                  height: 42,
-                  padding: '0 24px',
-                  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-                  color: '#ffffff',
-                  border: 0,
-                  borderRadius: 12,
-                  fontWeight: 800,
-                  fontSize: 13.5,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6
-                }}
-              >
-                💾 {savingProfile ? 'Saving...' : 'Save Extended Profile'}
-              </button>
-            </div>
-
-            {profileMsg && (
-              <div style={{ marginBottom: 20, padding: '12px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                {profileMsg}
+        {activeTab === 'profile' && (() => {
+          const isLocked = Boolean(candidate?.IsProfileLocked);
+          return (
+            <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 20, padding: 28 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 12 }}>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0f172a' }}>
+                  My Candidate Extended Profile
+                </h3>
+                {!isLocked ? (
+                  <button
+                    type="button"
+                    onClick={handleSaveProfile}
+                    disabled={savingProfile}
+                    style={{
+                      height: 42,
+                      padding: '0 24px',
+                      background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                      color: '#ffffff',
+                      border: 0,
+                      borderRadius: 12,
+                      fontWeight: 800,
+                      fontSize: 13.5,
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6
+                    }}
+                  >
+                    💾 {savingProfile ? 'Saving...' : 'Save Extended Profile'}
+                  </button>
+                ) : (
+                  <span style={{ fontSize: 12, fontWeight: 800, color: '#dc2626', background: '#fef2f2', border: '1px solid rgba(220,38,38,0.2)', padding: '6px 14px', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    🔒 Profile Locked by HR
+                  </span>
+                )}
               </div>
-            )}
 
-            <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              {isLocked && (
+                <div style={{ marginBottom: 20, padding: '14px 18px', borderRadius: 14, fontSize: 13, fontWeight: 800, background: '#fef2f2', color: '#dc2626', border: '1px solid rgba(220,38,38,0.2)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 24 }}>🔒</span>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 900 }}>Profile Locked by HR</div>
+                    <div style={{ fontWeight: 600, color: '#991b1b', marginTop: 2 }}>Your candidate profile has been finalized and locked by HR. Profile data cannot be modified.</div>
+                  </div>
+                </div>
+              )}
+
+              {profileMsg && (
+                <div style={{ marginBottom: 20, padding: '12px 16px', borderRadius: 10, fontSize: 13, fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  {profileMsg}
+                </div>
+              )}
+
+              <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <fieldset disabled={isLocked} style={{ border: 0, padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
               
               {/* SECTION 1: PROFILE PHOTO */}
               <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 16, padding: 20, display: 'flex', alignItems: 'center', gap: 20 }}>
@@ -1394,29 +1413,34 @@ export default function CandidatePortal() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-                <button
-                  type="submit"
-                  disabled={savingProfile}
-                  style={{
-                    height: 44,
-                    padding: '0 28px',
-                    background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-                    color: '#ffffff',
-                    border: 0,
-                    borderRadius: 12,
-                    fontWeight: 800,
-                    fontSize: 14,
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(37,99,235,0.3)'
-                  }}
-                >
-                  {savingProfile ? 'Saving...' : 'Save Extended Profile Changes'}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
+                </fieldset>
+
+                {!isLocked && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+                    <button
+                      type="submit"
+                      disabled={savingProfile}
+                      style={{
+                        height: 44,
+                        padding: '0 28px',
+                        background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                        color: '#ffffff',
+                        border: 0,
+                        borderRadius: 12,
+                        fontWeight: 800,
+                        fontSize: 14,
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(37,99,235,0.3)'
+                      }}
+                    >
+                      {savingProfile ? 'Saving...' : 'Save Extended Profile Changes'}
+                    </button>
+                  </div>
+                )}
+              </form>
+            </div>
+          );
+        })()}
       </main>
     </div>
   );

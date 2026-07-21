@@ -340,6 +340,26 @@ export default function CandidatesPool(props) {
     }
   }
 
+  async function handleToggleLockProfile(cand) {
+    const targetState = cand.IsProfileLocked ? 0 : 1;
+    const actionText = targetState === 1 ? 'lock' : 'unlock';
+    if (!confirm(`Are you sure you want to ${actionText} the candidate profile for "${cand.FullName}"?`)) return;
+    try {
+      const res = await apiCall('ToggleCandidateProfileLock', { CandidateID: Number(cand.CandidateID), IsProfileLocked: targetState }, {}, 'recruitment_requests');
+      if (res.State === 0) {
+        alert(res.Message || `Candidate profile ${targetState === 1 ? 'locked' : 'unlocked'} successfully.`);
+        loadData();
+        if (selectedCandidate && selectedCandidate.CandidateID === cand.CandidateID) {
+          setSelectedCandidate(prev => ({ ...prev, IsProfileLocked: targetState }));
+        }
+      } else {
+        alert(res.Message || 'Failed to update profile lock status.');
+      }
+    } catch (e) {
+      alert('Connection error: ' + e.message);
+    }
+  }
+
   async function loadData() {
     setLoading(true);
     setError('');
@@ -1568,6 +1588,37 @@ ${selectedCandidate.Summary}`;
                       </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600, alignItems: 'center' }}>
+                      <span style={{ color: 'var(--muted)' }}>App Profile Status</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          color: selectedCandidate.IsProfileLocked ? 'var(--red)' : 'var(--green)',
+                          background: selectedCandidate.IsProfileLocked ? 'var(--red-soft)' : 'var(--green-soft)',
+                          padding: '2px 8px',
+                          borderRadius: 6
+                        }}>
+                          {selectedCandidate.IsProfileLocked ? '🔒 Profile Locked' : '🔓 Profile Editable'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleLockProfile(selectedCandidate)}
+                          style={{
+                            background: selectedCandidate.IsProfileLocked ? 'var(--green-soft)' : 'var(--red-soft)',
+                            color: selectedCandidate.IsProfileLocked ? 'var(--green)' : 'var(--red)',
+                            border: '1px solid var(--border)',
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            fontSize: 10.5,
+                            fontWeight: 800,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {selectedCandidate.IsProfileLocked ? '🔓 Unlock Profile' : '🔒 Lock Profile'}
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600, alignItems: 'center' }}>
                       <span style={{ color: 'var(--muted)' }}>Requisition</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ color: 'var(--text)' }}>{selectedCandidate.PositionTitle}</span>
@@ -2711,6 +2762,11 @@ ${selectedCandidate.Summary}`;
                 });
                 setShowReassignModal(true);
               }
+            },
+            {
+              label: (row) => row.IsProfileLocked ? '🔓 Unlock Profile' : '🔒 Lock Profile',
+              show: () => true,
+              onClick: (row) => handleToggleLockProfile(row)
             },
             {
               label: '❌ Reject Candidate',

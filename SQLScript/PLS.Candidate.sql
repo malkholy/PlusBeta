@@ -28,6 +28,7 @@ BEGIN
         [ExpectedSalary] NVARCHAR(50) NULL,
         [EducationDetails] NVARCHAR(MAX) NULL,
         [WorkExperienceDetails] NVARCHAR(MAX) NULL,
+        [IsProfileLocked] BIT NOT NULL DEFAULT 0,
         [CreatedBy] NVARCHAR(100) NOT NULL,
         [CreatedDate] DATETIME NOT NULL DEFAULT GETDATE()
     );
@@ -48,5 +49,7 @@ BEGIN
         ALTER TABLE [PLS].[Candidate] ADD [EducationDetails] NVARCHAR(MAX) NULL;
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[PLS].[Candidate]') AND name = 'WorkExperienceDetails')
         ALTER TABLE [PLS].[Candidate] ADD [WorkExperienceDetails] NVARCHAR(MAX) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[PLS].[Candidate]') AND name = 'IsProfileLocked')
+        ALTER TABLE [PLS].[Candidate] ADD [IsProfileLocked] BIT NOT NULL DEFAULT 0;
 END
 GO
