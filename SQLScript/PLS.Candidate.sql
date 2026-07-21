@@ -22,6 +22,12 @@ BEGIN
         [City] NVARCHAR(100) NULL,
         [Address] NVARCHAR(250) NULL,
         [AccessPassword] VARCHAR(50) NULL,
+        [ProfilePhoto] NVARCHAR(MAX) NULL,
+        [DateOfBirth] DATETIME NULL,
+        [ExpectedJoiningDate] DATETIME NULL,
+        [ExpectedSalary] NVARCHAR(50) NULL,
+        [EducationDetails] NVARCHAR(MAX) NULL,
+        [WorkExperienceDetails] NVARCHAR(MAX) NULL,
         [CreatedBy] NVARCHAR(100) NOT NULL,
         [CreatedDate] DATETIME NOT NULL DEFAULT GETDATE()
     );
@@ -29,8 +35,18 @@ END
 ELSE
 BEGIN
     IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[PLS].[Candidate]') AND name = 'AccessPassword')
-    BEGIN
         ALTER TABLE [PLS].[Candidate] ADD [AccessPassword] VARCHAR(50) NULL;
-    END
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[PLS].[Candidate]') AND name = 'ProfilePhoto')
+        ALTER TABLE [PLS].[Candidate] ADD [ProfilePhoto] NVARCHAR(MAX) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[PLS].[Candidate]') AND name = 'DateOfBirth')
+        ALTER TABLE [PLS].[Candidate] ADD [DateOfBirth] DATETIME NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[PLS].[Candidate]') AND name = 'ExpectedJoiningDate')
+        ALTER TABLE [PLS].[Candidate] ADD [ExpectedJoiningDate] DATETIME NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[PLS].[Candidate]') AND name = 'ExpectedSalary')
+        ALTER TABLE [PLS].[Candidate] ADD [ExpectedSalary] NVARCHAR(50) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[PLS].[Candidate]') AND name = 'EducationDetails')
+        ALTER TABLE [PLS].[Candidate] ADD [EducationDetails] NVARCHAR(MAX) NULL;
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[PLS].[Candidate]') AND name = 'WorkExperienceDetails')
+        ALTER TABLE [PLS].[Candidate] ADD [WorkExperienceDetails] NVARCHAR(MAX) NULL;
 END
 GO

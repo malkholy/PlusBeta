@@ -18,6 +18,16 @@ export default function CandidatePortal() {
   const [assignedTests, setAssignedTests] = useState([]);
   const [loadingTests, setLoadingTests] = useState(false);
 
+  // Helper to parse JSON string safely
+  function parseJSON(str, fallback) {
+    if (!str) return fallback;
+    try {
+      return typeof str === 'string' ? JSON.parse(str) : str;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
   // Profile Form State
   const [profileForm, setProfileForm] = useState({
     FullName: '',
@@ -26,9 +36,23 @@ export default function CandidatePortal() {
     City: '',
     Address: '',
     CVFileName: '',
-    CVFileContent: ''
+    CVFileContent: '',
+    ProfilePhoto: '',
+    DateOfBirth: '',
+    ExpectedJoiningDate: '',
+    ExpectedSalary: '',
+    Education: {
+      Degree: '',
+      University: '',
+      Major: '',
+      GraduationYear: '',
+      Grade: ''
+    },
+    WorkExperiences: []
   });
+
   const [uploadingCV, setUploadingCV] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState('');
 
@@ -41,6 +65,9 @@ export default function CandidatePortal() {
 
   useEffect(() => {
     if (candidate) {
+      const edu = parseJSON(candidate.EducationDetails, { Degree: '', University: '', Major: '', GraduationYear: '', Grade: '' });
+      const workExps = parseJSON(candidate.WorkExperienceDetails, []);
+
       setProfileForm({
         FullName: candidate.FullName || '',
         Email: candidate.Email || '',
@@ -48,7 +75,13 @@ export default function CandidatePortal() {
         City: candidate.City || '',
         Address: candidate.Address || '',
         CVFileName: candidate.CVFileName || '',
-        CVFileContent: candidate.CVFileContent || ''
+        CVFileContent: candidate.CVFileContent || '',
+        ProfilePhoto: candidate.ProfilePhoto || '',
+        DateOfBirth: candidate.DateOfBirth ? candidate.DateOfBirth.split('T')[0] : '',
+        ExpectedJoiningDate: candidate.ExpectedJoiningDate ? candidate.ExpectedJoiningDate.split('T')[0] : '',
+        ExpectedSalary: candidate.ExpectedSalary || '',
+        Education: edu || { Degree: '', University: '', Major: '', GraduationYear: '', Grade: '' },
+        WorkExperiences: Array.isArray(workExps) ? workExps : []
       });
       loadAssignedTests(candidate.CandidateID);
     }
@@ -189,6 +222,53 @@ export default function CandidatePortal() {
     }
   }
 
+  async function handlePhotoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingPhoto(true);
+    try {
+      const url = await uploadToCloudinary(file);
+      setProfileForm(prev => ({
+        ...prev,
+        ProfilePhoto: url
+      }));
+    } catch (err) {
+      alert('Photo upload failed: ' + err.message);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
+  function handleAddWorkExp() {
+    setProfileForm(prev => ({
+      ...prev,
+      WorkExperiences: [
+        ...prev.WorkExperiences,
+        {
+          CompanyName: '',
+          JobTitle: '',
+          StartDate: '',
+          EndDate: '',
+          IsCurrent: false,
+          Responsibilities: '',
+          ReasonForLeaving: ''
+        }
+      ]
+    }));
+  }
+
+  function handleUpdateWorkExp(index, field, value) {
+    const updated = [...profileForm.WorkExperiences];
+    updated[index][field] = value;
+    setProfileForm(prev => ({ ...prev, WorkExperiences: updated }));
+  }
+
+  function handleRemoveWorkExp(index) {
+    const updated = [...profileForm.WorkExperiences];
+    updated.splice(index, 1);
+    setProfileForm(prev => ({ ...prev, WorkExperiences: updated }));
+  }
+
   async function handleSaveProfile(e) {
     e.preventDefault();
     setSavingProfile(true);
@@ -202,12 +282,23 @@ export default function CandidatePortal() {
         City: profileForm.City,
         Address: profileForm.Address,
         CVFileName: profileForm.CVFileName,
-        CVFileContent: profileForm.CVFileContent
+        CVFileContent: profileForm.CVFileContent,
+        ProfilePhoto: profileForm.ProfilePhoto,
+        DateOfBirth: profileForm.DateOfBirth,
+        ExpectedJoiningDate: profileForm.ExpectedJoiningDate,
+        ExpectedSalary: profileForm.ExpectedSalary,
+        EducationDetails: JSON.stringify(profileForm.Education),
+        WorkExperienceDetails: JSON.stringify(profileForm.WorkExperiences)
       }, {}, 'recruitment_tests');
 
       if (res.State === 0) {
         setProfileMsg('✅ Profile updated successfully!');
-        const updatedCand = { ...candidate, ...profileForm };
+        const updatedCand = {
+          ...candidate,
+          ...profileForm,
+          EducationDetails: JSON.stringify(profileForm.Education),
+          WorkExperienceDetails: JSON.stringify(profileForm.WorkExperiences)
+        };
         setCandidate(updatedCand);
         sessionStorage.setItem('CandidatePortalUser', JSON.stringify(updatedCand));
       } else {
@@ -262,7 +353,7 @@ export default function CandidatePortal() {
               Candidate Web Portal
             </h2>
             <p style={{ margin: '6px 0 0 0', fontSize: 13, color: '#64748b' }}>
-              Sign in with your mobile number and HR access PIN to take your assessment tests.
+              Sign in with your mobile number and HR access PIN to complete your application.
             </p>
           </div>
 
@@ -487,7 +578,7 @@ export default function CandidatePortal() {
         </div>
 
         {/* Quiz Question Body */}
-        <div style={{ flex: 1, maxW: 720, width: '100%', margin: '32px auto', padding: '0 20px', boxSizing: 'border-box' }}>
+        <div style={{ flex: 1, maxWidth: 720, width: '100%', margin: '32px auto', padding: '0 20px', boxSizing: 'border-box' }}>
           <div style={{
             background: '#ffffff',
             borderRadius: 20,
@@ -632,21 +723,29 @@ export default function CandidatePortal() {
         justify: 'space-between',
         alignItems: 'center'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 42,
-            height: 42,
-            borderRadius: 12,
-            background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
-            color: '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 20,
-            fontWeight: 800
-          }}>
-            📝
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {profileForm.ProfilePhoto ? (
+            <img
+              src={profileForm.ProfilePhoto}
+              alt="Avatar"
+              style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: '2px solid #2563eb' }}
+            />
+          ) : (
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 18,
+              fontWeight: 800
+            }}>
+              {candidate.FullName ? candidate.FullName.charAt(0).toUpperCase() : '👤'}
+            </div>
+          )}
           <div>
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#0f172a' }}>
               {candidate.FullName}
@@ -711,7 +810,7 @@ export default function CandidatePortal() {
               cursor: 'pointer'
             }}
           >
-            👤 My Profile & CV Attachments
+            👤 My Extended Profile & Resume
           </button>
         </div>
 
@@ -825,11 +924,11 @@ export default function CandidatePortal() {
           </div>
         )}
 
-        {/* TAB 2: PROFILE & ATTACHMENTS */}
+        {/* TAB 2: EXTENDED PROFILE FORM */}
         {activeTab === 'profile' && (
           <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 20, padding: 28 }}>
-            <h3 style={{ margin: '0 0 20px 0', fontSize: 16, fontWeight: 900, color: '#0f172a' }}>
-              My Profile & Attachments
+            <h3 style={{ margin: '0 0 20px 0', fontSize: 18, fontWeight: 900, color: '#0f172a' }}>
+              My Candidate Extended Profile
             </h3>
 
             {profileMsg && (
@@ -838,64 +937,334 @@ export default function CandidatePortal() {
               </div>
             )}
 
-            <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Full Name</label>
-                  <input
-                    type="text"
-                    value={profileForm.FullName}
-                    onChange={e => setProfileForm({ ...profileForm, FullName: e.target.value })}
-                    style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
-                    required
+            <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              
+              {/* SECTION 1: PROFILE PHOTO */}
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 16, padding: 20, display: 'flex', alignItems: 'center', gap: 20 }}>
+                {profileForm.ProfilePhoto ? (
+                  <img
+                    src={profileForm.ProfilePhoto}
+                    alt="Profile Avatar"
+                    style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid #2563eb' }}
                   />
-                </div>
+                ) : (
+                  <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, color: '#64748b' }}>
+                    📷
+                  </div>
+                )}
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Email Address</label>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
+                    Profile Photo
+                  </label>
                   <input
-                    type="email"
-                    value={profileForm.Email}
-                    onChange={e => setProfileForm({ ...profileForm, Email: e.target.value })}
-                    style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
-                    required
+                    type="file"
+                    onChange={handlePhotoUpload}
+                    accept="image/*"
+                    style={{ fontSize: 13 }}
                   />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Government / State</label>
-                  <input
-                    type="text"
-                    value={profileForm.Government}
-                    onChange={e => setProfileForm({ ...profileForm, Government: e.target.value })}
-                    placeholder="e.g. Cairo"
-                    style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>City / Area</label>
-                  <input
-                    type="text"
-                    value={profileForm.City}
-                    onChange={e => setProfileForm({ ...profileForm, City: e.target.value })}
-                    placeholder="e.g. New Cairo"
-                    style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
-                  />
+                  {uploadingPhoto && <span style={{ fontSize: 12, color: '#2563eb', marginLeft: 8 }}>Uploading Photo...</span>}
                 </div>
               </div>
 
+              {/* SECTION 2: PERSONAL & COMPENSATION INFO */}
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Detailed Address</label>
-                <input
-                  type="text"
-                  value={profileForm.Address}
-                  onChange={e => setProfileForm({ ...profileForm, Address: e.target.value })}
-                  style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
-                />
+                <h4 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 900, color: '#2563eb', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  1. Personal & Expectations
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Full Name</label>
+                    <input
+                      type="text"
+                      value={profileForm.FullName}
+                      onChange={e => setProfileForm({ ...profileForm, FullName: e.target.value })}
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Email Address</label>
+                    <input
+                      type="email"
+                      value={profileForm.Email}
+                      onChange={e => setProfileForm({ ...profileForm, Email: e.target.value })}
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Date of Birth</label>
+                    <input
+                      type="date"
+                      value={profileForm.DateOfBirth}
+                      onChange={e => setProfileForm({ ...profileForm, DateOfBirth: e.target.value })}
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Expected Joining Date</label>
+                    <input
+                      type="date"
+                      value={profileForm.ExpectedJoiningDate}
+                      onChange={e => setProfileForm({ ...profileForm, ExpectedJoiningDate: e.target.value })}
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Expected Salary</label>
+                    <input
+                      type="text"
+                      value={profileForm.ExpectedSalary}
+                      onChange={e => setProfileForm({ ...profileForm, ExpectedSalary: e.target.value })}
+                      placeholder="e.g. 25,000 EGP"
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Government / State</label>
+                    <input
+                      type="text"
+                      value={profileForm.Government}
+                      onChange={e => setProfileForm({ ...profileForm, Government: e.target.value })}
+                      placeholder="e.g. Cairo"
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>City / Area</label>
+                    <input
+                      type="text"
+                      value={profileForm.City}
+                      onChange={e => setProfileForm({ ...profileForm, City: e.target.value })}
+                      placeholder="e.g. New Cairo"
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Detailed Address</label>
+                  <input
+                    type="text"
+                    value={profileForm.Address}
+                    onChange={e => setProfileForm({ ...profileForm, Address: e.target.value })}
+                    style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                  />
+                </div>
               </div>
 
-              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 16 }}>
+              {/* SECTION 3: EDUCATION */}
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 20 }}>
+                <h4 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 900, color: '#2563eb', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  2. Education Background
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Degree / Qualification</label>
+                    <input
+                      type="text"
+                      value={profileForm.Education.Degree}
+                      onChange={e => setProfileForm({
+                        ...profileForm,
+                        Education: { ...profileForm.Education, Degree: e.target.value }
+                      })}
+                      placeholder="e.g. Bachelor's Degree"
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>University / Institute</label>
+                    <input
+                      type="text"
+                      value={profileForm.Education.University}
+                      onChange={e => setProfileForm({
+                        ...profileForm,
+                        Education: { ...profileForm.Education, University: e.target.value }
+                      })}
+                      placeholder="e.g. Cairo University"
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Major / Field of Study</label>
+                    <input
+                      type="text"
+                      value={profileForm.Education.Major}
+                      onChange={e => setProfileForm({
+                        ...profileForm,
+                        Education: { ...profileForm.Education, Major: e.target.value }
+                      })}
+                      placeholder="e.g. Computer Science"
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Graduation Year</label>
+                    <input
+                      type="text"
+                      value={profileForm.Education.GraduationYear}
+                      onChange={e => setProfileForm({
+                        ...profileForm,
+                        Education: { ...profileForm.Education, GraduationYear: e.target.value }
+                      })}
+                      placeholder="e.g. 2022"
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Grade / GPA</label>
+                    <input
+                      type="text"
+                      value={profileForm.Education.Grade}
+                      onChange={e => setProfileForm({
+                        ...profileForm,
+                        Education: { ...profileForm.Education, Grade: e.target.value }
+                      })}
+                      placeholder="e.g. Very Good / 3.4"
+                      style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: WORK EXPERIENCE REPEATER */}
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <h4 style={{ margin: 0, fontSize: 14, fontWeight: 900, color: '#2563eb', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    3. Work Experience ({profileForm.WorkExperiences.length})
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={handleAddWorkExp}
+                    style={{
+                      background: '#eff6ff',
+                      color: '#2563eb',
+                      border: '1px solid #bfdbfe',
+                      borderRadius: 8,
+                      padding: '6px 14px',
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    + Add Work Experience
+                  </button>
+                </div>
+
+                {profileForm.WorkExperiences.length === 0 ? (
+                  <div style={{ padding: 24, background: '#f8fafc', border: '1px stroke #cbd5e1', borderRadius: 12, textAlign: 'center', fontSize: 13, color: '#64748b' }}>
+                    💼 No work experiences added yet. Click above to add your employment history.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {profileForm.WorkExperiences.map((exp, idx) => (
+                      <div key={idx} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 16, padding: 18, position: 'relative' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                          <span style={{ fontSize: 11, fontWeight: 900, color: '#2563eb', textTransform: 'uppercase' }}>
+                            Experience #{idx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveWorkExp(idx)}
+                            style={{ background: 'none', border: 0, color: '#dc2626', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Company Name</label>
+                            <input
+                              type="text"
+                              value={exp.CompanyName}
+                              onChange={e => handleUpdateWorkExp(idx, 'CompanyName', e.target.value)}
+                              placeholder="e.g. GLC Paints"
+                              style={{ width: '100%', height: 38, padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12.5, outline: 'none' }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Job Title</label>
+                            <input
+                              type="text"
+                              value={exp.JobTitle}
+                              onChange={e => handleUpdateWorkExp(idx, 'JobTitle', e.target.value)}
+                              placeholder="e.g. Senior Accountant"
+                              style={{ width: '100%', height: 38, padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12.5, outline: 'none' }}
+                            />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginTop: 12, alignItems: 'center' }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Start Date</label>
+                            <input
+                              type="date"
+                              value={exp.StartDate}
+                              onChange={e => handleUpdateWorkExp(idx, 'StartDate', e.target.value)}
+                              style={{ width: '100%', height: 38, padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12.5, outline: 'none' }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>End Date</label>
+                            <input
+                              type="date"
+                              value={exp.EndDate}
+                              disabled={exp.IsCurrent}
+                              onChange={e => handleUpdateWorkExp(idx, 'EndDate', e.target.value)}
+                              style={{ width: '100%', height: 38, padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12.5, outline: 'none', opacity: exp.IsCurrent ? 0.5 : 1 }}
+                            />
+                          </div>
+                          <div style={{ paddingTop: 18 }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: '#1e293b', cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={!!exp.IsCurrent}
+                                onChange={e => handleUpdateWorkExp(idx, 'IsCurrent', e.target.checked)}
+                              />
+                              Current Job
+                            </label>
+                          </div>
+                        </div>
+
+                        <div style={{ marginTop: 12 }}>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Main Responsibilities</label>
+                          <textarea
+                            rows="2"
+                            value={exp.Responsibilities}
+                            onChange={e => handleUpdateWorkExp(idx, 'Responsibilities', e.target.value)}
+                            placeholder="Key duties and achievements..."
+                            style={{ width: '100%', padding: 10, border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12.5, outline: 'none', resize: 'vertical' }}
+                          />
+                        </div>
+
+                        <div style={{ marginTop: 12 }}>
+                          <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Reason for Leaving</label>
+                          <input
+                            type="text"
+                            value={exp.ReasonForLeaving}
+                            onChange={e => handleUpdateWorkExp(idx, 'ReasonForLeaving', e.target.value)}
+                            placeholder="e.g. Career growth / relocation"
+                            style={{ width: '100%', height: 38, padding: '0 10px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 12.5, outline: 'none' }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION 5: CV ATTACHMENT */}
+              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 20 }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 8 }}>CV / Resume Attachment</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <input
@@ -921,18 +1290,19 @@ export default function CandidatePortal() {
                   type="submit"
                   disabled={savingProfile}
                   style={{
-                    height: 42,
-                    padding: '0 24px',
-                    background: '#2563eb',
+                    height: 44,
+                    padding: '0 28px',
+                    background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
                     color: '#ffffff',
                     border: 0,
-                    borderRadius: 10,
+                    borderRadius: 12,
                     fontWeight: 800,
-                    fontSize: 13,
-                    cursor: 'pointer'
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(37,99,235,0.3)'
                   }}
                 >
-                  {savingProfile ? 'Saving...' : 'Save Profile Changes'}
+                  {savingProfile ? 'Saving...' : 'Save Extended Profile Changes'}
                 </button>
               </div>
             </form>

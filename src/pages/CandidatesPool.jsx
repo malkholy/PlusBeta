@@ -1128,9 +1128,17 @@ ${selectedCandidate.Summary}`;
 
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div style={{ display: 'flex', gap: 14, alignItems: 'center', background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 18, padding: 16 }}>
-              <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, flexShrink: 0 }}>
-                {initials}
-              </div>
+              {selectedCandidate.ProfilePhoto ? (
+                <img
+                  src={selectedCandidate.ProfilePhoto}
+                  alt="Avatar"
+                  style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)', flexShrink: 0 }}
+                />
+              ) : (
+                <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, flexShrink: 0 }}>
+                  {initials}
+                </div>
+              )}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 4 }}>
                   {selectedCandidate.FullName}
@@ -1140,6 +1148,11 @@ ${selectedCandidate.Summary}`;
                     {state.text}
                   </span>
                   <span style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>ID: #{selectedCandidate.CandidateID}</span>
+                  {selectedCandidate.ExpectedSalary && (
+                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--green)', background: 'var(--green-soft)', padding: '2px 8px', borderRadius: 6 }}>
+                      Expected: {selectedCandidate.ExpectedSalary}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -1492,12 +1505,95 @@ ${selectedCandidate.Summary}`;
                       <span style={{ color: 'var(--muted)' }}>Registered By</span>
                       <span style={{ color: 'var(--text)' }}>{selectedCandidate.CreatedBy}</span>
                     </div>
+                    {selectedCandidate.DateOfBirth && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                        <span style={{ color: 'var(--muted)' }}>Date of Birth</span>
+                        <span style={{ color: 'var(--text)' }}>{new Date(selectedCandidate.DateOfBirth).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    {selectedCandidate.ExpectedJoiningDate && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                        <span style={{ color: 'var(--muted)' }}>Expected Joining Date</span>
+                        <span style={{ color: 'var(--text)' }}>{new Date(selectedCandidate.ExpectedJoiningDate).toLocaleDateString()}</span>
+                      </div>
+                    )}
+                    {selectedCandidate.ExpectedSalary && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
+                        <span style={{ color: 'var(--muted)' }}>Expected Salary</span>
+                        <span style={{ color: 'var(--green)', fontWeight: 800 }}>{selectedCandidate.ExpectedSalary}</span>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
                       <span style={{ color: 'var(--muted)' }}>Created Date</span>
                       <span style={{ color: 'var(--text)' }}>{selectedCandidate.CreatedDate ? new Date(selectedCandidate.CreatedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
                     </div>
                   </div>
                 </div>
+
+                {/* Education Section */}
+                {(() => {
+                  if (!selectedCandidate.EducationDetails) return null;
+                  try {
+                    const edu = typeof selectedCandidate.EducationDetails === 'string' ? JSON.parse(selectedCandidate.EducationDetails) : selectedCandidate.EducationDetails;
+                    if (!edu || (!edu.Degree && !edu.University)) return null;
+
+                    return (
+                      <div style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 }}>
+                          🎓 Education Background
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, fontSize: 13, fontWeight: 600 }}>
+                          <div><span style={{ color: 'var(--muted)' }}>Qualification:</span> {edu.Degree || '—'}</div>
+                          <div><span style={{ color: 'var(--muted)' }}>University:</span> {edu.University || '—'}</div>
+                          <div><span style={{ color: 'var(--muted)' }}>Major:</span> {edu.Major || '—'}</div>
+                          <div><span style={{ color: 'var(--muted)' }}>Graduation Year:</span> {edu.GraduationYear || '—'}</div>
+                          {edu.Grade && <div><span style={{ color: 'var(--muted)' }}>Grade / GPA:</span> {edu.Grade}</div>}
+                        </div>
+                      </div>
+                    );
+                  } catch (e) { return null; }
+                })()}
+
+                {/* Work Experience Section */}
+                {(() => {
+                  if (!selectedCandidate.WorkExperienceDetails) return null;
+                  try {
+                    const exps = typeof selectedCandidate.WorkExperienceDetails === 'string' ? JSON.parse(selectedCandidate.WorkExperienceDetails) : selectedCandidate.WorkExperienceDetails;
+                    if (!Array.isArray(exps) || exps.length === 0) return null;
+
+                    return (
+                      <div>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 }}>
+                          💼 Work Experience History ({exps.length})
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          {exps.map((w, idx) => (
+                            <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 14 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
+                                  {w.JobTitle} @ {w.CompanyName}
+                                </div>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: w.IsCurrent ? 'var(--green)' : 'var(--muted)', background: w.IsCurrent ? 'var(--green-soft)' : 'var(--soft)', padding: '2px 8px', borderRadius: 6 }}>
+                                  {w.IsCurrent ? 'Current Job' : `${w.StartDate || '—'} to ${w.EndDate || '—'}`}
+                                </span>
+                              </div>
+                              {w.Responsibilities && (
+                                <p style={{ margin: '6px 0 0 0', fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.4 }}>
+                                  {w.Responsibilities}
+                                </p>
+                              )}
+                              {w.ReasonForLeaving && (
+                                <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4, fontStyle: 'italic' }}>
+                                  Reason for leaving: {w.ReasonForLeaving}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  } catch (e) { return null; }
+                })()}
 
                 {selectedCandidate.RejectionReason && (
                   <div style={{ background: 'var(--red-soft)', border: '1px solid rgba(220,38,38,0.15)', borderRadius: 14, padding: 14 }}>

@@ -1043,6 +1043,12 @@ BEGIN
             c.CVFileName,
             c.CVFileContent,
             c.AccessPassword,
+            c.ProfilePhoto,
+            c.DateOfBirth,
+            c.ExpectedJoiningDate,
+            c.ExpectedSalary,
+            c.EducationDetails,
+            c.WorkExperienceDetails,
             r.PositionTitle,
             r.Department
         FROM [PLS].[Candidate] c
@@ -1094,9 +1100,16 @@ BEGIN
         DECLARE @UpAddr NVARCHAR(250) = JSON_VALUE(@LineData, '$.Address');
         DECLARE @UpCVName NVARCHAR(250) = JSON_VALUE(@LineData, '$.CVFileName');
         DECLARE @UpCVContent NVARCHAR(MAX) = JSON_QUERY(@LineData, '$.CVFileContent');
+        DECLARE @UpPhoto NVARCHAR(MAX) = JSON_VALUE(@LineData, '$.ProfilePhoto');
+        DECLARE @UpDOB DATETIME = NULLIF(JSON_VALUE(@LineData, '$.DateOfBirth'), '');
+        DECLARE @UpExpJoin DATETIME = NULLIF(JSON_VALUE(@LineData, '$.ExpectedJoiningDate'), '');
+        DECLARE @UpExpSal NVARCHAR(50) = JSON_VALUE(@LineData, '$.ExpectedSalary');
+        DECLARE @UpEdu NVARCHAR(MAX) = JSON_QUERY(@LineData, '$.EducationDetails');
+        DECLARE @UpExp NVARCHAR(MAX) = JSON_QUERY(@LineData, '$.WorkExperienceDetails');
 
-        IF @UpCVContent IS NULL
-            SET @UpCVContent = JSON_VALUE(@LineData, '$.CVFileContent');
+        IF @UpCVContent IS NULL SET @UpCVContent = JSON_VALUE(@LineData, '$.CVFileContent');
+        IF @UpEdu IS NULL SET @UpEdu = JSON_VALUE(@LineData, '$.EducationDetails');
+        IF @UpExp IS NULL SET @UpExp = JSON_VALUE(@LineData, '$.WorkExperienceDetails');
 
         UPDATE [PLS].[Candidate]
         SET FullName = ISNULL(@UpFullName, FullName),
@@ -1105,7 +1118,13 @@ BEGIN
             City = ISNULL(@UpCity, City),
             Address = ISNULL(@UpAddr, Address),
             CVFileName = ISNULL(@UpCVName, CVFileName),
-            CVFileContent = ISNULL(@UpCVContent, CVFileContent)
+            CVFileContent = ISNULL(@UpCVContent, CVFileContent),
+            ProfilePhoto = ISNULL(@UpPhoto, ProfilePhoto),
+            DateOfBirth = ISNULL(@UpDOB, DateOfBirth),
+            ExpectedJoiningDate = ISNULL(@UpExpJoin, ExpectedJoiningDate),
+            ExpectedSalary = ISNULL(@UpExpSal, ExpectedSalary),
+            EducationDetails = ISNULL(@UpEdu, EducationDetails),
+            WorkExperienceDetails = ISNULL(@UpExp, WorkExperienceDetails)
         WHERE CandidateID = @UpProfCandID;
 
         RETURN;
