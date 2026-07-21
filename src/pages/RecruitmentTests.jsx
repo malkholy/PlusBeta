@@ -363,7 +363,7 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
           position: 'fixed',
           top: 0,
           right: 0,
-          width: 'min(860px, 100vw)',
+          width: 'min(980px, 100vw)',
           height: '100vh',
           background: 'var(--surface)',
           boxShadow: '-10px 0 30px rgba(0,0,0,0.12)',
