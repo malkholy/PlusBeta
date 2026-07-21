@@ -126,5 +126,13 @@ export default defineConfig({
         }
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        candidate: 'candidate.html'
+      }
+    }
   }
 })

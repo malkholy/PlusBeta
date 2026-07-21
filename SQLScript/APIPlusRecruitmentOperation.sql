@@ -1019,6 +1019,98 @@ BEGIN
         RETURN;
     END
 
+    -- ======================================================================
+    -- Operation: Candidate Login
+    -- ======================================================================
+    IF @Operation = 'CandidateLogin'
+    BEGIN
+        SET @State = 0;
+        SET @Message = 'Success';
+
+        DECLARE @CPhone VARCHAR(50) = JSON_VALUE(@LineData, '$.Phone');
+        DECLARE @CPassword VARCHAR(50) = JSON_VALUE(@LineData, '$.AccessPassword');
+
+        SELECT 
+            c.CandidateID,
+            c.RequestID,
+            c.FullName,
+            c.Email,
+            c.Phone,
+            c.Source,
+            c.Government,
+            c.City,
+            c.Address,
+            c.CVFileName,
+            c.CVFileContent,
+            c.AccessPassword,
+            r.PositionTitle,
+            r.Department
+        FROM [PLS].[Candidate] c
+        JOIN [PLS].[HiringRequest] r ON c.RequestID = r.RequestID
+        WHERE (c.Phone = @CPhone OR REPLACE(REPLACE(c.Phone, ' ', ''), '-', '') = REPLACE(REPLACE(@CPhone, ' ', ''), '-', ''))
+          AND c.AccessPassword = @CPassword;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            SET @State = 1;
+            SET @Message = 'Invalid mobile number or access password.';
+        END
+
+        RETURN;
+    END
+
+    -- ======================================================================
+    -- Operation: Generate Candidate Access Code
+    -- ======================================================================
+    IF @Operation = 'GenerateCandidateAccessCode'
+    BEGIN
+        SET @State = 0;
+        SET @Message = 'Success';
+
+        DECLARE @GenCandID INT = JSON_VALUE(@LineData, '$.CandidateID');
+        DECLARE @NewPIN VARCHAR(50) = CAST(FLOOR(100000 + RAND() * 900000) AS VARCHAR(10));
+
+        UPDATE [PLS].[Candidate]
+        SET AccessPassword = @NewPIN
+        WHERE CandidateID = @GenCandID;
+
+        SELECT @NewPIN AS AccessPassword;
+        RETURN;
+    END
+
+    -- ======================================================================
+    -- Operation: Update Candidate Profile
+    -- ======================================================================
+    IF @Operation = 'UpdateCandidateProfile'
+    BEGIN
+        SET @State = 0;
+        SET @Message = 'Success';
+
+        DECLARE @UpCandID INT = JSON_VALUE(@LineData, '$.CandidateID');
+        DECLARE @UpFullName NVARCHAR(150) = JSON_VALUE(@LineData, '$.FullName');
+        DECLARE @UpEmail NVARCHAR(150) = JSON_VALUE(@LineData, '$.Email');
+        DECLARE @UpGov NVARCHAR(100) = JSON_VALUE(@LineData, '$.Government');
+        DECLARE @UpCity NVARCHAR(100) = JSON_VALUE(@LineData, '$.City');
+        DECLARE @UpAddr NVARCHAR(250) = JSON_VALUE(@LineData, '$.Address');
+        DECLARE @UpCVName NVARCHAR(250) = JSON_VALUE(@LineData, '$.CVFileName');
+        DECLARE @UpCVContent NVARCHAR(MAX) = JSON_QUERY(@LineData, '$.CVFileContent');
+
+        IF @UpCVContent IS NULL
+            SET @UpCVContent = JSON_VALUE(@LineData, '$.CVFileContent');
+
+        UPDATE [PLS].[Candidate]
+        SET FullName = ISNULL(@UpFullName, FullName),
+            Email = ISNULL(@UpEmail, Email),
+            Government = ISNULL(@UpGov, Government),
+            City = ISNULL(@UpCity, City),
+            Address = ISNULL(@UpAddr, Address),
+            CVFileName = ISNULL(@UpCVName, CVFileName),
+            CVFileContent = ISNULL(@UpCVContent, CVFileContent)
+        WHERE CandidateID = @UpCandID;
+
+        RETURN;
+    END
+
     END TRY
     BEGIN CATCH
         SET @State = ERROR_NUMBER();

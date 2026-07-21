@@ -211,6 +211,23 @@ export default function CandidatesPool(props) {
     }
   }
 
+  async function handleGeneratePIN() {
+    if (!selectedCandidate) return;
+    try {
+      const res = await apiCall('GenerateCandidateAccessCode', { CandidateID: selectedCandidate.CandidateID }, {}, 'recruitment_tests');
+      if (res.State === 0 || res.List0) {
+        const pin = res.List0[0].AccessPassword;
+        setSelectedCandidate(prev => ({ ...prev, AccessPassword: pin }));
+        setRows(prevRows => prevRows.map(r => r.CandidateID === selectedCandidate.CandidateID ? { ...r, AccessPassword: pin } : r));
+        alert(`Access PIN generated for ${selectedCandidate.FullName}: ${pin}`);
+      } else {
+        alert(res.Message || 'Failed to generate access code.');
+      }
+    } catch (e) {
+      alert('Error generating PIN: ' + e.message);
+    }
+  }
+
   async function handleStatusSubmit(e) {
     e.preventDefault();
     setSubmitting(true);
@@ -1395,6 +1412,30 @@ ${selectedCandidate.Summary}`;
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
                       <span style={{ color: 'var(--muted)' }}>Phone Number</span>
                       <span style={{ color: 'var(--text)' }}>{selectedCandidate.Phone || '—'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600, alignItems: 'center' }}>
+                      <span style={{ color: 'var(--muted)' }}>Portal Access PIN</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: selectedCandidate.AccessPassword ? 'var(--primary)' : 'var(--muted)', fontWeight: 800, fontFamily: 'monospace' }}>
+                          {selectedCandidate.AccessPassword || 'Not Generated'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleGeneratePIN}
+                          style={{
+                            background: 'var(--soft)',
+                            color: 'var(--text)',
+                            border: '1px solid var(--border)',
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            fontSize: 10.5,
+                            fontWeight: 800,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          🔑 Generate PIN
+                        </button>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600, alignItems: 'center' }}>
                       <span style={{ color: 'var(--muted)' }}>Requisition</span>

@@ -21,8 +21,16 @@ BEGIN
         [Government] NVARCHAR(100) NULL,
         [City] NVARCHAR(100) NULL,
         [Address] NVARCHAR(250) NULL,
+        [AccessPassword] VARCHAR(50) NULL,
         [CreatedBy] NVARCHAR(100) NOT NULL,
         [CreatedDate] DATETIME NOT NULL DEFAULT GETDATE()
     );
+END
+ELSE
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[PLS].[Candidate]') AND name = 'AccessPassword')
+    BEGIN
+        ALTER TABLE [PLS].[Candidate] ADD [AccessPassword] VARCHAR(50) NULL;
+    END
 END
 GO
