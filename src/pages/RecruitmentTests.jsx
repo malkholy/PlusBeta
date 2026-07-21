@@ -280,7 +280,7 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
             },
             body: JSON.stringify({
               model: currentModel,
-              max_tokens: 1500,
+              max_tokens: 4000,
               system: systemPrompt,
               messages: [
                 {
@@ -306,8 +306,20 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
           const textResponse = resJson.content?.find(b => b.type === 'text')?.text || '';
           
           try {
-            const cleanText = textResponse.replace(/^```json/g, '').replace(/```$/g, '').trim();
-            generatedJson = JSON.parse(cleanText);
+            const cleanText = textResponse.replace(/^```json/gi, '').replace(/^```/gi, '').replace(/```$/gi, '').trim();
+            try {
+              generatedJson = JSON.parse(cleanText);
+            } catch (pErr) {
+              // Salvage valid complete questions if output was truncated mid-JSON
+              const lastObjectEnd = cleanText.lastIndexOf('}');
+              const firstBracket = cleanText.indexOf('[');
+              if (lastObjectEnd !== -1 && firstBracket !== -1 && lastObjectEnd > firstBracket) {
+                const salvaged = cleanText.substring(firstBracket, lastObjectEnd + 1) + ']';
+                generatedJson = JSON.parse(salvaged);
+              } else {
+                throw pErr;
+              }
+            }
             break; 
           } catch(e) {
             throw new Error("Failed to parse Claude output as JSON: " + textResponse);
