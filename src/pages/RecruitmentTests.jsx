@@ -256,18 +256,19 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
 
   return (
     <div className="p-6 h-full flex flex-col relative">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 bg-white/60 p-4 rounded-2xl shadow-sm backdrop-blur-md border border-white/50">
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+          <h1 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 tracking-tight drop-shadow-sm">
             Candidate Tests & Assessments
           </h1>
-          <p className="text-gray-500 mt-1">Manage multiple-choice tests and generate questions with AI.</p>
+          <p className="text-gray-500 mt-1 font-medium">Manage multiple-choice tests and generate questions with AI.</p>
         </div>
         <button
           onClick={handleCreateNew}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-200 transition-all active:scale-95"
+          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg shadow-blue-200 transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-95 flex items-center gap-2"
         >
-          + Create New Test
+          <span className="material-icons text-sm">add</span>
+          Create New Test
         </button>
       </div>
 
@@ -306,143 +307,178 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
 
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* Header Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-5 p-5 bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div className="col-span-2 md:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Test Title</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Test Title</label>
                   <input 
                     type="text" 
                     value={editingTest.TestTitle}
                     onChange={(e) => setEditingTest({...editingTest, TestTitle: e.target.value})}
-                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2.5 border"
+                    className="w-full bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm p-3 transition-all outline-none"
+                    placeholder="Enter test title..."
                   />
                 </div>
                 <div className="col-span-2 md:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Test Type</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Test Type</label>
                   <select
                     value={editingTest.TestType}
                     onChange={(e) => setEditingTest({...editingTest, TestType: e.target.value})}
-                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2.5 border"
+                    className="w-full bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm p-3 transition-all outline-none"
                   >
                     <option value="IQ">IQ Test</option>
-                    <option value="English">English</option>
-                    <option value="Technical">Technical</option>
+                    <option value="English">English Proficiency</option>
+                    <option value="Technical">Technical Skills</option>
+                    <option value="Personality">Personality Assessment</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
               </div>
 
-              <hr className="border-gray-100" />
-
               {/* AI Generator Box */}
-              <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-                <h3 className="text-sm font-semibold text-indigo-900 mb-2 flex items-center">
-                  <span className="material-icons mr-1 text-base">auto_awesome</span>
-                  Generate with Claude AI
-                </h3>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    className="flex-1 border-indigo-200 rounded-lg text-sm p-2 focus:ring-indigo-500 focus:border-indigo-500 border"
-                    placeholder="E.g. Generate 5 intermediate English questions"
-                  />
-                  <button
-                    onClick={generateWithAI}
-                    disabled={generating}
-                    className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-                  >
-                    {generating ? 'Generating...' : 'Generate'}
-                  </button>
+              <div className="relative overflow-hidden p-6 rounded-2xl border border-indigo-100 shadow-sm group">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <span className="material-icons text-6xl text-indigo-600">psychology</span>
                 </div>
-                {aiError && <p className="text-red-500 text-xs mt-2">{aiError}</p>}
+                
+                <div className="relative z-10">
+                  <h3 className="text-base font-bold text-indigo-900 mb-3 flex items-center gap-2">
+                    <span className="material-icons text-indigo-600">auto_awesome</span>
+                    Generate with Claude AI
+                  </h3>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={aiPrompt}
+                      onChange={(e) => setAiPrompt(e.target.value)}
+                      className="flex-1 bg-white/80 backdrop-blur border border-indigo-200 rounded-xl text-sm p-3 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all shadow-sm"
+                      placeholder="E.g. Generate 5 intermediate English questions about past perfect tense"
+                    />
+                    <button
+                      onClick={generateWithAI}
+                      disabled={generating}
+                      className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-indigo-300 disabled:to-purple-300 text-white px-6 py-3 rounded-xl text-sm font-semibold shadow-md shadow-indigo-200 transition-all hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-95 whitespace-nowrap flex items-center gap-2"
+                    >
+                      {generating ? (
+                        <><span className="material-icons animate-spin text-sm">refresh</span> Generating...</>
+                      ) : (
+                        <><span className="material-icons text-sm">magic_button</span> Generate</>
+                      )}
+                    </button>
+                  </div>
+                  {aiError && <p className="text-red-500 text-sm font-medium mt-3 bg-red-50 p-2 rounded-lg border border-red-100">{aiError}</p>}
+                </div>
               </div>
 
               {/* Questions List */}
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold text-gray-800">Questions ({questions.length})</h3>
+              <div className="bg-gray-50/50 p-5 rounded-2xl border border-gray-100">
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <span className="material-icons text-gray-400">help_outline</span>
+                    Questions <span className="bg-gray-200 text-gray-600 py-0.5 px-2.5 rounded-full text-xs">{questions.length}</span>
+                  </h3>
                   <button 
                     onClick={handleAddEmptyQuestion}
-                    className="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded text-sm font-medium transition-colors"
+                    className="text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-1"
                   >
-                    + Add Manual Question
+                    <span className="material-icons text-sm">add</span>
+                    Add Manual Question
                   </button>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {questions.map((q, idx) => (
-                    <div key={idx} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative group">
+                    <div key={idx} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm relative group hover:border-indigo-200 hover:shadow-md transition-all duration-300">
                       <button 
                         onClick={() => removeQuestion(idx)}
-                        className="absolute top-2 right-2 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-4 right-4 text-gray-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
+                        title="Remove Question"
                       >
-                        <span className="material-icons text-sm">delete</span>
+                        <span className="material-icons text-[20px]">delete</span>
                       </button>
-                      <div className="mb-3 pr-6">
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Question {idx + 1}</label>
+                      
+                      <div className="mb-4 pr-10">
+                        <label className="block text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">Question {idx + 1}</label>
                         <textarea
                           value={q.QuestionText}
                           onChange={(e) => updateQuestion(idx, 'QuestionText', e.target.value)}
-                          className="w-full text-sm p-2 border border-gray-300 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          className="w-full text-sm p-3 bg-gray-50/50 border border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all resize-y"
                           rows="2"
+                          placeholder="Type your question here..."
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold w-4 text-gray-400">A</span>
-                          <input type="text" value={q.OptionA} onChange={(e) => updateQuestion(idx, 'OptionA', e.target.value)} className="w-full text-sm p-1.5 border border-gray-300 rounded" />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold w-4 text-gray-400">B</span>
-                          <input type="text" value={q.OptionB} onChange={(e) => updateQuestion(idx, 'OptionB', e.target.value)} className="w-full text-sm p-1.5 border border-gray-300 rounded" />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold w-4 text-gray-400">C</span>
-                          <input type="text" value={q.OptionC} onChange={(e) => updateQuestion(idx, 'OptionC', e.target.value)} className="w-full text-sm p-1.5 border border-gray-300 rounded" />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold w-4 text-gray-400">D</span>
-                          <input type="text" value={q.OptionD} onChange={(e) => updateQuestion(idx, 'OptionD', e.target.value)} className="w-full text-sm p-1.5 border border-gray-300 rounded" />
-                        </div>
+
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        {[
+                          { key: 'OptionA', label: 'A' },
+                          { key: 'OptionB', label: 'B' },
+                          { key: 'OptionC', label: 'C' },
+                          { key: 'OptionD', label: 'D' }
+                        ].map((opt) => (
+                          <div key={opt.key} className="flex items-center gap-3 bg-gray-50/50 p-2 border border-gray-100 rounded-xl focus-within:border-indigo-300 focus-within:bg-white transition-colors">
+                            <span className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-lg shadow-sm ${q.CorrectAnswer === opt.label ? 'bg-green-500 text-white' : 'bg-white text-gray-500 border border-gray-200'}`}>
+                              {opt.label}
+                            </span>
+                            <input 
+                              type="text" 
+                              value={q[opt.key]} 
+                              onChange={(e) => updateQuestion(idx, opt.key, e.target.value)} 
+                              className="w-full text-sm bg-transparent border-none p-1 focus:ring-0 outline-none" 
+                              placeholder={`Option ${opt.label}...`}
+                            />
+                          </div>
+                        ))}
                       </div>
-                      <div>
-                        <label className="text-xs font-medium text-gray-700 mr-2">Correct Answer:</label>
-                        <select 
-                          value={q.CorrectAnswer} 
-                          onChange={(e) => updateQuestion(idx, 'CorrectAnswer', e.target.value)}
-                          className="text-sm border border-gray-300 rounded p-1"
-                        >
-                          <option value="A">A</option>
-                          <option value="B">B</option>
-                          <option value="C">C</option>
-                          <option value="D">D</option>
-                        </select>
+
+                      <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Correct Answer:</label>
+                        <div className="flex gap-2">
+                          {['A', 'B', 'C', 'D'].map(val => (
+                            <button
+                              key={val}
+                              onClick={() => updateQuestion(idx, 'CorrectAnswer', val)}
+                              className={`w-8 h-8 rounded-lg text-xs font-bold flex items-center justify-center transition-all ${
+                                q.CorrectAnswer === val 
+                                  ? 'bg-green-500 text-white shadow-md shadow-green-200 transform scale-110' 
+                                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                              }`}
+                            >
+                              {val}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ))}
+                  
                   {questions.length === 0 && (
-                    <div className="text-center py-8 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-xl">
-                      No questions yet. Add one manually or generate with AI.
+                    <div className="text-center py-12 bg-white/50 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center group hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors">
+                      <span className="material-icons text-5xl text-gray-300 mb-3 group-hover:text-indigo-300 transition-colors">quiz</span>
+                      <p className="text-gray-500 font-medium">No questions added yet.</p>
+                      <p className="text-sm text-gray-400 mt-1">Add one manually or let Claude AI generate them for you.</p>
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+            <div className="p-5 border-t border-gray-100 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] flex justify-end gap-3 z-10">
               <button 
                 onClick={() => setShowDrawer(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-5 py-2.5 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-colors"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleSaveTest}
                 disabled={saving}
-                className="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="px-8 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-70 shadow-md shadow-blue-200 transition-all flex items-center gap-2"
               >
-                {saving ? 'Saving...' : 'Save Test'}
+                {saving ? (
+                  <><span className="material-icons animate-spin text-[18px]">autorenew</span> Saving...</>
+                ) : (
+                  <><span className="material-icons text-[18px]">save</span> Save Test</>
+                )}
               </button>
             </div>
           </>
