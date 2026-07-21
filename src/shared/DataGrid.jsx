@@ -560,7 +560,7 @@ export default function DataGrid({
           if (act.show && !act.show(rowMenu.row)) return null;
           return (
             <div key={idx} className="dg-menu-item" onClick={() => { act.onClick(rowMenu.row); setRowMenu(null); }}>
-              {act.label}
+              {typeof act.label === 'function' ? act.label(rowMenu.row) : act.label}
             </div>
           );
         })}
