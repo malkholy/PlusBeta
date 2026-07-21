@@ -43,7 +43,44 @@ export default function PublicApply({ requestId }) {
     Government: '',
     City: '',
     Address: '',
+    DateOfBirth: '',
+    ExpectedJoiningDate: '',
+    ExpectedSalary: '',
+    EducationDetails: {
+      Degree: '',
+      University: '',
+      Major: '',
+      GraduationYear: '',
+      Grade: ''
+    },
+    WorkExperienceDetails: []
   });
+
+  const handleAddExperience = () => {
+    setFormData(prev => ({
+      ...prev,
+      WorkExperienceDetails: [
+        ...(Array.isArray(prev.WorkExperienceDetails) ? prev.WorkExperienceDetails : []),
+        { CompanyName: '', JobTitle: '', StartDate: '', EndDate: '', IsCurrent: false, Responsibilities: '', ReasonForLeaving: '' }
+      ]
+    }));
+  };
+
+  const handleUpdateExperience = (index, field, value) => {
+    setFormData(prev => {
+      const updated = [...(Array.isArray(prev.WorkExperienceDetails) ? prev.WorkExperienceDetails : [])];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, WorkExperienceDetails: updated };
+    });
+  };
+
+  const handleRemoveExperience = (index) => {
+    setFormData(prev => {
+      const updated = [...(Array.isArray(prev.WorkExperienceDetails) ? prev.WorkExperienceDetails : [])];
+      updated.splice(index, 1);
+      return { ...prev, WorkExperienceDetails: updated };
+    });
+  };
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -107,8 +144,8 @@ export default function PublicApply({ requestId }) {
       setSubmitError('Please upload your CV (PDF format) to submit your application.');
       return;
     }
-    if (!formData.Government || !formData.City) {
-      setSubmitError('Location (Government and City) is mandatory.');
+    if (!formData.FullName || !formData.Email || !formData.Phone || !formData.Government || !formData.City || !formData.Address || !formData.DateOfBirth || !formData.ExpectedJoiningDate || !formData.ExpectedSalary) {
+      setSubmitError('All Personal & Expectations fields (Full Name, Email, Phone, Government, City, Address, Date of Birth, Expected Joining Date, Expected Salary) are mandatory.');
       return;
     }
 
@@ -126,6 +163,11 @@ export default function PublicApply({ requestId }) {
         Government: formData.Government,
         City: formData.City,
         Address: formData.Address,
+        DateOfBirth: formData.DateOfBirth,
+        ExpectedJoiningDate: formData.ExpectedJoiningDate,
+        ExpectedSalary: formData.ExpectedSalary,
+        EducationDetails: JSON.stringify(formData.EducationDetails),
+        WorkExperienceDetails: JSON.stringify(formData.WorkExperienceDetails),
         CVFileName: cvName,
         CVFileContent: attachments
       };
@@ -311,13 +353,48 @@ export default function PublicApply({ requestId }) {
                 </div>
               </div>
 
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Date of Birth *</label>
+                  <input 
+                    type="date" 
+                    value={formData.DateOfBirth} 
+                    onChange={e => setFormData({ ...formData, DateOfBirth: e.target.value })} 
+                    style={{ width: '100%', height: 40, border: '1.5px solid var(--border)', borderRadius: 10, padding: '0 12px', background: 'var(--soft)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }} 
+                    required 
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Expected Joining Date *</label>
+                  <input 
+                    type="date" 
+                    value={formData.ExpectedJoiningDate} 
+                    onChange={e => setFormData({ ...formData, ExpectedJoiningDate: e.target.value })} 
+                    style={{ width: '100%', height: 40, border: '1.5px solid var(--border)', borderRadius: 10, padding: '0 12px', background: 'var(--soft)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }} 
+                    required 
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Expected Salary *</label>
+                  <input 
+                    type="text" 
+                    value={formData.ExpectedSalary} 
+                    onChange={e => setFormData({ ...formData, ExpectedSalary: e.target.value })} 
+                    style={{ width: '100%', height: 40, border: '1.5px solid var(--border)', borderRadius: 10, padding: '0 12px', background: 'var(--soft)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }} 
+                    required 
+                    placeholder="e.g. 25,000 EGP"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Address Details</label>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Address Details *</label>
                 <input 
                   type="text" 
                   value={formData.Address} 
                   onChange={e => setFormData({ ...formData, Address: e.target.value })} 
                   style={{ width: '100%', height: 40, border: '1.5px solid var(--border)', borderRadius: 10, padding: '0 12px', background: 'var(--soft)', color: 'var(--text)', outline: 'none', transition: 'border-color 0.15s', fontFamily: 'inherit' }} 
+                  required
                   placeholder="Street, building, flat number"
                 />
               </div>

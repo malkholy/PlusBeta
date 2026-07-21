@@ -502,13 +502,8 @@ export default function CandidatesPool(props) {
     e.preventDefault();
     setSubmitting(true);
     setModalError('');
-    if (!formData.Government) {
-      setModalError('Government (Governorate) is required.');
-      setSubmitting(false);
-      return;
-    }
-    if (!formData.City) {
-      setModalError('City is required.');
+    if (!formData.FullName || !formData.Email || !formData.Phone || !formData.Government || !formData.City || !formData.Address || !formData.DateOfBirth || !formData.ExpectedJoiningDate || !formData.ExpectedSalary) {
+      setModalError('All Personal & Expectations fields (Full Name, Email, Phone, Government, City, Address, Date of Birth, Expected Joining Date, Expected Salary) are mandatory.');
       setSubmitting(false);
       return;
     }
@@ -2774,8 +2769,8 @@ ${selectedCandidate.Summary}`;
                     <input type="email" value={formData.Email} onChange={e => setFormData({ ...formData, Email: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} required />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Phone</label>
-                    <input type="text" value={formData.Phone} onChange={e => setFormData({ ...formData, Phone: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} />
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Phone *</label>
+                    <input type="text" value={formData.Phone} onChange={e => setFormData({ ...formData, Phone: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} required />
                   </div>
                 </div>
 
@@ -2822,22 +2817,22 @@ ${selectedCandidate.Summary}`;
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Date of Birth</label>
-                    <input type="date" value={formData.DateOfBirth} onChange={e => setFormData({ ...formData, DateOfBirth: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} />
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Date of Birth *</label>
+                    <input type="date" value={formData.DateOfBirth} onChange={e => setFormData({ ...formData, DateOfBirth: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} required />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Expected Joining Date</label>
-                    <input type="date" value={formData.ExpectedJoiningDate} onChange={e => setFormData({ ...formData, ExpectedJoiningDate: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} />
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Expected Joining Date *</label>
+                    <input type="date" value={formData.ExpectedJoiningDate} onChange={e => setFormData({ ...formData, ExpectedJoiningDate: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} required />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Expected Salary</label>
-                    <input type="text" value={formData.ExpectedSalary} onChange={e => setFormData({ ...formData, ExpectedSalary: e.target.value })} placeholder="e.g. 25,000 EGP" style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} />
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Expected Salary *</label>
+                    <input type="text" value={formData.ExpectedSalary} onChange={e => setFormData({ ...formData, ExpectedSalary: e.target.value })} placeholder="e.g. 25,000 EGP" style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} required />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Address</label>
-                  <input type="text" value={formData.Address} onChange={e => setFormData({ ...formData, Address: e.target.value })} placeholder="e.g. Street 9, Maadi" style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} />
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Address Details *</label>
+                  <input type="text" value={formData.Address} onChange={e => setFormData({ ...formData, Address: e.target.value })} placeholder="e.g. Street 9, Maadi" style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} required />
                 </div>
               </div>
 
