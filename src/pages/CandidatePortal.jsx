@@ -315,6 +315,12 @@ export default function CandidatePortal() {
     e.preventDefault();
     setSavingProfile(true);
     setProfileMsg('');
+
+    if (!profileForm.FullName || !profileForm.Email || !profileForm.Government || !profileForm.City || !profileForm.Address || !profileForm.DateOfBirth || !profileForm.ExpectedJoiningDate || !profileForm.ExpectedSalary) {
+      setProfileMsg('❌ All Personal & Expectations fields (Full Name, Email, Government, City, Address, Date of Birth, Expected Joining Date, Expected Salary) are mandatory.');
+      setSavingProfile(false);
+      return;
+    }
     try {
       const res = await apiCall('UpdateCandidateProfile', {
         CandidateID: candidate.CandidateID,
@@ -1015,7 +1021,9 @@ export default function CandidatePortal() {
                 </h4>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Full Name</label>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
+                      Full Name <span style={{ color: '#dc2626', fontWeight: 900 }}>*</span>
+                    </label>
                     <input
                       type="text"
                       value={profileForm.FullName}
@@ -1025,7 +1033,9 @@ export default function CandidatePortal() {
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Email Address</label>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
+                      Email Address <span style={{ color: '#dc2626', fontWeight: 900 }}>*</span>
+                    </label>
                     <input
                       type="email"
                       value={profileForm.Email}
@@ -1038,38 +1048,49 @@ export default function CandidatePortal() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 14 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Date of Birth</label>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
+                      Date of Birth <span style={{ color: '#dc2626', fontWeight: 900 }}>*</span>
+                    </label>
                     <input
                       type="date"
                       value={profileForm.DateOfBirth}
                       onChange={e => setProfileForm({ ...profileForm, DateOfBirth: e.target.value })}
                       style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                      required
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Expected Joining Date</label>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
+                      Expected Joining Date <span style={{ color: '#dc2626', fontWeight: 900 }}>*</span>
+                    </label>
                     <input
                       type="date"
                       value={profileForm.ExpectedJoiningDate}
                       onChange={e => setProfileForm({ ...profileForm, ExpectedJoiningDate: e.target.value })}
                       style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                      required
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Expected Salary</label>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
+                      Expected Salary <span style={{ color: '#dc2626', fontWeight: 900 }}>*</span>
+                    </label>
                     <input
                       type="text"
                       value={profileForm.ExpectedSalary}
                       onChange={e => setProfileForm({ ...profileForm, ExpectedSalary: e.target.value })}
                       placeholder="e.g. 25,000 EGP"
                       style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                      required
                     />
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 14 }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Government / State</label>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
+                      Government / State <span style={{ color: '#dc2626', fontWeight: 900 }}>*</span>
+                    </label>
                     <select
                       value={profileForm.Government}
                       onChange={e => {
@@ -1082,6 +1103,7 @@ export default function CandidatePortal() {
                         });
                       }}
                       style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, background: '#fff', boxSizing: 'border-box' }}
+                      required
                     >
                       <option value="">Select Government / State...</option>
                       {Object.keys(EGYPT_LOCATIONS).map(gov => (
@@ -1090,12 +1112,15 @@ export default function CandidatePortal() {
                     </select>
                   </div>
                   <div>
-                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>City / Area</label>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
+                      City / Area <span style={{ color: '#dc2626', fontWeight: 900 }}>*</span>
+                    </label>
                     <select
                       value={profileForm.City}
                       onChange={e => setProfileForm({ ...profileForm, City: e.target.value })}
                       disabled={!profileForm.Government}
                       style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, background: '#fff', boxSizing: 'border-box', opacity: !profileForm.Government ? 0.6 : 1 }}
+                      required
                     >
                       <option value="">Select City / Area...</option>
                       {(EGYPT_LOCATIONS[profileForm.Government] || []).map(city => (
@@ -1106,12 +1131,15 @@ export default function CandidatePortal() {
                 </div>
 
                 <div style={{ marginTop: 14 }}>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>Detailed Address</label>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: '#475569', textTransform: 'uppercase', marginBottom: 6 }}>
+                    Detailed Address <span style={{ color: '#dc2626', fontWeight: 900 }}>*</span>
+                  </label>
                   <input
                     type="text"
                     value={profileForm.Address}
                     onChange={e => setProfileForm({ ...profileForm, Address: e.target.value })}
                     style={{ width: '100%', height: 40, padding: '0 12px', border: '1.5px solid #cbd5e1', borderRadius: 10, outline: 'none', fontSize: 13, boxSizing: 'border-box' }}
+                    required
                   />
                 </div>
               </div>
