@@ -1153,6 +1153,11 @@ ${selectedCandidate.Summary}`;
                       Expected: {selectedCandidate.ExpectedSalary}
                     </span>
                   )}
+                  {assignedTests.filter(t => t.Score !== null && t.Score !== undefined).map((t, i) => (
+                    <span key={i} style={{ fontSize: 11, fontWeight: 800, color: t.Score >= 60 ? 'var(--green)' : 'var(--red)', background: t.Score >= 60 ? 'var(--green-soft)' : 'var(--red-soft)', padding: '2px 8px', borderRadius: 6 }}>
+                      📝 {t.TestTitle}: {t.Score}%
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1414,6 +1419,80 @@ ${selectedCandidate.Summary}`;
                     </button>
                   </div>
                 )}
+
+                {/* Assessment Test Results Section */}
+                <div style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 16, padding: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                      📝 Assessment Test Results ({assignedTests.length})
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAssignTestFormData({ CandidateID: String(selectedCandidate.CandidateID), TestID: '' });
+                        setShowAssignTestModal(true);
+                      }}
+                      style={{
+                        background: 'var(--primary-soft)',
+                        border: '1px solid var(--primary)',
+                        color: 'var(--primary)',
+                        padding: '3px 10px',
+                        borderRadius: 6,
+                        fontSize: 11,
+                        fontWeight: 800,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      + Assign Test
+                    </button>
+                  </div>
+
+                  {assignedTests.length === 0 ? (
+                    <div style={{ padding: '14px 10px', textAlign: 'center', fontSize: 12.5, color: 'var(--muted)', fontWeight: 600 }}>
+                      No assessment tests assigned yet. Click "+ Assign Test" above to assign a test.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {assignedTests.map((t, idx) => {
+                        const hasScore = t.Score !== null && t.Score !== undefined;
+                        const isPassed = t.Score >= 60;
+
+                        return (
+                          <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text)', marginBottom: 2 }}>
+                                {t.TestTitle}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: 'var(--muted)' }}>
+                                <span style={{ fontWeight: 700, background: 'var(--soft)', padding: '1px 6px', borderRadius: 4 }}>
+                                  {t.TestType}
+                                </span>
+                                <span>Assigned: {t.TestDate ? new Date(t.TestDate).toLocaleDateString() : '—'}</span>
+                              </div>
+                            </div>
+
+                            <div>
+                              {hasScore ? (
+                                <div style={{ textAlign: 'right' }}>
+                                  <div style={{ fontSize: 16, fontWeight: 900, color: isPassed ? 'var(--green)' : 'var(--red)' }}>
+                                    {t.Score}%
+                                  </div>
+                                  <span style={{ fontSize: 10, fontWeight: 800, color: isPassed ? 'var(--green)' : 'var(--red)', background: isPassed ? 'var(--green-soft)' : 'var(--red-soft)', padding: '2px 6px', borderRadius: 4 }}>
+                                    {isPassed ? 'Passed ✓' : 'Needs Review'}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--orange)', background: 'var(--orange-soft)', padding: '4px 10px', borderRadius: 6 }}>
+                                  ⏳ {t.Status || 'Assigned / Pending Candidate'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
 
                 <div>
                   <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>General Info</div>
