@@ -63,6 +63,7 @@ export default function HiringRequests(props) {
   const [systemUsers, setSystemUsers] = useState([]);
   const [expandedComments, setExpandedComments] = useState({});
   const [expandedSummaries, setExpandedSummaries] = useState({});
+  const [expandedDetails, setExpandedDetails] = useState({});
   const [candidateLanguages, setCandidateLanguages] = useState({});
   const [candidateTranslating, setCandidateTranslating] = useState({});
   const [translatedCandidateSummaries, setTranslatedCandidateSummaries] = useState({});
@@ -1431,6 +1432,27 @@ ${englishSummary}`;
                   )}
 
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedDetails(prev => ({ ...prev, [c.CandidateID]: !prev[c.CandidateID] }))}
+                      style={{
+                        height: 28,
+                        padding: '0 10px',
+                        background: expandedDetails[c.CandidateID] ? 'var(--soft)' : 'var(--primary-soft)',
+                        border: '1px solid var(--primary)',
+                        borderRadius: 8,
+                        fontSize: 11.5,
+                        fontWeight: 800,
+                        color: 'var(--primary)',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4
+                      }}
+                    >
+                      {expandedDetails[c.CandidateID] ? '🔼 Hide Details' : '🎓 Education & Experience'}
+                    </button>
+
                     {(() => {
                       if (c.CVFileContent && c.CVFileContent.trim().startsWith('[')) {
                         try {
@@ -1454,6 +1476,91 @@ ${englishSummary}`;
                     })()}
                   </div>
                 </div>
+
+                {expandedDetails[c.CandidateID] && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {/* Personal Expectations Card */}
+                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 12 }}>
+                      <div style={{ fontSize: 10.5, fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>
+                        📋 Personal Details & Expectations
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, fontSize: 12, fontWeight: 600 }}>
+                        <div><span style={{ color: 'var(--muted)' }}>DOB:</span> <strong style={{ color: 'var(--text)' }}>{c.DateOfBirth ? new Date(c.DateOfBirth).toLocaleDateString() : '—'}</strong></div>
+                        <div><span style={{ color: 'var(--muted)' }}>Expected Joining:</span> <strong style={{ color: 'var(--text)' }}>{c.ExpectedJoiningDate ? new Date(c.ExpectedJoiningDate).toLocaleDateString() : '—'}</strong></div>
+                        <div><span style={{ color: 'var(--muted)' }}>Expected Salary:</span> <strong style={{ color: 'var(--green)' }}>{c.ExpectedSalary || '—'}</strong></div>
+                      </div>
+                      {c.Address && (
+                        <div style={{ fontSize: 12, fontWeight: 600, marginTop: 6, paddingTop: 6, borderTop: '1px dashed var(--border)' }}>
+                          <span style={{ color: 'var(--muted)' }}>Address Details:</span> <span style={{ color: 'var(--text)' }}>{c.Address}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Education Background Card */}
+                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 12 }}>
+                      <div style={{ fontSize: 10.5, fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>
+                        🎓 Education Background
+                      </div>
+                      {(() => {
+                        if (!c.EducationDetails) return <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>No education background recorded.</div>;
+                        try {
+                          const edu = typeof c.EducationDetails === 'string' ? JSON.parse(c.EducationDetails) : c.EducationDetails;
+                          if (!edu || (!edu.Degree && !edu.University)) return <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>No education background recorded.</div>;
+                          return (
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12, fontWeight: 600 }}>
+                              <div><span style={{ color: 'var(--muted)' }}>Degree / Qualification:</span> <strong style={{ color: 'var(--text)' }}>{edu.Degree || '—'}</strong></div>
+                              <div><span style={{ color: 'var(--muted)' }}>University / Institute:</span> <strong style={{ color: 'var(--text)' }}>{edu.University || '—'}</strong></div>
+                              <div><span style={{ color: 'var(--muted)' }}>Major / Study:</span> <strong style={{ color: 'var(--text)' }}>{edu.Major || '—'}</strong></div>
+                              <div><span style={{ color: 'var(--muted)' }}>Graduation Year:</span> <strong style={{ color: 'var(--text)' }}>{edu.GraduationYear || '—'}</strong></div>
+                              <div><span style={{ color: 'var(--muted)' }}>Grade / GPA:</span> <strong style={{ color: 'var(--text)' }}>{edu.Grade || '—'}</strong></div>
+                            </div>
+                          );
+                        } catch (e) { return <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>No education background recorded.</div>; }
+                      })()}
+                    </div>
+
+                    {/* Work Experience Card */}
+                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 12 }}>
+                      {(() => {
+                        let exps = [];
+                        if (c.WorkExperienceDetails) {
+                          try {
+                            exps = typeof c.WorkExperienceDetails === 'string' ? JSON.parse(c.WorkExperienceDetails) : c.WorkExperienceDetails;
+                          } catch (e) {}
+                        }
+
+                        return (
+                          <>
+                            <div style={{ fontSize: 10.5, fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              💼 Work Experience History ({Array.isArray(exps) ? exps.length : 0})
+                            </div>
+                            {(!Array.isArray(exps) || exps.length === 0) ? (
+                              <div style={{ fontSize: 12, color: 'var(--muted)', fontWeight: 600 }}>No work experience history recorded.</div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {exps.map((w, idx) => (
+                                  <div key={idx} style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 10, padding: 10 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>
+                                      <span>{w.JobTitle || 'Position'} {w.CompanyName ? `@ ${w.CompanyName}` : ''}</span>
+                                      <span style={{ fontSize: 10, fontWeight: 800, color: w.IsCurrent ? 'var(--green)' : 'var(--muted)', background: w.IsCurrent ? 'var(--green-soft)' : 'var(--surface)', padding: '2px 6px', borderRadius: 4 }}>
+                                        {w.IsCurrent ? 'Current' : `${w.StartDate || '—'} to ${w.EndDate || '—'}`}
+                                      </span>
+                                    </div>
+                                    {w.Responsibilities && (
+                                      <p style={{ margin: '4px 0 0 0', fontSize: 11.5, color: 'var(--text)', lineHeight: 1.4 }}>
+                                        {w.Responsibilities}
+                                      </p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
 
                 {c.Summary && expandedSummaries[c.CandidateID] && (() => {
                   const isAr = candidateLanguages[c.CandidateID] === 'ar';
