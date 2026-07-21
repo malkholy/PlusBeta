@@ -127,6 +127,44 @@ export default function CandidatesPool(props) {
   // Answer Breakdown Modal State
   const [showAnswerModal, setShowAnswerModal] = useState(false);
   const [selectedAnswerTest, setSelectedAnswerTest] = useState(null);
+  const [modalQuestions, setModalQuestions] = useState([]);
+  const [loadingAnswerDetails, setLoadingAnswerDetails] = useState(false);
+
+  async function handleOpenAnswerModal(testItem) {
+    setSelectedAnswerTest(testItem);
+    setShowAnswerModal(true);
+    setLoadingAnswerDetails(true);
+
+    let parsedQuestions = [];
+    if (testItem.AnswersDetails) {
+      try {
+        parsedQuestions = typeof testItem.AnswersDetails === 'string'
+          ? JSON.parse(testItem.AnswersDetails)
+          : testItem.AnswersDetails;
+      } catch (e) {}
+    }
+
+    if (parsedQuestions && Array.isArray(parsedQuestions) && parsedQuestions.length > 0) {
+      setModalQuestions(parsedQuestions);
+      setLoadingAnswerDetails(false);
+    } else {
+      try {
+        const res = await apiCall('GetTestQuestions', { TestID: testItem.TestID }, {}, 'recruitment_tests');
+        if (res.State === 0 || res.List0) {
+          const fetchedQs = (res.List0 || []).map(q => ({
+            ...q,
+            SelectedAnswer: null,
+            IsCorrect: null
+          }));
+          setModalQuestions(fetchedQs);
+        }
+      } catch (err) {
+        console.error('Failed to load test questions:', err);
+      } finally {
+        setLoadingAnswerDetails(false);
+      }
+    }
+  }
 
   useEffect(() => {
     loadData();
@@ -1872,27 +1910,22 @@ ${selectedCandidate.Summary}`;
                               }}>
                                 Score: {item.Score}% {item.Score >= 60 ? '✓' : '⚠️'}
                               </span>
-                              {item.AnswersDetails && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedAnswerTest(item);
-                                    setShowAnswerModal(true);
-                                  }}
-                                  style={{
-                                    background: 'var(--primary-soft)',
-                                    color: 'var(--primary)',
-                                    border: '1px solid var(--primary)',
-                                    padding: '4px 10px',
-                                    borderRadius: 8,
-                                    fontSize: 11.5,
-                                    fontWeight: 800,
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  👁️ View Answer Breakdown
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleOpenAnswerModal(item)}
+                                style={{
+                                  background: 'var(--primary-soft)',
+                                  color: 'var(--primary)',
+                                  border: '1px solid var(--primary)',
+                                  padding: '4px 10px',
+                                  borderRadius: 8,
+                                  fontSize: 11.5,
+                                  fontWeight: 800,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                👁️ View Answer Breakdown
+                              </button>
                             </div>
                           ) : (
                             <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--orange)', background: 'var(--orange-soft)', padding: '4px 8px', borderRadius: 6 }}>
@@ -2782,23 +2815,16 @@ ${selectedCandidate.Summary}`;
 
             {/* Modal Content - Question List */}
             <div style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {(() => {
-                let questions = [];
-                try {
-                  questions = typeof selectedAnswerTest.AnswersDetails === 'string'
-                    ? JSON.parse(selectedAnswerTest.AnswersDetails)
-                    : selectedAnswerTest.AnswersDetails;
-                } catch (e) {}
-
-                if (!Array.isArray(questions) || questions.length === 0) {
-                  return (
-                    <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
-                      No question breakdown details available for this test.
-                    </div>
-                  );
-                }
-
-                return questions.map((q, idx) => {
+              {loadingAnswerDetails ? (
+                <div style={{ padding: 48, textAlign: 'center', color: 'var(--muted)', fontSize: 14 }}>
+                  Loading test question breakdown...
+                </div>
+              ) : modalQuestions.length === 0 ? (
+                <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+                  No question breakdown details available for this test.
+                </div>
+              ) : (
+                modalQuestions.map((q, idx) => {
                   const isCorrect = q.IsCorrect;
 
                   return (
@@ -2882,8 +2908,8 @@ ${selectedCandidate.Summary}`;
                       </div>
                     </div>
                   );
-                });
-              })()}
+                })
+              )}
             </div>
 
             {/* Modal Footer */}
