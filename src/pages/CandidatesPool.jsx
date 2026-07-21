@@ -59,7 +59,18 @@ export default function CandidatesPool(props) {
     Source: 'Job Board',
     Government: '',
     City: '',
-    Address: ''
+    Address: '',
+    DateOfBirth: '',
+    ExpectedJoiningDate: '',
+    ExpectedSalary: '',
+    EducationDetails: {
+      Degree: '',
+      University: '',
+      Major: '',
+      GraduationYear: '',
+      Grade: ''
+    },
+    WorkExperienceDetails: []
   });
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [showDetailDrawer, setShowDetailDrawer] = useState(false);
@@ -461,6 +472,32 @@ export default function CandidatesPool(props) {
     setLoading(false);
   }
 
+  const handleAddExperience = () => {
+    setFormData(prev => ({
+      ...prev,
+      WorkExperienceDetails: [
+        ...(Array.isArray(prev.WorkExperienceDetails) ? prev.WorkExperienceDetails : []),
+        { CompanyName: '', JobTitle: '', StartDate: '', EndDate: '', IsCurrent: false, Responsibilities: '', ReasonForLeaving: '' }
+      ]
+    }));
+  };
+
+  const handleUpdateExperience = (index, field, value) => {
+    setFormData(prev => {
+      const updated = [...(Array.isArray(prev.WorkExperienceDetails) ? prev.WorkExperienceDetails : [])];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, WorkExperienceDetails: updated };
+    });
+  };
+
+  const handleRemoveExperience = (index) => {
+    setFormData(prev => {
+      const updated = [...(Array.isArray(prev.WorkExperienceDetails) ? prev.WorkExperienceDetails : [])];
+      updated.splice(index, 1);
+      return { ...prev, WorkExperienceDetails: updated };
+    });
+  };
+
   async function handleSaveCandidate(e) {
     e.preventDefault();
     setSubmitting(true);
@@ -502,7 +539,12 @@ export default function CandidatesPool(props) {
         ...formData,
         CVFileName: finalCVFileName,
         CVFileContent: finalCVFileContent,
-        RequestID: Number(formData.RequestID)
+        RequestID: Number(formData.RequestID),
+        DateOfBirth: formData.DateOfBirth || null,
+        ExpectedJoiningDate: formData.ExpectedJoiningDate || null,
+        ExpectedSalary: formData.ExpectedSalary || null,
+        EducationDetails: typeof formData.EducationDetails === 'object' ? JSON.stringify(formData.EducationDetails) : formData.EducationDetails,
+        WorkExperienceDetails: Array.isArray(formData.WorkExperienceDetails) ? JSON.stringify(formData.WorkExperienceDetails) : formData.WorkExperienceDetails
       };
 
       const res = await apiCall('Save Candidate', payload, {}, 'recruitment_requests');
@@ -2445,7 +2487,7 @@ ${selectedCandidate.Summary}`;
             setSelectedFiles([]);
             setFormData({
               CandidateID: '',
-              RequestID: hiringRequests.length > 0 ? String(hiringRequests[0].RequestID) : '',
+              RequestID: '',
               FullName: '',
               Email: '',
               Phone: '',
@@ -2454,7 +2496,18 @@ ${selectedCandidate.Summary}`;
               Source: 'Job Board',
               Government: '',
               City: '',
-              Address: ''
+              Address: '',
+              DateOfBirth: '',
+              ExpectedJoiningDate: '',
+              ExpectedSalary: '',
+              EducationDetails: {
+                Degree: '',
+                University: '',
+                Major: '',
+                GraduationYear: '',
+                Grade: ''
+              },
+              WorkExperienceDetails: []
             });
             setModalError('');
             setShowAddModal(true);
@@ -2464,6 +2517,20 @@ ${selectedCandidate.Summary}`;
               label: '📝 Edit Details',
               show: (row) => row.CandidateState === 0,
               onClick: (row) => {
+                let parsedEdu = { Degree: '', University: '', Major: '', GraduationYear: '', Grade: '' };
+                if (row.EducationDetails) {
+                  try {
+                    parsedEdu = typeof row.EducationDetails === 'string' ? JSON.parse(row.EducationDetails) : row.EducationDetails;
+                  } catch (e) {}
+                }
+
+                let parsedExps = [];
+                if (row.WorkExperienceDetails) {
+                  try {
+                    parsedExps = typeof row.WorkExperienceDetails === 'string' ? JSON.parse(row.WorkExperienceDetails) : row.WorkExperienceDetails;
+                  } catch (e) {}
+                }
+
                 setFormData({
                   CandidateID: String(row.CandidateID),
                   RequestID: String(row.RequestID),
@@ -2475,7 +2542,12 @@ ${selectedCandidate.Summary}`;
                   Source: row.Source || 'Job Board',
                   Government: row.Government || '',
                   City: row.City || '',
-                  Address: row.Address || ''
+                  Address: row.Address || '',
+                  DateOfBirth: row.DateOfBirth ? row.DateOfBirth.split('T')[0] : '',
+                  ExpectedJoiningDate: row.ExpectedJoiningDate ? row.ExpectedJoiningDate.split('T')[0] : '',
+                  ExpectedSalary: row.ExpectedSalary || '',
+                  EducationDetails: parsedEdu || { Degree: '', University: '', Major: '', GraduationYear: '', Grade: '' },
+                  WorkExperienceDetails: Array.isArray(parsedExps) ? parsedExps : []
                 });
                 setSelectedFiles([]);
                 setModalError('');
@@ -2617,101 +2689,334 @@ ${selectedCandidate.Summary}`;
 
       {/* Candidate Registration Modal */}
       {showAddModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)' }}>
-          <div style={{ width: 'min(480px, calc(100vw - 28px))', background: 'var(--surface)', borderRadius: 22, boxShadow: 'var(--shadow)', padding: 24, border: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(4px)', padding: 16 }}>
+          <div style={{ width: 'min(780px, calc(100vw - 32px))', maxHeight: '90vh', overflowY: 'auto', background: 'var(--surface)', borderRadius: 22, boxShadow: 'var(--shadow)', padding: 26, border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
               <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>
-                {formData.CandidateID ? 'Edit Candidate Details' : 'Register Candidate'}
+                {formData.CandidateID ? '📝 Edit Candidate Details' : '👤 Register Candidate'}
               </h3>
-              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: 'var(--muted)' }}>&times;</button>
+              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 0, fontSize: 22, cursor: 'pointer', color: 'var(--muted)' }}>&times;</button>
             </div>
 
             {modalError && (
-              <div style={{ marginBottom: 16, background: 'var(--red-soft)', color: 'var(--red)', padding: 10, borderRadius: 8, fontSize: 12.5 }}>{modalError}</div>
+              <div style={{ marginBottom: 16, background: 'var(--red-soft)', color: 'var(--red)', padding: 12, borderRadius: 10, fontSize: 13, fontWeight: 600 }}>{modalError}</div>
             )}
 
-            <form onSubmit={handleSaveCandidate}>
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Hiring Requisition</label>
-                <select value={formData.RequestID} onChange={e => setFormData({ ...formData, RequestID: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required>
-                  <option value="">Select Requisition</option>
-                  {hiringRequests.map(r => (
-                    <option key={r.RequestID} value={r.RequestID}>{r.PositionTitle} ({r.Department})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Full Name</label>
-                <input type="text" value={formData.FullName} onChange={e => setFormData({ ...formData, FullName: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Email</label>
-                  <input type="email" value={formData.Email} onChange={e => setFormData({ ...formData, Email: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} required />
+            <form onSubmit={handleSaveCandidate} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              
+              {/* Section 1: Personal & Contact Info */}
+              <div style={{ background: 'var(--soft)', borderRadius: 16, padding: 16, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 14, letterSpacing: 0.5 }}>
+                  1. Personal & Contact Details
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Phone</label>
-                  <input type="text" value={formData.Phone} onChange={e => setFormData({ ...formData, Phone: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
-                </div>
-              </div>
 
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Source</label>
-                <select value={formData.Source} onChange={e => setFormData({ ...formData, Source: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}>
-                  <option value="Job Board">Job Board</option>
-                  <option value="Agency">Agency</option>
-                  <option value="Referral">Referral</option>
-                  <option value="Walk-in">Walk-in</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Government *</label>
-                  <select
-                    value={formData.Government}
-                    onChange={e => setFormData({ ...formData, Government: e.target.value, City: '' })}
-                    style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
-                    required
-                  >
-                    <option value="">Select Government</option>
-                    {Object.keys(EGYPT_LOCATIONS).map(gov => (
-                      <option key={gov} value={gov}>{gov}</option>
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Hiring Requisition *</label>
+                  <select value={formData.RequestID} onChange={e => setFormData({ ...formData, RequestID: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} required>
+                    <option value="">Select Requisition</option>
+                    {hiringRequests.map(r => (
+                      <option key={r.RequestID} value={r.RequestID}>{r.PositionTitle} ({r.Department})</option>
                     ))}
                   </select>
                 </div>
+
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Full Name *</label>
+                  <input type="text" value={formData.FullName} onChange={e => setFormData({ ...formData, FullName: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} required />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Email *</label>
+                    <input type="email" value={formData.Email} onChange={e => setFormData({ ...formData, Email: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} required />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Phone</label>
+                    <input type="text" value={formData.Phone} onChange={e => setFormData({ ...formData, Phone: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Source</label>
+                    <select value={formData.Source} onChange={e => setFormData({ ...formData, Source: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}>
+                      <option value="Job Board">Job Board</option>
+                      <option value="Agency">Agency</option>
+                      <option value="Referral">Referral</option>
+                      <option value="Walk-in">Walk-in</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Government *</label>
+                    <select
+                      value={formData.Government}
+                      onChange={e => setFormData({ ...formData, Government: e.target.value, City: '' })}
+                      style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}
+                      required
+                    >
+                      <option value="">Select Government</option>
+                      {Object.keys(EGYPT_LOCATIONS).map(gov => (
+                        <option key={gov} value={gov}>{gov}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>City *</label>
+                    <select
+                      value={formData.City}
+                      onChange={e => setFormData({ ...formData, City: e.target.value })}
+                      style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}
+                      disabled={!formData.Government}
+                      required
+                    >
+                      <option value="">Select City</option>
+                      {(EGYPT_LOCATIONS[formData.Government] || []).map(city => (
+                        <option key={city} value={city}>{city}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Date of Birth</label>
+                    <input type="date" value={formData.DateOfBirth} onChange={e => setFormData({ ...formData, DateOfBirth: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Expected Joining Date</label>
+                    <input type="date" value={formData.ExpectedJoiningDate} onChange={e => setFormData({ ...formData, ExpectedJoiningDate: e.target.value })} style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Expected Salary</label>
+                    <input type="text" value={formData.ExpectedSalary} onChange={e => setFormData({ ...formData, ExpectedSalary: e.target.value })} placeholder="e.g. 25,000 EGP" style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} />
+                  </div>
+                </div>
+
                 <div>
-                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>City *</label>
-                  <select
-                    value={formData.City}
-                    onChange={e => setFormData({ ...formData, City: e.target.value })}
-                    style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
-                    disabled={!formData.Government}
-                    required
-                  >
-                    <option value="">Select City</option>
-                    {(EGYPT_LOCATIONS[formData.Government] || []).map(city => (
-                      <option key={city} value={city}>{city}</option>
-                    ))}
-                  </select>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Address</label>
+                  <input type="text" value={formData.Address} onChange={e => setFormData({ ...formData, Address: e.target.value })} placeholder="e.g. Street 9, Maadi" style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }} />
                 </div>
               </div>
 
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Address</label>
-                <input type="text" value={formData.Address} onChange={e => setFormData({ ...formData, Address: e.target.value })} placeholder="e.g. Street 9" style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none' }} />
+              {/* Section 2: Education Background */}
+              <div style={{ background: 'var(--soft)', borderRadius: 16, padding: 16, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 14, letterSpacing: 0.5 }}>
+                  🎓 2. Education Background
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Degree / Qualification</label>
+                    <input
+                      type="text"
+                      value={formData.EducationDetails?.Degree || ''}
+                      onChange={e => setFormData({
+                        ...formData,
+                        EducationDetails: { ...(formData.EducationDetails || {}), Degree: e.target.value }
+                      })}
+                      placeholder="e.g. Bachelor's Degree"
+                      style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>University / Institute</label>
+                    <input
+                      type="text"
+                      value={formData.EducationDetails?.University || ''}
+                      onChange={e => setFormData({
+                        ...formData,
+                        EducationDetails: { ...(formData.EducationDetails || {}), University: e.target.value }
+                      })}
+                      placeholder="e.g. Cairo University"
+                      style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Major / Field of Study</label>
+                    <input
+                      type="text"
+                      value={formData.EducationDetails?.Major || ''}
+                      onChange={e => setFormData({
+                        ...formData,
+                        EducationDetails: { ...(formData.EducationDetails || {}), Major: e.target.value }
+                      })}
+                      placeholder="e.g. Computer Science"
+                      style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Graduation Year</label>
+                    <input
+                      type="text"
+                      value={formData.EducationDetails?.GraduationYear || ''}
+                      onChange={e => setFormData({
+                        ...formData,
+                        EducationDetails: { ...(formData.EducationDetails || {}), GraduationYear: e.target.value }
+                      })}
+                      placeholder="e.g. 2022"
+                      style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Grade / GPA</label>
+                    <input
+                      type="text"
+                      value={formData.EducationDetails?.Grade || ''}
+                      onChange={e => setFormData({
+                        ...formData,
+                        EducationDetails: { ...(formData.EducationDetails || {}), Grade: e.target.value }
+                      })}
+                      placeholder="e.g. Very Good / 3.4"
+                      style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div style={{ marginBottom: 20 }}>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase' }}>Upload Attachments (CV, Certificates, etc.)</label>
+              {/* Section 3: Work Experience History */}
+              <div style={{ background: 'var(--soft)', borderRadius: 16, padding: 16, border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                    💼 3. Work Experience ({formData.WorkExperienceDetails?.length || 0})
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAddExperience}
+                    style={{
+                      height: 30,
+                      padding: '0 12px',
+                      border: '1px solid var(--primary)',
+                      background: 'var(--primary-soft)',
+                      color: 'var(--primary)',
+                      borderRadius: 8,
+                      fontSize: 11.5,
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                  >
+                    + Add Work Experience
+                  </button>
+                </div>
+
+                {(!formData.WorkExperienceDetails || formData.WorkExperienceDetails.length === 0) ? (
+                  <div style={{ padding: '16px', background: 'var(--surface)', borderRadius: 12, border: '1px dashed var(--border)', textAlign: 'center', fontSize: 12.5, color: 'var(--muted)', fontWeight: 600 }}>
+                    💼 No work experiences added yet. Click above to add employment history.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {formData.WorkExperienceDetails.map((exp, idx) => (
+                      <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 14, position: 'relative' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>Experience #{idx + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveExperience(idx)}
+                            style={{ border: 0, background: 'var(--red-soft)', color: 'var(--red)', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}
+                          >
+                            🗑️ Remove
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase' }}>Company Name</label>
+                            <input
+                              type="text"
+                              value={exp.CompanyName || ''}
+                              onChange={e => handleUpdateExperience(idx, 'CompanyName', e.target.value)}
+                              placeholder="e.g. Acme Corp"
+                              style={{ width: '100%', height: 34, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)', fontSize: 12 }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase' }}>Job Title</label>
+                            <input
+                              type="text"
+                              value={exp.JobTitle || ''}
+                              onChange={e => handleUpdateExperience(idx, 'JobTitle', e.target.value)}
+                              placeholder="e.g. Software Engineer"
+                              style={{ width: '100%', height: 34, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)', fontSize: 12 }}
+                            />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10, alignItems: 'center' }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase' }}>Start Date</label>
+                            <input
+                              type="date"
+                              value={exp.StartDate || ''}
+                              onChange={e => handleUpdateExperience(idx, 'StartDate', e.target.value)}
+                              style={{ width: '100%', height: 34, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)', fontSize: 12 }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase' }}>End Date</label>
+                            <input
+                              type="date"
+                              value={exp.EndDate || ''}
+                              onChange={e => handleUpdateExperience(idx, 'EndDate', e.target.value)}
+                              disabled={exp.IsCurrent}
+                              style={{ width: '100%', height: 34, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)', fontSize: 12, opacity: exp.IsCurrent ? 0.5 : 1 }}
+                            />
+                          </div>
+                          <div style={{ paddingTop: 16 }}>
+                            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--text)', cursor: 'pointer' }}>
+                              <input
+                                type="checkbox"
+                                checked={exp.IsCurrent || false}
+                                onChange={e => handleUpdateExperience(idx, 'IsCurrent', e.target.checked)}
+                              />
+                              Current Job
+                            </label>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                          <div>
+                            <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase' }}>Main Responsibilities</label>
+                            <input
+                              type="text"
+                              value={exp.Responsibilities || ''}
+                              onChange={e => handleUpdateExperience(idx, 'Responsibilities', e.target.value)}
+                              placeholder="e.g. Developed Web APIs"
+                              style={{ width: '100%', height: 34, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)', fontSize: 12 }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: 'var(--muted)', marginBottom: 4, textTransform: 'uppercase' }}>Reason for Leaving</label>
+                            <input
+                              type="text"
+                              value={exp.ReasonForLeaving || ''}
+                              onChange={e => handleUpdateExperience(idx, 'ReasonForLeaving', e.target.value)}
+                              placeholder="e.g. Career Growth"
+                              style={{ width: '100%', height: 34, padding: '0 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg)', color: 'var(--text)', fontSize: 12 }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Section 4: Attachments */}
+              <div style={{ background: 'var(--soft)', borderRadius: 16, padding: 16, border: '1px solid var(--border)' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: 10, letterSpacing: 0.5 }}>
+                  📎 4. Upload Attachments (CV, Certificates, etc.)
+                </div>
                 <input type="file" onChange={handleFileChange} multiple style={{ fontSize: 13, display: 'block', marginBottom: 10 }} />
                 
                 {selectedFiles.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 120, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 10, padding: 8, background: 'var(--soft)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 120, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 10, padding: 8, background: 'var(--surface)' }}>
                     {selectedFiles.map((file, idx) => (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, fontWeight: 700, color: 'var(--text)', background: 'var(--surface)', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)' }}>
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, fontWeight: 700, color: 'var(--text)', background: 'var(--soft)', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)' }}>
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '85%' }}>📄 {file.name}</span>
                         <button type="button" onClick={() => handleRemoveFile(idx)} style={{ border: 0, background: 'none', color: 'var(--red)', fontSize: 16, cursor: 'pointer', fontWeight: 900, padding: '0 4px' }}>&times;</button>
                       </div>
@@ -2720,9 +3025,10 @@ ${selectedCandidate.Summary}`;
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-                <button type="button" onClick={() => setShowAddModal(false)} style={{ height: 38, padding: '0 18px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
-                <button type="submit" disabled={submitting} style={{ height: 38, padding: '0 20px', border: 0, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                <button type="button" onClick={() => setShowAddModal(false)} style={{ height: 40, padding: '0 20px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+                <button type="submit" disabled={submitting} style={{ height: 40, padding: '0 24px', border: 0, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}>
                   {submitting ? 'Saving...' : (formData.CandidateID ? 'Save Changes' : 'Register Candidate')}
                 </button>
               </div>
