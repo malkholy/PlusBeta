@@ -1648,6 +1648,52 @@ ${selectedCandidate.Summary}`;
                     <p style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, lineHeight: 1.4, margin: 0 }}>"{selectedCandidate.RejectionReason}"</p>
                   </div>
                 )}
+
+                {/* Interviewer Feedback & Comments at bottom of Details tab */}
+                {(() => {
+                  const completedInts = interviews.filter(i => i.FeedbackComments || i.Rating);
+                  if (completedInts.length === 0) return null;
+
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+                      <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                        💬 Interviewer Feedback & Comments ({completedInts.length})
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {completedInts.map((inv, idx) => {
+                          const roundNames = { 1: 'HR Round', 2: 'Technical Round', 3: 'Manager Round', 4: 'Final Round' };
+                          const rName = roundNames[inv.RoundNumber] || `Round ${inv.RoundNumber}`;
+
+                          return (
+                            <div key={idx} style={{
+                              background: 'var(--soft)',
+                              border: '1px solid var(--border)',
+                              borderRadius: 14,
+                              padding: 14,
+                              borderLeft: '4px solid var(--primary)'
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>
+                                  {rName} — Interviewer: {inv.InterviewerUser || 'Unassigned'}
+                                </span>
+                                {inv.Rating && (
+                                  <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--amber)' }}>
+                                    ⭐ {inv.Rating} / 10
+                                  </span>
+                                )}
+                              </div>
+                              {inv.FeedbackComments && (
+                                <p style={{ fontSize: 12.5, color: 'var(--text)', fontWeight: 600, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
+                                  "{inv.FeedbackComments}"
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
