@@ -15,7 +15,9 @@ export default function RecruitmentTests(props) {
   const [saving, setSaving] = useState(false);
 
   // AI Generator State
-  const [aiPrompt, setAiPrompt] = useState('Generate 5 intermediate-level multiple-choice questions about English grammar.');
+  const [aiQuestionCount, setAiQuestionCount] = useState('5');
+  const [aiDifficulty, setAiDifficulty] = useState('Intermediate');
+  const [aiPrompt, setAiPrompt] = useState('Generate 5 intermediate level IQ and logical reasoning multiple-choice questions with 4 options and clear correct answers.');
   const [generating, setGenerating] = useState(false);
   const [aiError, setAiError] = useState('');
 
@@ -105,18 +107,20 @@ export default function RecruitmentTests(props) {
     setColumns(cols);
   }
 
-  function getDefaultPromptForType(type) {
+  function buildPrompt(type, count, difficulty) {
+    const diffText = (difficulty || 'Intermediate').toLowerCase();
+    const num = count || '5';
     switch (type) {
       case 'IQ':
-        return 'Generate 5 intermediate IQ and logical reasoning multiple-choice questions with 4 options and answers.';
+        return `Generate ${num} ${diffText} level IQ and logical reasoning multiple-choice questions with 4 options and clear correct answers.`;
       case 'English':
-        return 'Generate 5 intermediate English grammar and vocabulary multiple-choice questions with 4 options and answers.';
+        return `Generate ${num} ${diffText} level English grammar and vocabulary multiple-choice questions with 4 options and clear correct answers.`;
       case 'Technical':
-        return 'Generate 5 technical assessment multiple-choice questions for a software development candidate.';
+        return `Generate ${num} ${diffText} level technical assessment multiple-choice questions for a software development candidate.`;
       case 'Personality':
-        return 'Generate 5 situational judgment and workplace personality multiple-choice questions.';
+        return `Generate ${num} ${diffText} level situational judgment and workplace personality multiple-choice questions.`;
       default:
-        return 'Generate 5 general aptitude multiple-choice questions with 4 options and answers.';
+        return `Generate ${num} ${diffText} level general aptitude multiple-choice questions with 4 options and clear correct answers.`;
     }
   }
 
@@ -128,7 +132,7 @@ export default function RecruitmentTests(props) {
         TestTitle: testRow.TestTitle || '',
         TestType: type
       });
-      setAiPrompt(getDefaultPromptForType(type));
+      setAiPrompt(buildPrompt(type, aiQuestionCount, aiDifficulty));
       loadQuestions(testRow.TestID);
     } else {
       setEditingTest({
@@ -136,7 +140,7 @@ export default function RecruitmentTests(props) {
         TestTitle: '',
         TestType: 'IQ'
       });
-      setAiPrompt(getDefaultPromptForType('IQ'));
+      setAiPrompt(buildPrompt('IQ', aiQuestionCount, aiDifficulty));
       setQuestions([]);
     }
     setShowDrawer(true);
@@ -347,7 +351,7 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
           position: 'fixed',
           top: 0,
           right: 0,
-          width: 'min(680px, 100vw)',
+          width: 'min(860px, 100vw)',
           height: '100vh',
           background: 'var(--surface)',
           boxShadow: '-10px 0 30px rgba(0,0,0,0.12)',
@@ -384,7 +388,7 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
                   onChange={(e) => {
                     const newType = e.target.value;
                     setEditingTest({...editingTest, TestType: newType});
-                    setAiPrompt(getDefaultPromptForType(newType));
+                    setAiPrompt(buildPrompt(newType, aiQuestionCount, aiDifficulty));
                   }}
                   style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none', fontSize: 13, fontWeight: 600 }}
                 >
@@ -399,15 +403,60 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
 
             {/* AI Generator Box */}
             <div style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.06))', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 16, padding: 18 }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--primary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--primary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                 ✨ Generate Questions with Claude AI
               </div>
+
+              {/* Comboboxes Row for Difficulty and Count */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>
+                    Question Level / Difficulty
+                  </label>
+                  <select
+                    value={aiDifficulty}
+                    onChange={(e) => {
+                      const newDiff = e.target.value;
+                      setAiDifficulty(newDiff);
+                      setAiPrompt(buildPrompt(editingTest.TestType, aiQuestionCount, newDiff));
+                    }}
+                    style={{ width: '100%', height: 36, padding: '0 10px', border: '1.5px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', outline: 'none', fontSize: 12.5, fontWeight: 600 }}
+                  >
+                    <option value="Beginner">Beginner / Easy</option>
+                    <option value="Intermediate">Intermediate / Medium</option>
+                    <option value="Advanced">Advanced / Hard</option>
+                    <option value="Expert">Expert</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 4 }}>
+                    Number of Questions
+                  </label>
+                  <select
+                    value={aiQuestionCount}
+                    onChange={(e) => {
+                      const newCount = e.target.value;
+                      setAiQuestionCount(newCount);
+                      setAiPrompt(buildPrompt(editingTest.TestType, newCount, aiDifficulty));
+                    }}
+                    style={{ width: '100%', height: 36, padding: '0 10px', border: '1.5px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', outline: 'none', fontSize: 12.5, fontWeight: 600 }}
+                  >
+                    <option value="3">3 Questions</option>
+                    <option value="5">5 Questions</option>
+                    <option value="10">10 Questions</option>
+                    <option value="15">15 Questions</option>
+                    <option value="20">20 Questions</option>
+                  </select>
+                </div>
+              </div>
+
               <div style={{ display: 'flex', gap: 10 }}>
                 <input
                   type="text"
                   value={aiPrompt}
                   onChange={(e) => setAiPrompt(e.target.value)}
-                  placeholder="e.g. Generate 5 intermediate English questions about past perfect tense"
+                  placeholder="Custom AI prompt..."
                   style={{ flex: 1, height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none', fontSize: 13 }}
                 />
                 <button
