@@ -44,7 +44,7 @@ export default function CandidatePortal() {
   const [loginError, setLoginError] = useState('');
 
   // Portal View State
-  const [activeTab, setActiveTab] = useState('tests'); // 'tests' or 'profile'
+  const [activeTab, setActiveTab] = useState('profile'); // 'profile' or 'tests'
   const [assignedTests, setAssignedTests] = useState([]);
   const [loadingTests, setLoadingTests] = useState(false);
 
@@ -825,21 +825,6 @@ export default function CandidatePortal() {
         {/* Navigation Tabs */}
         <div style={{ display: 'flex', gap: 12, borderBottom: '1.5px solid #e2e8f0', marginBottom: 24 }}>
           <button
-            onClick={() => setActiveTab('tests')}
-            style={{
-              border: 0,
-              background: 'none',
-              borderBottom: activeTab === 'tests' ? '3px solid #2563eb' : '3px solid transparent',
-              color: activeTab === 'tests' ? '#2563eb' : '#64748b',
-              padding: '12px 16px',
-              fontSize: 14,
-              fontWeight: 800,
-              cursor: 'pointer'
-            }}
-          >
-            📝 My Assigned Tests ({assignedTests.length})
-          </button>
-          <button
             onClick={() => setActiveTab('profile')}
             style={{
               border: 0,
@@ -853,6 +838,21 @@ export default function CandidatePortal() {
             }}
           >
             👤 My Extended Profile & Resume
+          </button>
+          <button
+            onClick={() => setActiveTab('tests')}
+            style={{
+              border: 0,
+              background: 'none',
+              borderBottom: activeTab === 'tests' ? '3px solid #2563eb' : '3px solid transparent',
+              color: activeTab === 'tests' ? '#2563eb' : '#64748b',
+              padding: '12px 16px',
+              fontSize: 14,
+              fontWeight: 800,
+              cursor: 'pointer'
+            }}
+          >
+            📝 My Assigned Tests ({assignedTests.length})
           </button>
         </div>
 
