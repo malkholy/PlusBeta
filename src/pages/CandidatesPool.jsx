@@ -1876,6 +1876,16 @@ ${selectedCandidate.Summary}`;
                                 {item.ScheduledDate ? new Date(item.ScheduledDate).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
                               </span>
                             </div>
+                            {item.Rating !== null && item.Rating !== undefined && (
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ color: 'var(--muted)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  ⭐ Rating Score:
+                                </span>
+                                <span style={{ color: 'var(--amber)', fontWeight: 900, fontSize: 13.5 }}>
+                                  ⭐ {item.Rating} / 10
+                                </span>
+                              </div>
+                            )}
                           </div>
 
                           {/* Scheduled Action Controls */}
