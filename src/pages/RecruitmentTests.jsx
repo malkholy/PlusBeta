@@ -165,17 +165,17 @@ export default function RecruitmentTests(props) {
     try {
       // 1. Save Header
       const headerRes = await apiCall('SaveRecruitmentTest', editingTest, {}, 'recruitment_tests');
-      if (headerRes.State !== 0) throw new Error(headerRes.Message);
+      if (headerRes.State !== 0) throw new Error(headerRes.Message || "Failed to save test header");
       
-      const newTestID = headerRes.List0[0].TestID;
+      const newTestID = (headerRes.List0 && headerRes.List0.length > 0) ? headerRes.List0[0].TestID : editingTest.TestID;
 
       // 2. Save Questions
       const qsRes = await apiCall('SaveTestQuestions', {
         TestID: newTestID,
-        Questions: JSON.stringify(questions)
+        Questions: questions
       }, {}, 'recruitment_tests');
 
-      if (qsRes.State !== 0) throw new Error(qsRes.Message);
+      if (qsRes.State !== 0) throw new Error(qsRes.Message || "Failed to save test questions");
 
       setShowDrawer(false);
       loadTests();

@@ -20,7 +20,7 @@ export async function apiCall(operation, lineData = null, extraParams = {}, apiT
     target = 'express';
   } else if (apiType === 'hr') {
     target = 'hr';
-  } else if (apiType === 'recruitment_requests' || apiType === 'recruitment') {
+  } else if (apiType === 'recruitment_requests' || apiType === 'recruitment' || apiType === 'recruitment_tests' || apiType === 'recruitment_interviews') {
     target = 'recruitment';
   } else if (apiType === 'plus') {
     target = 'plus';
