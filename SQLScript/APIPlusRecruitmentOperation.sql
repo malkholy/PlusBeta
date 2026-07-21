@@ -425,7 +425,8 @@ BEGIN
             c.Government,
             c.City,
             c.Address,
-            r.PositionTitle
+            r.PositionTitle,
+            r.Department
         FROM [PLS].[CandidateInterview] i
         JOIN [PLS].[Candidate] c ON i.CandidateID = c.CandidateID
         JOIN [PLS].[HiringRequest] r ON ISNULL(i.RequestID, c.RequestID) = r.RequestID

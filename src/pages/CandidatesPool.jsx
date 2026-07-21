@@ -1727,6 +1727,12 @@ ${selectedCandidate.Summary}`;
 
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5, fontWeight: 600 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ color: 'var(--muted)' }}>Job Requisition</span>
+                              <span style={{ color: 'var(--text)', fontWeight: 800 }}>
+                                {item.PositionTitle ? `${item.PositionTitle}${item.Department ? ` (${item.Department})` : ''}` : (selectedCandidate?.PositionTitle ? `${selectedCandidate.PositionTitle}${selectedCandidate.Department ? ` (${selectedCandidate.Department})` : ''}` : '—')}
+                              </span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                               <span style={{ color: 'var(--muted)' }}>Interviewer</span>
                               <span style={{ color: 'var(--text)' }}>
                                 {(() => {
