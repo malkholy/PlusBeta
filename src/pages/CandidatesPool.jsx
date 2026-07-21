@@ -1616,7 +1616,7 @@ ${selectedCandidate.Summary}`;
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
                       <span style={{ color: 'var(--muted)' }}>Address</span>
-                      <span style={{ color: 'var(--text)' }}>{selectedCandidate.Address || '—'}</span>
+                      <span style={{ color: 'var(--text)' }}>{selectedCandidate.Address && selectedCandidate.Address !== 'N/A' ? selectedCandidate.Address : '—'}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: 8, fontSize: 13, fontWeight: 600 }}>
                       <span style={{ color: 'var(--muted)' }}>Registered By</span>
@@ -2580,7 +2580,7 @@ ${selectedCandidate.Summary}`;
                   Source: row.Source || 'Job Board',
                   Government: row.Government || '',
                   City: row.City || '',
-                  Address: row.Address || '',
+                  Address: (row.Address && row.Address !== 'N/A') ? row.Address : '',
                   DateOfBirth: row.DateOfBirth ? row.DateOfBirth.split('T')[0] : '',
                   ExpectedJoiningDate: row.ExpectedJoiningDate ? row.ExpectedJoiningDate.split('T')[0] : '',
                   ExpectedSalary: row.ExpectedSalary || '',

@@ -103,7 +103,7 @@ export default function CandidatePortal() {
         Email: candidate.Email || '',
         Government: candidate.Government || '',
         City: candidate.City || '',
-        Address: candidate.Address || '',
+        Address: (candidate.Address && candidate.Address !== 'N/A') ? candidate.Address : '',
         CVFileName: candidate.CVFileName || '',
         CVFileContent: candidate.CVFileContent || '',
         ProfilePhoto: candidate.ProfilePhoto || '',

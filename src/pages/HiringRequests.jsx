@@ -1489,7 +1489,7 @@ ${englishSummary}`;
                         <div><span style={{ color: 'var(--muted)' }}>Expected Joining:</span> <strong style={{ color: 'var(--text)' }}>{c.ExpectedJoiningDate ? new Date(c.ExpectedJoiningDate).toLocaleDateString() : '—'}</strong></div>
                         <div><span style={{ color: 'var(--muted)' }}>Expected Salary:</span> <strong style={{ color: 'var(--green)' }}>{c.ExpectedSalary || '—'}</strong></div>
                       </div>
-                      {c.Address && (
+                      {c.Address && c.Address !== 'N/A' && (
                         <div style={{ fontSize: 12, fontWeight: 600, marginTop: 6, paddingTop: 6, borderTop: '1px dashed var(--border)' }}>
                           <span style={{ color: 'var(--muted)' }}>Address Details:</span> <span style={{ color: 'var(--text)' }}>{c.Address}</span>
                         </div>
