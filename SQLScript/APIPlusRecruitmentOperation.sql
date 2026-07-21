@@ -846,6 +846,115 @@ BEGIN
         RETURN;
     END
 
+    -- ======================================================================
+    -- Operation: Get Recruitment Tests
+    -- ======================================================================
+    IF @Operation = 'GetRecruitmentTests'
+    BEGIN
+        SET @State = 0;
+        SET @Message = 'Success';
+
+        SELECT 
+            TestID,
+            TestTitle,
+            TestType,
+            CreatedBy,
+            CreatedDate,
+            (SELECT COUNT(*) FROM [PLS].[RecruitmentTestQuestions] q WHERE q.TestID = t.TestID) AS QuestionCount
+        FROM [PLS].[RecruitmentTests] t
+        ORDER BY TestID DESC;
+        RETURN;
+    END
+
+    -- ======================================================================
+    -- Operation: Save Recruitment Test
+    -- ======================================================================
+    IF @Operation = 'SaveRecruitmentTest'
+    BEGIN
+        SET @State = 0;
+        SET @Message = 'Success';
+
+        DECLARE @SaveTestID INT = JSON_VALUE(@LineData, '$.TestID');
+        DECLARE @SaveTestTitle VARCHAR(255) = JSON_VALUE(@LineData, '$.TestTitle');
+        DECLARE @SaveTestType VARCHAR(100) = JSON_VALUE(@LineData, '$.TestType');
+
+        IF @SaveTestID IS NULL OR @SaveTestID = 0
+        BEGIN
+            INSERT INTO [PLS].[RecruitmentTests] (TestTitle, TestType, CreatedBy, CreatedDate)
+            VALUES (@SaveTestTitle, @SaveTestType, @CreatedBy, GETDATE());
+            SET @SaveTestID = SCOPE_IDENTITY();
+        END
+        ELSE
+        BEGIN
+            UPDATE [PLS].[RecruitmentTests]
+            SET TestTitle = @SaveTestTitle,
+                TestType = @SaveTestType
+            WHERE TestID = @SaveTestID;
+        END
+
+        SELECT @SaveTestID AS TestID;
+        RETURN;
+    END
+
+    -- ======================================================================
+    -- Operation: Get Test Questions
+    -- ======================================================================
+    IF @Operation = 'GetTestQuestions'
+    BEGIN
+        SET @State = 0;
+        SET @Message = 'Success';
+
+        DECLARE @QTestID INT = JSON_VALUE(@LineData, '$.TestID');
+
+        SELECT 
+            QuestionID,
+            TestID,
+            QuestionText,
+            OptionA,
+            OptionB,
+            OptionC,
+            OptionD,
+            CorrectAnswer
+        FROM [PLS].[RecruitmentTestQuestions]
+        WHERE TestID = @QTestID
+        ORDER BY QuestionID ASC;
+        RETURN;
+    END
+
+    -- ======================================================================
+    -- Operation: Save Test Questions (Bulk Replacement)
+    -- ======================================================================
+    IF @Operation = 'SaveTestQuestions'
+    BEGIN
+        SET @State = 0;
+        SET @Message = 'Success';
+
+        DECLARE @BulkTestID INT = JSON_VALUE(@LineData, '$.TestID');
+        DECLARE @QuestionsJson NVARCHAR(MAX) = JSON_QUERY(@LineData, '$.Questions');
+
+        -- Delete existing questions for this test to replace with the new list
+        DELETE FROM [PLS].[RecruitmentTestQuestions] WHERE TestID = @BulkTestID;
+
+        -- Insert the new list
+        IF @QuestionsJson IS NOT NULL
+        BEGIN
+            INSERT INTO [PLS].[RecruitmentTestQuestions] (
+                TestID, QuestionText, OptionA, OptionB, OptionC, OptionD, CorrectAnswer
+            )
+            SELECT 
+                @BulkTestID,
+                JSON_VALUE(value, '$.QuestionText'),
+                JSON_VALUE(value, '$.OptionA'),
+                JSON_VALUE(value, '$.OptionB'),
+                JSON_VALUE(value, '$.OptionC'),
+                JSON_VALUE(value, '$.OptionD'),
+                JSON_VALUE(value, '$.CorrectAnswer')
+            FROM OPENJSON(@QuestionsJson);
+        END
+
+        RETURN;
+    END
+
     END TRY
     BEGIN CATCH
         SET @State = ERROR_NUMBER();

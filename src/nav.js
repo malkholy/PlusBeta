@@ -108,6 +108,12 @@ const NAV = [
         label: 'Interviews Log',
         icon: '📅',
         desc: 'Review history, schedules, and feedback of all interviews'
+      },
+      {
+        id: 'recruitment_tests',
+        label: 'Candidate Tests',
+        icon: '📝',
+        desc: 'Manage and generate candidate assessment tests'
       }
     ]
   }

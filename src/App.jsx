@@ -22,6 +22,7 @@ import CandidatesPool from './pages/CandidatesPool.jsx';
 import JobOffers from './pages/JobOffers.jsx';
 import RecruitmentRoles from './pages/RecruitmentRoles.jsx';
 import RecruitmentInterviews from './pages/RecruitmentInterviews.jsx';
+import RecruitmentTests from './pages/RecruitmentTests.jsx';
 import PublicApply from './pages/PublicApply.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
@@ -203,6 +204,7 @@ const PAGE_COMPONENTS = {
   recruitment_offers: JobOffers,
   recruitment_roles: RecruitmentRoles,
   recruitment_interviews: RecruitmentInterviews,
+  recruitment_tests: RecruitmentTests,
 };
 
 function checkIsAdmin(u, fallbackUsername) {
