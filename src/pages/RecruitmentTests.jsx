@@ -4,6 +4,7 @@ import DataGrid from '../shared/DataGrid.jsx';
 
 export default function RecruitmentTests(props) {
   const [rows, setRows] = useState([]);
+  const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -18,15 +19,6 @@ export default function RecruitmentTests(props) {
   const [generating, setGenerating] = useState(false);
   const [aiError, setAiError] = useState('');
 
-  const columns = [
-    { field: 'TestID', headerName: 'ID', width: 70 },
-    { field: 'TestTitle', headerName: 'Test Title', flex: 1 },
-    { field: 'TestType', headerName: 'Type', width: 120 },
-    { field: 'CreatedBy', headerName: 'Created By', width: 120 },
-    { field: 'CreatedDate', headerName: 'Date', width: 150 },
-    { field: 'QuestionCount', headerName: 'Questions', width: 100 }
-  ];
-
   useEffect(() => {
     loadTests();
   }, []);
@@ -37,7 +29,13 @@ export default function RecruitmentTests(props) {
     try {
       const res = await apiCall('GetRecruitmentTests', {}, {}, 'recruitment_tests');
       if (res.State === 0 || res.List0) {
-        setRows(res.List0 || []);
+        const data = res.List0 || [];
+        setRows(data);
+        if (data.length > 0) {
+          generateColumns(data[0]);
+        } else {
+          generateColumns({ TestID: 0, TestTitle: '', TestType: '', CreatedBy: '', CreatedDate: '', QuestionCount: 0 });
+        }
       } else {
         setError(res.Message || 'Failed to load tests.');
       }
@@ -48,35 +46,94 @@ export default function RecruitmentTests(props) {
     }
   }
 
-  async function handleRowDoubleClick(params) {
-    const testRow = params.row;
-    setEditingTest({
-      TestID: testRow.TestID,
-      TestTitle: testRow.TestTitle || '',
-      TestType: testRow.TestType || ''
+  function generateColumns(sample) {
+    if (!sample) return;
+    const keys = Object.keys(sample);
+    const cols = keys.map(k => {
+      let label = k.replace(/([A-Z])/g, ' $1').trim();
+      label = label.charAt(0).toUpperCase() + label.slice(1);
+      if (k === 'TestID') label = 'ID';
+      if (k === 'TestTitle') label = 'Test Title';
+      if (k === 'TestType') label = 'Category / Type';
+      if (k === 'QuestionCount') label = 'Questions';
+
+      return {
+        key: k,
+        label,
+        render: (val, row, search, highlight) => {
+          if (k === 'QuestionCount') {
+            return (
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--primary)',
+                background: 'var(--primary-soft)',
+                padding: '3px 8px',
+                borderRadius: 6
+              }}>
+                📝 {val || 0} Questions
+              </span>
+            );
+          }
+          if (k === 'TestType') {
+            return (
+              <span style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: 'var(--text)',
+                background: 'var(--soft)',
+                padding: '3px 8px',
+                borderRadius: 6
+              }}>
+                {val}
+              </span>
+            );
+          }
+          if (k.toLowerCase().endsWith('date') && val) {
+            try {
+              const d = new Date(val);
+              if (!isNaN(d.getTime())) {
+                return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+              }
+            } catch (e) {}
+          }
+          return highlight(String(val ?? '-'), search);
+        }
+      };
     });
+
+    setColumns(cols);
+  }
+
+  function handleOpenDrawer(testRow) {
+    if (testRow) {
+      setEditingTest({
+        TestID: testRow.TestID,
+        TestTitle: testRow.TestTitle || '',
+        TestType: testRow.TestType || ''
+      });
+      loadQuestions(testRow.TestID);
+    } else {
+      setEditingTest({
+        TestID: 0,
+        TestTitle: '',
+        TestType: 'IQ'
+      });
+      setQuestions([]);
+    }
     setShowDrawer(true);
+  }
+
+  async function loadQuestions(testId) {
     setQuestions([]);
-    
-    // Load questions
     try {
-      const res = await apiCall('GetTestQuestions', { TestID: testRow.TestID }, {}, 'recruitment_tests');
+      const res = await apiCall('GetTestQuestions', { TestID: testId }, {}, 'recruitment_tests');
       if (res.State === 0 || res.List0) {
         setQuestions(res.List0 || []);
       }
     } catch (e) {
       console.error(e);
     }
-  }
-
-  function handleCreateNew() {
-    setEditingTest({
-      TestID: 0,
-      TestTitle: '',
-      TestType: 'IQ'
-    });
-    setQuestions([]);
-    setShowDrawer(true);
   }
 
   async function handleSaveTest() {
@@ -227,7 +284,6 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
           const textResponse = resJson.content?.find(b => b.type === 'text')?.text || '';
           
           try {
-            // strip markdown formatting if claude ignored the prompt
             const cleanText = textResponse.replace(/^```json/g, '').replace(/```$/g, '').trim();
             generatedJson = JSON.parse(cleanText);
             break; 
@@ -254,189 +310,264 @@ You MUST output strictly in raw JSON format, without any markdown formatting or 
     }
   }
 
-  return (
-    <div className="rt-container">
-      <div className="rt-header">
-        <div className="rt-title-area">
-          <h1>Candidate Tests & Assessments</h1>
-          <p>Manage multiple-choice tests and generate questions with AI.</p>
-        </div>
-        <button className="rt-btn-primary" onClick={handleCreateNew}>
-          <span className="material-icons" style={{fontSize: '18px'}}>add</span>
-          Create New Test
-        </button>
-      </div>
+  const renderDrawer = () => {
+    if (!editingTest) return null;
 
-      {error && (
-        <div className="err-page">
-          {error}
-        </div>
-      )}
-
-      <div className="table-panel" style={{ flex: 1 }}>
-        <DataGrid
-          rows={rows}
-          columns={columns}
-          loading={loading}
-          onRowDoubleClick={handleRowDoubleClick}
-          getRowId={(r) => r.TestID}
+    return (
+      <>
+        <div
+          onClick={() => setShowDrawer(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15,23,42,0.15)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 9998
+          }}
         />
-      </div>
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          right: 0,
+          width: 'min(680px, 100vw)',
+          height: '100vh',
+          background: 'var(--surface)',
+          boxShadow: '-10px 0 30px rgba(0,0,0,0.12)',
+          borderLeft: '1px solid var(--border)',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '24px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>
+              {editingTest.TestID === 0 ? 'Create New Test' : `Test Configuration #${editingTest.TestID}`}
+            </h3>
+            <button onClick={() => setShowDrawer(false)} style={{ background: 'none', border: 0, fontSize: 24, cursor: 'pointer', color: 'var(--muted)', fontWeight: 'bold' }}>&times;</button>
+          </div>
 
-      {/* Side Drawer */}
-      <div className={`rt-drawer ${showDrawer ? 'open' : ''}`}>
-        {editingTest && (
-          <>
-            <div className="rt-drawer-header">
-              <h2>{editingTest.TestID === 0 ? 'New Test' : `Edit Test #${editingTest.TestID}`}</h2>
-              <button className="rt-close-btn" onClick={() => setShowDrawer(false)}>
-                <span className="material-icons">close</span>
-              </button>
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {/* Header Form */}
+            <div style={{ background: 'var(--soft)', border: '1px solid var(--border)', borderRadius: 16, padding: 18, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Test Title</label>
+                <input 
+                  type="text" 
+                  value={editingTest.TestTitle}
+                  onChange={(e) => setEditingTest({...editingTest, TestTitle: e.target.value})}
+                  placeholder="e.g. Senior Software Engineer IQ & Aptitude"
+                  style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none', fontSize: 13, fontWeight: 600 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 6 }}>Category / Type</label>
+                <select
+                  value={editingTest.TestType}
+                  onChange={(e) => setEditingTest({...editingTest, TestType: e.target.value})}
+                  style={{ width: '100%', height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none', fontSize: 13, fontWeight: 600 }}
+                >
+                  <option value="IQ">IQ & Aptitude Test</option>
+                  <option value="English">English Proficiency</option>
+                  <option value="Technical">Technical Skills</option>
+                  <option value="Personality">Personality Assessment</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
 
-            <div className="rt-drawer-body">
-              <div className="rt-form-grid">
-                <div className="rt-field">
-                  <label>Test Title</label>
-                  <input 
-                    type="text" 
-                    value={editingTest.TestTitle}
-                    onChange={(e) => setEditingTest({...editingTest, TestTitle: e.target.value})}
-                    placeholder="Enter test title..."
-                  />
+            {/* AI Generator Box */}
+            <div style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.06))', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 16, padding: 18 }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--primary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                ✨ Generate Questions with Claude AI
+              </div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <input
+                  type="text"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="e.g. Generate 5 intermediate English questions about past perfect tense"
+                  style={{ flex: 1, height: 38, padding: '0 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--surface)', color: 'var(--text)', outline: 'none', fontSize: 13 }}
+                />
+                <button
+                  type="button"
+                  onClick={generateWithAI}
+                  disabled={generating}
+                  style={{
+                    height: 38,
+                    padding: '0 18px',
+                    border: 0,
+                    background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                    color: '#fff',
+                    borderRadius: 10,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    whiteSpace: 'nowrap',
+                    opacity: generating ? 0.7 : 1
+                  }}
+                >
+                  {generating ? 'Generating...' : '✨ Auto-Generate'}
+                </button>
+              </div>
+              {aiError && (
+                <div style={{ marginTop: 8, fontSize: 12, color: 'var(--red)', fontWeight: 600 }}>
+                  ⚠️ {aiError}
                 </div>
-                <div className="rt-field">
-                  <label>Test Type</label>
-                  <select
-                    value={editingTest.TestType}
-                    onChange={(e) => setEditingTest({...editingTest, TestType: e.target.value})}
-                  >
-                    <option value="IQ">IQ Test</option>
-                    <option value="English">English Proficiency</option>
-                    <option value="Technical">Technical Skills</option>
-                    <option value="Personality">Personality Assessment</option>
-                    <option value="Other">Other</option>
-                  </select>
+              )}
+            </div>
+
+            {/* Questions List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Questions List ({questions.length})
                 </div>
+                <button
+                  type="button"
+                  onClick={handleAddEmptyQuestion}
+                  style={{
+                    background: 'var(--soft)',
+                    border: '1px solid var(--border)',
+                    padding: '5px 12px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    color: 'var(--primary)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  + Add Question
+                </button>
               </div>
 
-              <div className="rt-ai-box">
-                <span className="material-icons" style={{position:'absolute', right: '10px', top: '10px', fontSize: '64px', opacity: 0.1, color: '#3730a3'}}>psychology</span>
-                <h3>
-                  <span className="material-icons" style={{fontSize: '18px'}}>auto_awesome</span>
-                  Generate with Claude AI
-                </h3>
-                <div className="rt-ai-input-row" style={{position: 'relative', zIndex: 2}}>
-                  <input
-                    type="text"
-                    value={aiPrompt}
-                    onChange={(e) => setAiPrompt(e.target.value)}
-                    placeholder="E.g. Generate 5 intermediate English questions about past perfect tense"
-                  />
-                  <button
-                    className="rt-btn-primary"
-                    onClick={generateWithAI}
-                    disabled={generating}
-                  >
-                    {generating ? (
-                      <><span className="material-icons spinner" style={{fontSize: '16px', width: '16px', height:'16px', borderTopColor: '#fff', marginRight: '4px'}}></span> Generating...</>
-                    ) : (
-                      <><span className="material-icons" style={{fontSize: '18px'}}>magic_button</span> Generate</>
-                    )}
-                  </button>
+              {questions.length === 0 ? (
+                <div style={{ padding: '32px 16px', background: 'var(--soft)', border: '1px stroke var(--border)', borderRadius: 16, textAlign: 'center', color: 'var(--muted)', fontSize: 13, fontWeight: 600 }}>
+                  📝 No questions configured yet. Add questions manually or use AI to generate them.
                 </div>
-                {aiError && <p style={{color: 'var(--red)', fontSize: '13px', marginTop: '12px'}}>{aiError}</p>}
-              </div>
-
-              <div className="rt-questions-section">
-                <div className="rt-questions-header">
-                  <h3>Questions <span style={{background: '#f1f5f9', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', color: 'var(--muted)'}}>{questions.length}</span></h3>
-                  <button className="rt-add-btn" onClick={handleAddEmptyQuestion}>
-                    <span className="material-icons" style={{fontSize: '16px'}}>add</span>
-                    Add Manual Question
-                  </button>
-                </div>
-                
-                <div className="rt-questions-list">
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {questions.map((q, idx) => (
-                    <div key={idx} className="rt-question-card">
-                      <button className="rt-del-q-btn" onClick={() => removeQuestion(idx)} title="Remove Question">
-                        <span className="material-icons">delete</span>
-                      </button>
-                      
-                      <span className="rt-q-label">Question {idx + 1}</span>
+                    <div key={idx} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, padding: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.015)', position: 'relative' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase' }}>
+                          Question #{idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeQuestion(idx)}
+                          style={{ background: 'none', border: 0, color: 'var(--red)', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+
                       <textarea
-                        className="rt-q-text"
+                        rows="2"
                         value={q.QuestionText}
                         onChange={(e) => updateQuestion(idx, 'QuestionText', e.target.value)}
-                        rows="2"
-                        placeholder="Type your question here..."
+                        placeholder="Type question text..."
+                        style={{ width: '100%', padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: 10, background: 'var(--bg)', color: 'var(--text)', outline: 'none', fontSize: 13, marginBottom: 12, resize: 'vertical' }}
                       />
 
-                      <div className="rt-options-grid">
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
                         {[
                           { key: 'OptionA', label: 'A' },
                           { key: 'OptionB', label: 'B' },
                           { key: 'OptionC', label: 'C' },
                           { key: 'OptionD', label: 'D' }
                         ].map((opt) => (
-                          <div key={opt.key} className={`rt-opt-row ${q.CorrectAnswer === opt.label ? 'is-correct' : ''}`}>
-                            <div className="rt-opt-letter">{opt.label}</div>
-                            <input 
-                              type="text" 
-                              value={q[opt.key]} 
-                              onChange={(e) => updateQuestion(idx, opt.key, e.target.value)} 
+                          <div key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg)', border: '1.5px solid var(--border)', borderRadius: 8, padding: '4px 8px' }}>
+                            <span style={{ fontSize: 11, fontWeight: 900, color: q.CorrectAnswer === opt.label ? 'var(--green)' : 'var(--muted)' }}>
+                              {opt.label}.
+                            </span>
+                            <input
+                              type="text"
+                              value={q[opt.key]}
+                              onChange={(e) => updateQuestion(idx, opt.key, e.target.value)}
                               placeholder={`Option ${opt.label}...`}
+                              style={{ width: '100%', border: 0, background: 'transparent', outline: 'none', fontSize: 12.5, color: 'var(--text)' }}
                             />
                           </div>
                         ))}
                       </div>
 
-                      <div className="rt-correct-ans-row">
-                        <span className="rt-correct-ans-label">Correct Answer:</span>
-                        <div className="rt-ans-btns">
-                          {['A', 'B', 'C', 'D'].map(val => (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--muted)', textTransform: 'uppercase' }}>Correct Answer:</span>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          {['A', 'B', 'C', 'D'].map((ans) => (
                             <button
-                              key={val}
-                              onClick={() => updateQuestion(idx, 'CorrectAnswer', val)}
-                              className={`rt-ans-btn ${q.CorrectAnswer === val ? 'active' : ''}`}
+                              key={ans}
+                              type="button"
+                              onClick={() => updateQuestion(idx, 'CorrectAnswer', ans)}
+                              style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: 6,
+                                border: '1px solid var(--border)',
+                                background: q.CorrectAnswer === ans ? 'var(--green)' : 'var(--soft)',
+                                color: q.CorrectAnswer === ans ? '#fff' : 'var(--text)',
+                                fontSize: 12,
+                                fontWeight: 800,
+                                cursor: 'pointer'
+                              }}
                             >
-                              {val}
+                              {ans}
                             </button>
                           ))}
                         </div>
                       </div>
                     </div>
                   ))}
-                  
-                  {questions.length === 0 && (
-                    <div style={{textAlign: 'center', padding: '40px', border: '2px dashed var(--border)', borderRadius: '12px', background: '#f8fafc', color: 'var(--muted)'}}>
-                      <span className="material-icons" style={{fontSize: '48px', opacity: 0.3, marginBottom: '12px'}}>quiz</span>
-                      <div style={{fontWeight: '600', color: 'var(--text)'}}>No questions added yet.</div>
-                      <div style={{fontSize: '13px', marginTop: '4px'}}>Add one manually or let Claude AI generate them for you.</div>
-                    </div>
-                  )}
                 </div>
-              </div>
+              )}
             </div>
+          </div>
 
-            <div className="rt-drawer-footer">
-              <button className="rt-btn-secondary" onClick={() => setShowDrawer(false)}>Cancel</button>
-              <button className="rt-btn-primary" onClick={handleSaveTest} disabled={saving}>
-                {saving ? (
-                  <><span className="material-icons spinner" style={{fontSize: '16px', width: '16px', height:'16px', borderTopColor: '#fff'}}></span> Saving...</>
-                ) : (
-                  <><span className="material-icons" style={{fontSize: '18px'}}>save</span> Save Test</>
-                )}
-              </button>
-            </div>
-          </>
-        )}
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', paddingTop: 16, marginTop: 16, borderTop: '1px solid var(--border)' }}>
+            <button
+              type="button"
+              onClick={() => setShowDrawer(false)}
+              style={{ height: 38, padding: '0 18px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveTest}
+              disabled={saving}
+              style={{ height: 38, padding: '0 20px', border: 0, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', color: '#fff', borderRadius: 10, fontWeight: 800, cursor: 'pointer', fontSize: 13 }}
+            >
+              {saving ? 'Saving...' : 'Save Test'}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <div style={{ padding: '24px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {error && (
+        <div className="err-page">
+          {error}
+        </div>
+      )}
+
+      <div style={{ flex: 1, minHeight: 0 }}>
+        <DataGrid
+          title="Candidate Tests & Assessments"
+          subtitle="Manage multiple-choice tests, IQ assessments, and generate question sets with AI"
+          columns={columns}
+          rows={rows}
+          loading={loading}
+          onRefresh={loadTests}
+          addText="+ Create New Test"
+          onAdd={() => handleOpenDrawer(null)}
+          onRowClick={(row) => handleOpenDrawer(row)}
+        />
       </div>
 
-      {showDrawer && (
-        <div className="rt-drawer-overlay" onClick={() => setShowDrawer(false)} />
-      )}
+      {showDrawer && renderDrawer()}
     </div>
   );
 }
